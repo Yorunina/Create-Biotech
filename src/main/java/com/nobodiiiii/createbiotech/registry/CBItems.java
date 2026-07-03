@@ -29,6 +29,7 @@ import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
+import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -96,6 +97,10 @@ public class CBItems {
 
 	public static final RegistryObject<Item> WIRELESS_TERMINAL = ITEMS.register("wireless_terminal",
 		() -> new WirelessTerminalItem(new Item.Properties().stacksTo(1)));
+
+	public static final RegistryObject<StorageChannelExtensionCardItem> STORAGE_CHANNEL_EXTENSION_CARD =
+		ITEMS.register("storage_channel_extension_card",
+			() -> new StorageChannelExtensionCardItem(new Item.Properties()));
 
 	public static final RegistryObject<Item> HALF_SHAFT = ITEMS.register("half_shaft",
 		() -> new Item(new Item.Properties()));

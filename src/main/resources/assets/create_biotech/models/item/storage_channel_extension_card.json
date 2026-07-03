@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "create_biotech:item/storage_channel_extension_card"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "create_biotech:linked": 1
+      },
+      "model": "create_biotech:item/storage_channel_extension_card_on"
+    }
+  ]
+}

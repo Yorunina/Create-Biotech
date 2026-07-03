@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "create_biotech:storage_channel_extension_card"
+    }
+  ],
+  "result": {
+    "item": "create_biotech:storage_channel_extension_card",
+    "count": 1
+  }
+}

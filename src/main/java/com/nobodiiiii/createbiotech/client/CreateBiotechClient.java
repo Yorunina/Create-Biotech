@@ -52,6 +52,7 @@ import com.yision.phantom.client.gui.hud.AirCourierHudOverlay;
 import com.yision.phantom.client.render.AirCourierEntityRenderer;
 import com.yision.phantom.item.miniphantom.MiniPhantomMenu;
 import com.yision.phantom.item.miniphantom.MiniPhantomScreen;
+import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
 import com.nobodiiiii.createbiotech.client.render.SlimeMimicRenderLayer;
@@ -357,6 +358,7 @@ public class CreateBiotechClient {
 		registerCreateStyleTooltip(CBItems.SMART_SUPER_GLUE.get());
 		registerCreateStyleTooltip(CBItems.FIXED_CARROT_FISHING_ROD.get());
 		registerCreateStyleTooltip(CBItems.WIRELESS_TERMINAL.get());
+		registerCreateStyleTooltip(CBItems.STORAGE_CHANNEL_EXTENSION_CARD.get());
 		registerCreateStyleTooltip(CBItems.SHULKER_PACKAGER.get());
 		registerCreateStyleTooltip(CBItems.SHULKER_TELEPORTER.get());
 		registerCreateStyleTooltip(CBItems.PHANTOMPORT.get());
@@ -375,5 +377,7 @@ public class CreateBiotechClient {
 			(stack, level, entity, seed) -> CapturedEntityBoxHelper.hasCapturedEntity(stack) ? 1.0f : 0.0f);
 		ItemProperties.register(CBItems.LARGE_CARDBOARD_BOX.get(), CreateBiotech.asResource("captured"),
 			(stack, level, entity, seed) -> CapturedEntityBoxHelper.hasCapturedEntity(stack) ? 1.0f : 0.0f);
+		ItemProperties.register(CBItems.STORAGE_CHANNEL_EXTENSION_CARD.get(), CreateBiotech.asResource("linked"),
+			(stack, level, entity, seed) -> StorageChannelExtensionCardItem.isLinked(stack) ? 1.0f : 0.0f);
 	}
 }
