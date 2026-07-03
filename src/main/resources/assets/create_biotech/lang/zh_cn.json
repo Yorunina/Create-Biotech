@@ -53,8 +53,6 @@
   "create_biotech.jei.evoker_enchanting_chamber.note.blocked_until_extracted": "未取出成果前附魔室保持锁定状态",
   "create_biotech.jei.evoker_enchanting_chamber.note.experience": "每个总附魔等级消耗 1000 mB；缓存上限 4000 mB",
   "create_biotech.jei.evoker_enchanting_chamber.note.segmented": "分段咏唱，经验不足时会暂停等待输入",
-  "create_biotech.recipe.experience_pumping": "经验泵送",
-  "create_biotech.jei.experience_pump.note.nuggets": "从容器中抽取机械动力经验粒，并将每个经验粒转化为 3 mB",
   "create_biotech.recipe.processing.random_amount": "%s-%s个",
   "block.create_biotech.fixed_carrot_fishing_rod": "固定的钓竿",
   "block.create_biotech.fixed_carrot_fishing_rod.tooltip.summary": "把你的_钓竿_固定在墙上！",

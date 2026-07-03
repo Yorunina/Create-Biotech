@@ -5,7 +5,6 @@ import java.util.List;
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberHighPressureRecipe;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
-import com.nobodiiiii.createbiotech.registry.CBItems;
 import com.nobodiiiii.createbiotech.registry.CBRecipeTypes;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.kinetics.crusher.AbstractCrushingRecipe;
@@ -37,7 +36,6 @@ public class CreateBiotechJeiPlugin implements IModPlugin {
 		registration.addRecipeCategories(new CreeperBlastChamberHighPressureJeiCategory());
 		registration.addRecipeCategories(new SquidPrinterJeiCategory());
 		registration.addRecipeCategories(new EvokerEnchantingChamberJeiCategory());
-		registration.addRecipeCategories(new ExperiencePumpJeiCategory());
 	}
 
 	@Override
@@ -49,7 +47,6 @@ public class CreateBiotechJeiPlugin implements IModPlugin {
 			creeperBlastChamberHighPressureRecipes());
 		registration.addRecipes(SquidPrinterJeiCategory.TYPE, SquidPrinterJeiRecipes.create());
 		registration.addRecipes(EvokerEnchantingChamberJeiCategory.TYPE, EvokerEnchantingChamberJeiRecipes.create());
-		registration.addRecipes(ExperiencePumpJeiCategory.TYPE, ExperienceJeiRecipes.pump());
 	}
 
 	@Override
@@ -60,7 +57,6 @@ public class CreateBiotechJeiPlugin implements IModPlugin {
 		registration.addRecipeCatalyst(new ItemStack(CBBlocks.SQUID_PRINTER.get()), SquidPrinterJeiCategory.TYPE);
 		registration.addRecipeCatalyst(new ItemStack(CBBlocks.EVOKER_ENCHANTING_CHAMBER.get()),
 			EvokerEnchantingChamberJeiCategory.TYPE);
-		registration.addRecipeCatalyst(new ItemStack(CBBlocks.EXPERIENCE_PUMP.get()), ExperiencePumpJeiCategory.TYPE);
 	}
 
 	private static List<CreeperBlastChamberHighPressureRecipe> creeperBlastChamberHighPressureRecipes() {
