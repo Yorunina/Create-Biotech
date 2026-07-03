@@ -76,6 +76,7 @@
   "item.create_biotech.power_belt_connector": "Power Belt",
   "item.create_biotech.captured_small_slime": "Small Slime",
   "item.create_biotech.captured_small_slime.tooltip.summary": "Use a Create Funnel to insert small slimes into a Basin for processing.",
+  "item.create_biotech.captured_phantom": "Phantom",
   "item.create_biotech.half_shaft": "Half Shaft",
   "item.create_biotech.smart_super_glue": "Smart Super Glue",
   "item.create_biotech.smart_super_glue.tooltip.summary": "Batch-process _Super Glue_ selections.",

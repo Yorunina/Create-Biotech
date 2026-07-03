@@ -20,7 +20,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 	private static final ModelResourceLocation PACKAGE_MODEL =
-		new ModelResourceLocation(new ResourceLocation(CreatePhantom.MODID, "item/mini_phantom_package"), "inventory");
+		new ModelResourceLocation(new ResourceLocation(CreatePhantom.MODID, "mini_phantom_package"), "inventory");
 
 	@Override
 	protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer,
