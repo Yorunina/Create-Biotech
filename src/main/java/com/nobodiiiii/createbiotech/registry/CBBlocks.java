@@ -31,6 +31,7 @@ import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterB
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableBlock;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableCogBlock;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointBlock;
+import com.yision.phantom.block.phantomport.PhantomPortBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainDriveBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.ExplosionProofCasingBlock;
@@ -265,6 +266,15 @@ public class CBBlocks {
 				.sound(SoundType.STONE)
 				.strength(2.0f)
 				.mapColor(MapColor.COLOR_PURPLE)
+				.noOcclusion()));
+
+	public static final RegistryObject<PhantomPortBlock> PHANTOMPORT =
+		BLOCKS.register("phantomport",
+			() -> new PhantomPortBlock(Block.Properties.of()
+				.sound(SoundType.METAL)
+				.strength(3.0f)
+				.mapColor(MapColor.METAL)
+				.requiresCorrectToolForDrops()
 				.noOcclusion()));
 
 	public static final RegistryObject<ConnectedGlassBlock> BLAST_PROOF_FRAMED_GLASS =

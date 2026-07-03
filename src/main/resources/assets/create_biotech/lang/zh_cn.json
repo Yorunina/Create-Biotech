@@ -409,5 +409,18 @@
   "block.create_biotech.shulker_teleporter.tooltip.behaviour2": "上方贝壳会旋转下压并闭合；同名目标中优先选择同维度最近的空闲站点，并将底座上的所有目标一起传送。全部离开则取消。",
   "create_biotech.shulker_teleporter.own_address": "本机地址",
   "create_biotech.shulker_teleporter.target_address": "目标地址",
-  "create_biotech.shulker_teleporter.save": "保存"
+  "create_biotech.shulker_teleporter.save": "保存",
+  "block.create_biotech.phantomport": "货物翼站",
+  "item.create_biotech.phantomport": "货物翼站",
+  "item.create_biotech.mini_phantom": "运输幻翼",
+  "item.createphantom.mini_phantom": "运输幻翼",
+  "block.createphantom.phantomport": "货物翼站",
+  "gui.createphantom.mini_phantom.invalid_target_phantomport": "找不到有效目标",
+  "gui.createphantom.phantomport.arrival_time_display": "抵达剩余时间：%s",
+  "gui.createphantom.phantomport.order_status.preparing": "即将起飞",
+  "gui.createphantom.phantomport.order_status.in_transit": "飞行中",
+  "gui.createphantom.phantomport.order_status.returning": "返航中",
+  "gui.createphantom.phantomport.order_status.cross_dimension": "正在跨越维度",
+  "gui.createphantom.phantomport.order_status.delivered": "已抵达目的地",
+  "gui.createphantom.phantomport.order_status.failed": "无法发出"
 }

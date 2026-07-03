@@ -409,5 +409,18 @@
   "block.create_biotech.shulker_teleporter.tooltip.behaviour2": "The upper shell closes, prefers the nearest idle same-address destination in its dimension, and teleports everything on the base together. It cancels when the base is empty.",
   "create_biotech.shulker_teleporter.own_address": "Own Address",
   "create_biotech.shulker_teleporter.target_address": "Target Address",
-  "create_biotech.shulker_teleporter.save": "Save"
+  "create_biotech.shulker_teleporter.save": "Save",
+  "block.create_biotech.phantomport": "Phantom Port",
+  "item.create_biotech.phantomport": "Phantom Port",
+  "item.create_biotech.mini_phantom": "Cargo Phantom",
+  "item.createphantom.mini_phantom": "Cargo Phantom",
+  "block.createphantom.phantomport": "Phantom Port",
+  "gui.createphantom.mini_phantom.invalid_target_phantomport": "No valid target Phantom Port was found",
+  "gui.createphantom.phantomport.arrival_time_display": "Arrival ETA: %s",
+  "gui.createphantom.phantomport.order_status.preparing": "Preparing for takeoff",
+  "gui.createphantom.phantomport.order_status.in_transit": "In transit",
+  "gui.createphantom.phantomport.order_status.returning": "Returning",
+  "gui.createphantom.phantomport.order_status.cross_dimension": "Crossing dimensions",
+  "gui.createphantom.phantomport.order_status.delivered": "Arrived at destination",
+  "gui.createphantom.phantomport.order_status.failed": "Unable to dispatch"
 }

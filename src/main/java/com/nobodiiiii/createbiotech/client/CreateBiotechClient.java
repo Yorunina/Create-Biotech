@@ -42,6 +42,12 @@ import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointRendere
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestMenu;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestScreen;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
+import com.yision.phantom.block.phantomport.PhantomPortMenu;
+import com.yision.phantom.block.phantomport.PhantomPortScreen;
+import com.yision.phantom.client.gui.hud.AirCourierHudOverlay;
+import com.yision.phantom.client.render.AirCourierEntityRenderer;
+import com.yision.phantom.item.miniphantom.MiniPhantomMenu;
+import com.yision.phantom.item.miniphantom.MiniPhantomScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
 import com.nobodiiiii.createbiotech.client.render.SlimeMimicRenderLayer;
@@ -77,6 +83,7 @@ import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
@@ -131,6 +138,7 @@ public class CreateBiotechClient {
 			GhastHotAirBalloonEntityRenderer::new);
 		event.registerEntityRenderer(CBEntityTypes.GHAST_HOT_AIR_BALLOON_SEAT.get(),
 			GhastHotAirBalloonSeatEntity.Render::new);
+		event.registerEntityRenderer(CBEntityTypes.AIR_COURIER.get(), AirCourierEntityRenderer::new);
 	}
 
 	@SubscribeEvent
@@ -161,12 +169,14 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_open"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_closed"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/tray"));
+		event.register(new ModelResourceLocation(CreateBiotech.asResource("item/mini_phantom_package"), "inventory"));
 	}
 
 	@SubscribeEvent
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
 		event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "ghast_balloon_magnet_prompt",
 			GhastBalloonMagnetSnapOverlay.INSTANCE);
+		event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "air_courier_hud", AirCourierHudOverlay.INSTANCE);
 	}
 
 	@SubscribeEvent
@@ -217,6 +227,7 @@ public class CreateBiotechClient {
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BIO_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_TELEPORTER.get(), RenderType.cutoutMipped());
+			ItemBlockRenderTypes.setRenderLayer(CBBlocks.PHANTOMPORT.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.EXPERIENCE_PUMP.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.MAGMA_BELT.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.POWER_BELT.get(), RenderType.cutoutMipped());
@@ -235,6 +246,20 @@ public class CreateBiotechClient {
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.LIQUID_LIVING_SLIME_FLOWING.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.LIQUID_LIVING_SLIME_BLOCK.get(), RenderType.translucent());
 			MenuScreens.register(CBMenuTypes.SPIDER_ASSEMBLY_TABLE.get(), SpiderAssemblyTableScreen::new);
+			MenuScreens.register(CBMenuTypes.PHANTOMPORT.get(), new MenuScreens.ScreenConstructor() {
+				@Override
+				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
+					net.minecraft.network.chat.Component title) {
+					return new PhantomPortScreen((PhantomPortMenu) menu, inventory, title);
+				}
+			});
+			MenuScreens.register(CBMenuTypes.MINI_PHANTOM.get(), new MenuScreens.ScreenConstructor() {
+				@Override
+				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
+					net.minecraft.network.chat.Component title) {
+					return new MiniPhantomScreen((MiniPhantomMenu) menu, inventory, title);
+				}
+			});
 			MenuScreens.register(CBMenuTypes.SHULKER_TELEPORTER.get(), new MenuScreens.ScreenConstructor() {
 				@Override
 				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
@@ -323,6 +348,8 @@ public class CreateBiotechClient {
 		registerCreateStyleTooltip(CBItems.WIRELESS_TERMINAL.get());
 		registerCreateStyleTooltip(CBItems.SHULKER_PACKAGER.get());
 		registerCreateStyleTooltip(CBItems.SHULKER_TELEPORTER.get());
+		registerCreateStyleTooltip(CBItems.PHANTOMPORT.get());
+		registerCreateStyleTooltip(CBItems.MINI_PHANTOM.get());
 		CBItems.BUFFER_PADS.values()
 			.forEach(entry -> registerCreateStyleTooltip(entry.get()));
 	}

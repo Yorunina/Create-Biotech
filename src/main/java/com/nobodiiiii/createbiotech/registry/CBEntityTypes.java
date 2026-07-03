@@ -3,6 +3,7 @@ package com.nobodiiiii.createbiotech.registry;
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloonEntity;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloonSeatEntity;
+import com.yision.phantom.entity.courier.AirCourierEntity;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -38,6 +39,15 @@ public class CBEntityTypes {
 			GhastHotAirBalloonSeatEntity.build(builder);
 			return builder.build("ghast_hot_air_balloon_seat");
 		});
+
+	public static final RegistryObject<EntityType<AirCourierEntity>> AIR_COURIER =
+		ENTITY_TYPES.register("air_courier", () -> EntityType.Builder
+			.<AirCourierEntity>of(AirCourierEntity::createEmpty, MobCategory.MISC)
+			.sized(0.6F, 0.6F)
+			.setTrackingRange(96)
+			.setUpdateInterval(1)
+			.setShouldReceiveVelocityUpdates(true)
+			.build("air_courier"));
 
 	private CBEntityTypes() {}
 
