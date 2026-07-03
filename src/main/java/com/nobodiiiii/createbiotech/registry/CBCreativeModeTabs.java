@@ -31,6 +31,8 @@ public class CBCreativeModeTabs {
 				output.accept(CBItems.BIO_PACKAGER.get());
 				output.accept(CBItems.SHULKER_PACKAGER.get());
 				output.accept(CBItems.SHULKER_TELEPORTER.get());
+				output.accept(CBItems.PHANTOMPORT.get());
+				output.accept(CBItems.MINI_PHANTOM.get());
 				output.accept(CBItems.UNIVERSAL_JOINT.get());
 				output.accept(CBItems.SLIME_CLUTCH.get());
 				output.accept(CBItems.BONE_RATCHET.get());

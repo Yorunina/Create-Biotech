@@ -416,5 +416,18 @@
   "create_biotech.shulker_teleporter.search": "搜索地址",
   "create_biotech.shulker_teleporter.new_address": "新增目标地址",
   "create_biotech.shulker_teleporter.select_target": "左键点击选择",
-  "create_biotech.shulker_teleporter.no_addresses": "暂无候选地址"
+  "create_biotech.shulker_teleporter.no_addresses": "暂无候选地址",
+  "block.create_biotech.phantomport": "货物翼站",
+  "item.create_biotech.phantomport": "货物翼站",
+  "item.create_biotech.mini_phantom": "运输幻翼",
+  "item.createphantom.mini_phantom": "运输幻翼",
+  "block.createphantom.phantomport": "货物翼站",
+  "gui.createphantom.mini_phantom.invalid_target_phantomport": "找不到有效目标",
+  "gui.createphantom.phantomport.arrival_time_display": "抵达剩余时间：%s",
+  "gui.createphantom.phantomport.order_status.preparing": "即将起飞",
+  "gui.createphantom.phantomport.order_status.in_transit": "飞行中",
+  "gui.createphantom.phantomport.order_status.returning": "返航中",
+  "gui.createphantom.phantomport.order_status.cross_dimension": "正在跨越维度",
+  "gui.createphantom.phantomport.order_status.delivered": "已抵达目的地",
+  "gui.createphantom.phantomport.order_status.failed": "无法发出"
 }

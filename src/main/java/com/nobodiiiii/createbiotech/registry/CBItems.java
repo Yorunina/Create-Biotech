@@ -27,6 +27,7 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackageItem;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
+import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -146,6 +147,12 @@ public class CBItems {
 
 	public static final RegistryObject<Item> SHULKER_TELEPORTER = ITEMS.register("shulker_teleporter",
 		() -> new BlockItem(CBBlocks.SHULKER_TELEPORTER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> PHANTOMPORT = ITEMS.register("phantomport",
+		() -> new BlockItem(CBBlocks.PHANTOMPORT.get(), new Item.Properties()));
+
+	public static final RegistryObject<MiniPhantomItem> MINI_PHANTOM = ITEMS.register("mini_phantom",
+		() -> new MiniPhantomItem(new Item.Properties().stacksTo(1)));
 
 	public static final RegistryObject<Item> INCOMPLETE_CREEPER_BLAST_CHAMBER =
 		ITEMS.register("incomplete_creeper_blast_chamber", () -> new Item(new Item.Properties()));
