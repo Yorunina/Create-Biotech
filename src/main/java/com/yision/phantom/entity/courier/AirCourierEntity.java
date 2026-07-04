@@ -1,5 +1,6 @@
 package com.yision.phantom.entity.courier;
 
+import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.phantom.logistics.courier.AirCourierDispatchService;
 import com.yision.phantom.logistics.courier.AirCourierTarget;
@@ -352,7 +353,7 @@ public class AirCourierEntity extends Entity implements Container {
 		if (!exposesPackageContents()) {
 			return true;
 		}
-		ItemStackHandler contents = PackageItem.getContents(getPackage());
+		ItemStackHandler contents = CapturedEntityBoxHelper.getVisiblePackageContents(getPackage());
 		for (int slot = 0; slot < contents.getSlots(); slot++) {
 			if (!contents.getStackInSlot(slot).isEmpty()) {
 				return false;
@@ -366,7 +367,7 @@ public class AirCourierEntity extends Entity implements Container {
 		if (!exposesPackageContents() || slot < 0 || slot >= PackageItem.SLOTS) {
 			return ItemStack.EMPTY;
 		}
-		return PackageItem.getContents(getPackage())
+		return CapturedEntityBoxHelper.getVisiblePackageContents(getPackage())
 			.getStackInSlot(slot)
 			.copy();
 	}

@@ -1,5 +1,6 @@
 package com.yision.phantom.logistics.courier.hud;
 
+import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,7 @@ public final class AirCourierPackagePreview {
 		}
 
 		List<ItemStack> displayStacks = new ArrayList<>();
-		ItemStackHandler contents = PackageItem.getContents(box);
+		ItemStackHandler contents = CapturedEntityBoxHelper.getVisiblePackageContents(box);
 		for (int slot = 0; slot < contents.getSlots() && displayStacks.size() < MAX_DISPLAY_STACKS; slot++) {
 			ItemStack stack = contents.getStackInSlot(slot);
 			if (stack.isEmpty()) {

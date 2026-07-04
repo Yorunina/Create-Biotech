@@ -1,5 +1,7 @@
 package com.yision.phantom.item.miniphantom;
 
+import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
+import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxItem;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.phantom.registry.AllItems;
@@ -139,7 +141,7 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 			return cachedAddress;
 		}
 
-		ItemStackHandler contents = PackageItem.getContents(box);
+		ItemStackHandler contents = CapturedEntityBoxHelper.getVisiblePackageContents(box);
 		for (int slot = 0; slot < Math.min(packageInventory.getSlots(), contents.getSlots()); slot++) {
 			packageInventory.setStackInSlot(slot, contents.getStackInSlot(slot).copy());
 		}
@@ -166,7 +168,10 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		}
 
 		if (!normalizedAddress.isEmpty()) {
+			PackageItem.clearAddress(packageBox);
 			PackageItem.addAddress(packageBox, normalizedAddress);
+		} else {
+			PackageItem.clearAddress(packageBox);
 		}
 
 		ItemStack loadedPhantom = MiniPhantomItem.createLoaded(packageBox);
@@ -201,7 +206,15 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 			handler.setStackInSlot(slot, stack.copy());
 			hasAnyContents = true;
 		}
-		return hasAnyContents ? PackageItem.containing(handler) : ItemStack.EMPTY;
+		if (hasAnyContents) {
+			return PackageItem.containing(handler);
+		}
+
+		ItemStack originalBox = MiniPhantomItem.copyCargoPackage(openedStack);
+		if (CapturedEntityBoxItem.isBox(originalBox)) {
+			return originalBox;
+		}
+		return ItemStack.EMPTY;
 	}
 
 	private void clearPackageInventory() {

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.simibubi.create.content.logistics.box.PackageItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class CapturedEntityBoxHelper {
@@ -223,10 +225,52 @@ public class CapturedEntityBoxHelper {
 		return tag != null && tag.contains(CAPTURED_ENTITY_TAG, Tag.TAG_COMPOUND);
 	}
 
+	public static ItemStackHandler applyVirtualSelfFallbackContents(ItemStack box, ItemStackHandler contents) {
+		if (!CapturedEntityBoxItem.isBox(box) || hasAnyPackageContents(contents))
+			return contents;
+
+		contents.setStackInSlot(0, box.copyWithCount(1));
+		return contents;
+	}
+
+	public static ItemStackHandler getVisiblePackageContents(ItemStack box) {
+		if (!PackageItem.isPackage(box))
+			return new ItemStackHandler(PackageItem.SLOTS);
+		ItemStackHandler contents = PackageItem.getContents(box);
+		if (!hasOnlyVirtualSelfFallback(box, contents))
+			return contents;
+		return new ItemStackHandler(PackageItem.SLOTS);
+	}
+
 	private static CompoundTag getCapturedEntityData(ItemStack stack) {
 		CompoundTag tag = stack.getTag();
 		if (tag == null || !tag.contains(CAPTURED_ENTITY_TAG, Tag.TAG_COMPOUND))
 			return null;
 		return tag.getCompound(CAPTURED_ENTITY_TAG);
+	}
+
+	private static boolean hasAnyPackageContents(ItemStackHandler contents) {
+		for (int slot = 0; slot < contents.getSlots(); slot++)
+			if (!contents.getStackInSlot(slot).isEmpty())
+				return true;
+		return false;
+	}
+
+	private static boolean hasOnlyVirtualSelfFallback(ItemStack box, ItemStackHandler contents) {
+		if (!CapturedEntityBoxItem.isBox(box))
+			return false;
+
+		ItemStack normalizedBox = box.copyWithCount(1);
+		int nonEmptyStacks = 0;
+		for (int slot = 0; slot < contents.getSlots(); slot++) {
+			ItemStack stack = contents.getStackInSlot(slot);
+			if (stack.isEmpty())
+				continue;
+			if (!ItemStack.isSameItemSameTags(normalizedBox, stack.copyWithCount(1)))
+				return false;
+			nonEmptyStacks++;
+		}
+
+		return nonEmptyStacks == 1;
 	}
 }
