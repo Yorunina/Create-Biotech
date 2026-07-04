@@ -9,7 +9,8 @@
     "BeltBlockMixin",
     "BeltInventoryAccessor",
     "BeltInventoryMixin",
-    "ItemHandlerBeltSegmentMixin"
+    "ItemHandlerBeltSegmentMixin",
+    "PackagerBlockEntityMixin"
   ],
   "injectors": {
     "defaultRequire": 1

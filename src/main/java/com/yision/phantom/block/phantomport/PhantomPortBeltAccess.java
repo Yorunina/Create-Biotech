@@ -27,6 +27,10 @@ final class PhantomPortBeltAccess {
 		return port.getBlockState().getValue(PhantomPortBlock.FACING);
 	}
 
+	Direction packagerSide() {
+		return specialSide().getOpposite();
+	}
+
 	boolean canDispatchThrough(Direction side) {
 		return side == specialSide() && hasManualDispatchFunnel(side);
 	}

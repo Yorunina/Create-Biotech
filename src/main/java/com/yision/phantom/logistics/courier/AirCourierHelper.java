@@ -219,7 +219,7 @@ public final class AirCourierHelper {
 
 	private static boolean matchesPlayerAddress(String address, String playerName) {
 		for (String candidate : extractAddressCandidates(address)) {
-			if (PackageItem.matchAddress(candidate, playerName)) {
+			if (PhantomAddressRules.matches(candidate, playerName)) {
 				return true;
 			}
 			if (candidate.equalsIgnoreCase(playerName)) {

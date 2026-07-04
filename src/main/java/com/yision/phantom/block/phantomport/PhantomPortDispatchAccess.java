@@ -8,8 +8,6 @@ import com.yision.phantom.logistics.courier.AirCourierHelper;
 import com.yision.phantom.logistics.courier.AirCourierTarget;
 import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +25,6 @@ final class PhantomPortDispatchAccess {
 	private final PhantomPortBeltAccess beltAccess;
 
 	private final EnumMap<Direction, IItemHandler> launchFunnelHandlers = new EnumMap<>(Direction.class);
-	private final EnumMap<Direction, IItemHandler> packageFunnelHandlers = new EnumMap<>(Direction.class);
 	private final Map<Integer, PendingHudEntry> pendingHudEntries = new HashMap<>();
 
 	PhantomPortDispatchAccess(PhantomPortBlockEntity port,
@@ -37,22 +34,14 @@ final class PhantomPortDispatchAccess {
 		this.inventory = inventory;
 		this.beltAccess = beltAccess;
 
-		for (Direction direction : Direction.Plane.HORIZONTAL) {
+		for (Direction direction : Direction.Plane.HORIZONTAL)
 			launchFunnelHandlers.put(direction, createLaunchFunnelHandler(direction));
-			packageFunnelHandlers.put(direction, createPackageFunnelHandler(direction));
-		}
 	}
 
 	@Nullable IItemHandler getItemHandler(@Nullable Direction side) {
-		if (side != null && side.getAxis().isHorizontal()) {
-			if (side == beltAccess.specialSide()) {
-				return beltAccess.hasManualDispatchFunnel(side) ? launchFunnelHandlers.get(side) : null;
-			}
-			if (beltAccess.hasManualDispatchFunnel(side)) {
-				return packageFunnelHandlers.get(side);
-			}
-		}
-		return inventory.combinedHandler();
+		if (side != null && side == beltAccess.specialSide() && beltAccess.hasManualDispatchFunnel(side))
+			return launchFunnelHandlers.get(side);
+		return null;
 	}
 
 	void clearPendingHudEntries() {
@@ -125,54 +114,6 @@ final class PhantomPortDispatchAccess {
 		};
 	}
 
-	private IItemHandler createPackageFunnelHandler(Direction side) {
-		return new IItemHandler() {
-			@Override
-			public int getSlots() {
-				return 1;
-			}
-
-			@Override
-			public @NotNull ItemStack getStackInSlot(int slot) {
-				if (slot != 0) {
-					return ItemStack.EMPTY;
-				}
-				return getLocalPackageStack();
-			}
-
-			@Override
-			public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-				return stack;
-			}
-
-			@Override
-			public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-				if (slot != 0 || amount <= 0) {
-					return ItemStack.EMPTY;
-				}
-				int packageSlot = findLocalPackageSlot();
-				if (packageSlot < 0) {
-					return ItemStack.EMPTY;
-				}
-				ItemStack extracted = port.inventory.extractItem(packageSlot, amount, simulate);
-				if (!simulate && !extracted.isEmpty()) {
-					port.markPortContentsChanged();
-				}
-				return extracted;
-			}
-
-			@Override
-			public int getSlotLimit(int slot) {
-				return 64;
-			}
-
-			@Override
-			public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-				return false;
-			}
-		};
-	}
-
 	private @NotNull ItemStack getDispatchStack(Direction side) {
 		DispatchCandidate candidate = findDispatchCandidate(side);
 		if (candidate == null) {
@@ -233,31 +174,6 @@ final class PhantomPortDispatchAccess {
 		UUID newId = UUID.randomUUID();
 		pendingHudEntries.put(slot, new PendingHudEntry(newId, packageStack.copy()));
 		return newId;
-	}
-
-	private @NotNull ItemStack getLocalPackageStack() {
-		int packageSlot = findLocalPackageSlot();
-		if (packageSlot < 0) {
-			return ItemStack.EMPTY;
-		}
-		return port.inventory.getStackInSlot(packageSlot).copy();
-	}
-
-	private int findLocalPackageSlot() {
-		String filterString = port.getFilterString();
-		if (filterString == null || PhantomAddressRules.isBlank(filterString)) {
-			return -1;
-		}
-		for (int slot = 0; slot < port.inventory.getSlots(); slot++) {
-			ItemStack packageInSlot = port.inventory.getStackInSlot(slot);
-			if (packageInSlot.isEmpty() || !PackageItem.isPackage(packageInSlot)) {
-				continue;
-			}
-			if (PhantomAddressRules.matchesPackage(packageInSlot, filterString)) {
-				return slot;
-			}
-		}
-		return -1;
 	}
 
 	private record PendingHudEntry(UUID hudEntryId, ItemStack packageSnapshot) {}

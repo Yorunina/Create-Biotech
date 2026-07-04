@@ -1,14 +1,15 @@
 package com.yision.phantom.block.phantomport;
 
 import com.simibubi.create.content.logistics.box.PackageItem;
-import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
+import com.simibubi.create.content.logistics.packager.PackagerItemHandler;
+import com.simibubi.create.foundation.item.ItemHelper;
 import com.yision.phantom.logistics.address.PhantomAddressRules;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
 final class PhantomPortAutomation {
@@ -26,119 +27,104 @@ final class PhantomPortAutomation {
 	}
 
 	void tick() {
-		if (tryPushingToAdjacentPackagers()) {
+		tryPushingToAdjacentInventories();
+		tryPullingFromAdjacentInventories();
+	}
+
+	private void tryPushingToAdjacentInventories() {
+		IItemHandler itemHandler = port.getAutomationItemHandler();
+		if (itemHandler == null) {
 			return;
 		}
-		tryPullingFromAdjacentPackagers();
-	}
 
-	private boolean tryPushingToAdjacentPackagers() {
-		String filterString = port.getFilterString();
-		if (filterString == null || PhantomAddressRules.isBlank(filterString)) {
-			return false;
-		}
-
-		for (int packageSlot = 0; packageSlot < port.inventory.getSlots(); packageSlot++) {
-			ItemStack packageStack = port.inventory.getStackInSlot(packageSlot);
-			if (packageStack.isEmpty() || !PackageItem.isPackage(packageStack)) {
-				continue;
-			}
-			if (!PhantomAddressRules.matchesPackage(packageStack, filterString)) {
-				continue;
-			}
-			if (tryPushPackageSlotToAdjacentContainers(packageSlot, packageStack)) {
-				return true;
+		boolean empty = true;
+		for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
+			if (!itemHandler.getStackInSlot(slot).isEmpty()) {
+				empty = false;
+				break;
 			}
 		}
-		return false;
-	}
+		if (empty) {
+			return;
+		}
 
-	private boolean tryPushPackageSlotToAdjacentContainers(int packageSlot, ItemStack packageStack) {
-		ItemStack singlePackage = packageStack.copy();
-		singlePackage.setCount(1);
-
-		for (Direction side : Direction.values()) {
-			IItemHandler adjacentInventory = getAdjacentPackagerInventory(side);
-			if (adjacentInventory == null) {
+		for (Direction side : Direction.Plane.HORIZONTAL) {
+			if (!isAdjacentInventorySide(side)) {
 				continue;
 			}
-			if (tryInsertPackageIntoAdjacent(packageSlot, singlePackage, adjacentInventory)) {
-				return true;
+			IItemHandler handler = getAdjacentInventory(side);
+			if (handler == null) {
+				continue;
+			}
+			for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
+				ItemStack stackInSlot = itemHandler.extractItem(slot, 1, true);
+				if (stackInSlot.isEmpty()) {
+					continue;
+				}
+				ItemStack remainder = ItemHandlerHelper.insertItemStacked(handler, stackInSlot, false);
+				if (remainder.isEmpty()) {
+					itemHandler.extractItem(slot, 1, false);
+					port.markPortContentsChanged();
+				}
 			}
 		}
-		return false;
 	}
 
-	private boolean tryInsertPackageIntoAdjacent(int packageSlot, ItemStack singlePackage,
-												 IItemHandler adjacentInventory) {
-		for (int slot = 0; slot < adjacentInventory.getSlots(); slot++) {
-			ItemStack remainder = adjacentInventory.insertItem(slot, singlePackage.copy(), true);
-			if (!remainder.isEmpty()) {
-				continue;
-			}
-
-			ItemStack extracted = port.inventory.extractItem(packageSlot, 1, false);
-			if (extracted.isEmpty()) {
-				return false;
-			}
-
-			ItemStack actualRemainder = adjacentInventory.insertItem(slot, extracted, false);
-			if (actualRemainder.isEmpty()) {
-				port.markPortContentsChanged();
-				return true;
-			}
-
-			port.inventory.insertItem(packageSlot, actualRemainder, false);
-			return false;
-		}
-		return false;
-	}
-
-	private void tryPullingFromAdjacentPackagers() {
-		for (Direction side : Direction.values()) {
-			IItemHandler adjacentInventory = getAdjacentPackagerInventory(side);
-			if (adjacentInventory == null) {
-				continue;
-			}
-			if (tryPullPackage(adjacentInventory)) {
+	private void tryPullingFromAdjacentInventories() {
+		for (Direction side : Direction.Plane.HORIZONTAL) {
+			if (tryPullingFromSide(side)) {
 				return;
 			}
 		}
 	}
 
-	private boolean tryPullPackage(IItemHandler adjacentInventory) {
-		String filterString = port.getFilterString();
-		for (int slot = 0; slot < adjacentInventory.getSlots(); slot++) {
-			ItemStack extractedSimulated = adjacentInventory.extractItem(slot, 1, true);
-			if (extractedSimulated.isEmpty() || !PackageItem.isPackage(extractedSimulated)) {
-				continue;
-			}
-			if (filterString != null && !PhantomAddressRules.isBlank(filterString)
-				&& PhantomAddressRules.matchesPackage(extractedSimulated, filterString)) {
-				continue;
-			}
-			if (!inventory.addPackage(extractedSimulated, true)) {
-				return false;
-			}
-
-			ItemStack extracted = adjacentInventory.extractItem(slot, 1, false);
-			if (extracted.isEmpty()) {
-				continue;
-			}
-			return inventory.addPackage(extracted, false);
+	boolean tryPullingFromSide(Direction side) {
+		if (!isAdjacentInventorySide(side)) {
+			return false;
 		}
-		return false;
+		IItemHandler handler = getAdjacentInventory(side);
+		return handler != null && tryPullingFrom(handler);
 	}
 
-	private @Nullable IItemHandler getAdjacentPackagerInventory(Direction side) {
-		if (port.getLevel() == null || side == beltAccess.specialSide()) {
+	private boolean tryPullingFrom(IItemHandler handler) {
+		ItemStack extract = ItemHelper.extract(handler, stack -> {
+			if (!PackageItem.isPackage(stack)) {
+				return false;
+			}
+			String filterString = port.getFilterString();
+			return filterString == null || handler instanceof PackagerItemHandler
+				|| !PhantomAddressRules.matchesPackage(stack, filterString);
+		}, true);
+		if (extract.isEmpty() || !inventory.addPackage(extract, true)) {
+			return false;
+		}
+
+		ItemStack extracted = ItemHelper.extract(handler, stack -> {
+			if (!PackageItem.isPackage(stack)) {
+				return false;
+			}
+			String filterString = port.getFilterString();
+			return filterString == null || handler instanceof PackagerItemHandler
+				|| !PhantomAddressRules.matchesPackage(stack, filterString);
+		}, false);
+		if (extracted.isEmpty()) {
+			return false;
+		}
+		return inventory.addPackage(extracted, false);
+	}
+
+	private boolean isAdjacentInventorySide(Direction side) {
+		return side.getAxis().isHorizontal() && side != beltAccess.specialSide();
+	}
+
+	private @Nullable IItemHandler getAdjacentInventory(Direction side) {
+		if (port.getLevel() == null) {
 			return null;
 		}
-		BlockPos adjacentPos = port.getBlockPos().relative(side);
-		BlockEntity blockEntity = port.getLevel().getBlockEntity(adjacentPos);
-		if (!(blockEntity instanceof PackagerBlockEntity packager)) {
+		BlockEntity blockEntity = port.getLevel().getBlockEntity(port.getBlockPos().relative(side));
+		if (blockEntity == null || blockEntity instanceof PhantomPortBlockEntity) {
 			return null;
 		}
-		return packager.getCapability(ForgeCapabilities.ITEM_HANDLER, side.getOpposite()).orElse(null);
+		return blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER, side.getOpposite()).orElse(null);
 	}
 }

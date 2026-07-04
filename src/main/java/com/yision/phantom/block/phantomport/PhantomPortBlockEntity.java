@@ -40,6 +40,7 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 
 	public PhantomPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
+		itemHandler = LazyOptional.of(() -> new PhantomPortAutomationInventoryWrapper(inventory, this));
 		portInventory = new PhantomPortInventory(this);
 		beltAccess = new PhantomPortBeltAccess(this);
 		dispatchAccess = new PhantomPortDispatchAccess(this, portInventory, beltAccess);
@@ -80,6 +81,25 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 
 	public @Nullable IItemHandler getItemHandler(@Nullable Direction side) {
 		return dispatchAccess.getItemHandler(side);
+	}
+
+	@Nullable IItemHandler getAutomationItemHandler() {
+		return itemHandler.orElse(null);
+	}
+
+	public Direction getLaunchSide() {
+		return beltAccess.specialSide();
+	}
+
+	public Direction getPackagerSide() {
+		return beltAccess.packagerSide();
+	}
+
+	public boolean tryPullFromPackagerSide() {
+		if (level == null || level.isClientSide()) {
+			return false;
+		}
+		return automation.tryPullingFromSide(getPackagerSide());
 	}
 
 	public ItemStackHandler getCarrierInventory() {
