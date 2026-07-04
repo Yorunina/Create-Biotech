@@ -1,11 +1,13 @@
 package com.nobodiiiii.createbiotech.content.cardboardbox;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.simibubi.create.content.logistics.box.PackageItem;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +19,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.context.UseOnContext;
@@ -69,16 +72,9 @@ public class CapturedEntityBoxHelper {
 			.getBoolean(AI_DISABLED_BY_MOD_TAG);
 	}
 
-	public static void appendHoverText(ItemStack stack, List<Component> tooltipComponents, String filledTranslationKey) {
-		CompoundTag tag = stack.getTag();
-		if (tag == null || !tag.contains(CAPTURED_ENTITY_DESC_ID_TAG))
-			return;
-
-		String entityDescId = tag.getString(CAPTURED_ENTITY_DESC_ID_TAG);
-		if (entityDescId.isEmpty())
-			return;
-
-		tooltipComponents.add(Component.translatable(filledTranslationKey, Component.translatable(entityDescId)));
+	public static void appendHoverText(ItemStack stack, List<Component> tooltipComponents) {
+		appendAddressTooltip(stack, tooltipComponents);
+		appendContentsTooltip(stack, tooltipComponents);
 	}
 
 	public static boolean captureEntity(ItemStack stack, LivingEntity target) {
@@ -272,5 +268,70 @@ public class CapturedEntityBoxHelper {
 		}
 
 		return nonEmptyStacks == 1;
+	}
+
+	private static void appendAddressTooltip(ItemStack stack, List<Component> tooltipComponents) {
+		String address = PackageItem.getAddress(stack);
+		if (address.isBlank())
+			return;
+
+		tooltipComponents.add(Component.literal("\u2192 " + address)
+			.withStyle(ChatFormatting.GOLD));
+	}
+
+	private static void appendContentsTooltip(ItemStack stack, List<Component> tooltipComponents) {
+		List<TooltipEntry> entries = new ArrayList<>();
+		collectPackageEntries(stack, entries);
+		collectCapturedEntityEntry(stack, entries);
+
+		int visibleNames = 0;
+		int skippedNames = 0;
+		for (TooltipEntry entry : entries) {
+			if (visibleNames > 2) {
+				skippedNames++;
+				continue;
+			}
+
+			visibleNames++;
+			tooltipComponents.add(entry.toTooltipLine());
+		}
+
+		if (skippedNames > 0)
+			tooltipComponents.add(Component.translatable("container.shulkerBox.more", skippedNames)
+				.withStyle(ChatFormatting.ITALIC));
+	}
+
+	private static void collectPackageEntries(ItemStack stack, List<TooltipEntry> entries) {
+		ItemStackHandler contents = getVisiblePackageContents(stack);
+		for (int slot = 0; slot < contents.getSlots(); slot++) {
+			ItemStack contentStack = contents.getStackInSlot(slot);
+			if (contentStack.isEmpty())
+				continue;
+			if (contentStack.getItem() instanceof SpawnEggItem)
+				continue;
+
+			entries.add(new TooltipEntry(contentStack.getHoverName(), contentStack.getCount()));
+		}
+	}
+
+	private static void collectCapturedEntityEntry(ItemStack stack, List<TooltipEntry> entries) {
+		CompoundTag tag = stack.getTag();
+		if (tag == null || !tag.contains(CAPTURED_ENTITY_DESC_ID_TAG, Tag.TAG_STRING))
+			return;
+
+		String entityDescId = tag.getString(CAPTURED_ENTITY_DESC_ID_TAG);
+		if (entityDescId.isEmpty())
+			return;
+
+		entries.add(new TooltipEntry(Component.translatable(entityDescId), 1));
+	}
+
+	private record TooltipEntry(Component name, int count) {
+		private Component toTooltipLine() {
+			return name.copy()
+				.append(" x")
+				.append(String.valueOf(count))
+				.withStyle(ChatFormatting.GRAY);
+		}
 	}
 }

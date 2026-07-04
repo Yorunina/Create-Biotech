@@ -1,5 +1,7 @@
 package com.nobodiiiii.createbiotech.client;
 
+import java.util.function.Predicate;
+
 import com.nobodiiiii.createbiotech.content.evokerenchantingchamber.EvokerEnchantingChamberRenderer;
 import com.nobodiiiii.createbiotech.content.experience.ExperiencePumpRenderer;
 import com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule;
@@ -92,6 +94,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -352,8 +355,8 @@ public class CreateBiotechClient {
 		registerCreateStyleTooltip(CBItems.LARGE_EXPERIENCE_BUD.get());
 		registerCreateStyleTooltip(CBItems.EXPERIENCE_CLUSTER.get());
 		registerCreateStyleTooltip(CBItems.PETRI_DISH.get());
-		registerCreateStyleTooltip(CBItems.CARDBOARD_BOX.get());
-		registerCreateStyleTooltip(CBItems.LARGE_CARDBOARD_BOX.get());
+		registerCreateStyleTooltip(CBItems.CARDBOARD_BOX.get(), CapturedEntityBoxHelper::hasCapturedEntity);
+		registerCreateStyleTooltip(CBItems.LARGE_CARDBOARD_BOX.get(), CapturedEntityBoxHelper::hasCapturedEntity);
 		registerCreateStyleTooltip(CBItems.CAPTURED_SMALL_SLIME.get());
 		registerCreateStyleTooltip(CBItems.SMART_SUPER_GLUE.get());
 		registerCreateStyleTooltip(CBItems.FIXED_CARROT_FISHING_ROD.get());
@@ -368,8 +371,16 @@ public class CreateBiotechClient {
 	}
 
 	private static void registerCreateStyleTooltip(Item item) {
-		TooltipModifier.REGISTRY.register(item,
-			new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE));
+		registerCreateStyleTooltip(item, stack -> false);
+	}
+
+	private static void registerCreateStyleTooltip(Item item, Predicate<ItemStack> skipCondition) {
+		TooltipModifier description = new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE);
+		TooltipModifier.REGISTRY.register(item, context -> {
+			if (skipCondition.test(context.getItemStack()))
+				return;
+			description.modify(context);
+		});
 	}
 
 	private static void registerCardboardBoxModelProperties() {

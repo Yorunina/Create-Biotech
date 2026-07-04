@@ -26,13 +26,10 @@ public abstract class CapturedEntityBoxItem extends PackageItem {
 	private static final int EMPTY_BOX_MAX_STACK_SIZE = 16;
 
 	private final String descriptionId;
-	private final String filledTranslationKey;
 
-	protected CapturedEntityBoxItem(Properties properties, String descriptionId, String filledTranslationKey,
-		PackageStyle style) {
+	protected CapturedEntityBoxItem(Properties properties, String descriptionId, PackageStyle style) {
 		super(properties, style);
 		this.descriptionId = descriptionId;
-		this.filledTranslationKey = filledTranslationKey;
 		PackageStyles.ALL_BOXES.remove(this);
 		PackageStyles.STANDARD_BOXES.remove(this);
 		PackageStyles.RARE_BOXES.remove(this);
@@ -45,7 +42,7 @@ public abstract class CapturedEntityBoxItem extends PackageItem {
 
 	@Override
 	public void appendHoverText(ItemStack stack, Level level, List<Component> tooltipComponents, TooltipFlag isAdvanced) {
-		CapturedEntityBoxHelper.appendHoverText(stack, tooltipComponents, filledTranslationKey);
+		CapturedEntityBoxHelper.appendHoverText(stack, tooltipComponents);
 	}
 
 	@Override
