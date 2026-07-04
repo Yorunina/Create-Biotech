@@ -61,6 +61,7 @@ public class AirCourierEntity extends Entity implements Container {
 	private static final float MAX_ROLL_INPUT_DEGREES = 8.0f;
 	private static final float MAX_ROLL_CHANGE_DEGREES = 1.25f;
 	private static final float ROLL_SMOOTHING = 0.25f;
+	private static final float VISUAL_ROLL_MULTIPLIER = 4.0f;
 
 	@Nullable
 	private UUID hudEntryId;
@@ -72,8 +73,8 @@ public class AirCourierEntity extends Entity implements Container {
 	@Nullable
 	private UUID taskId;
 
-	public float oldDeltaYaw;
-	public float newDeltaYaw;
+	private float previousBankDegrees;
+	private float bankDegrees;
 
 	public AirCourierEntity(EntityType<? extends AirCourierEntity> type, Level level) {
 		super(type, level);
@@ -139,8 +140,7 @@ public class AirCourierEntity extends Entity implements Container {
 		if (getPhase() == Phase.TAKEOFF) {
 			lockTakeoffRotation();
 		} else {
-			updateRotation();
-			updateRoll();
+			updateVisualPose();
 		}
 	}
 
@@ -149,8 +149,7 @@ public class AirCourierEntity extends Entity implements Container {
 		setDeltaMovement(Vec3.ZERO);
 		setXRot(0);
 		xRotO = 0;
-		oldDeltaYaw = 0;
-		newDeltaYaw = 0;
+		resetVisualBank();
 	}
 
 	private void tickClient() {
@@ -167,8 +166,7 @@ public class AirCourierEntity extends Entity implements Container {
 			return;
 		}
 
-		updateRotation();
-		updateRoll();
+		updateVisualPose();
 
 		if (getPhase() == Phase.LANDING && tickCount % 3 == 0) {
 			Vec3 trail = getDeltaMovement().scale(-0.2);
@@ -177,6 +175,11 @@ public class AirCourierEntity extends Entity implements Container {
 	}
 
 	// ── Rotation & Visual ──
+
+	private void updateVisualPose() {
+		updateRotation();
+		updateBank();
+	}
 
 	private void updateRotation() {
 		Vec3 motion = getDeltaMovement();
@@ -195,17 +198,16 @@ public class AirCourierEntity extends Entity implements Container {
 		setXRot(continuousXRot);
 		yRotO = continuousYRot;
 		xRotO = continuousXRot;
-		oldDeltaYaw = 0;
-		newDeltaYaw = 0;
+		resetVisualBank();
 	}
 
-	private void updateRoll() {
-		oldDeltaYaw = newDeltaYaw;
+	private void updateBank() {
+		previousBankDegrees = bankDegrees;
 		float targetRoll = Mth.wrapDegrees(yRotO - getYRot());
 		targetRoll = Mth.clamp(targetRoll, -MAX_ROLL_INPUT_DEGREES, MAX_ROLL_INPUT_DEGREES);
-		float smoothedRoll = Mth.lerp(ROLL_SMOOTHING, newDeltaYaw, targetRoll);
-		float rollStep = Mth.clamp(smoothedRoll - newDeltaYaw, -MAX_ROLL_CHANGE_DEGREES, MAX_ROLL_CHANGE_DEGREES);
-		newDeltaYaw += rollStep;
+		float smoothedRoll = Mth.lerp(ROLL_SMOOTHING, bankDegrees, targetRoll);
+		float rollStep = Mth.clamp(smoothedRoll - bankDegrees, -MAX_ROLL_CHANGE_DEGREES, MAX_ROLL_CHANGE_DEGREES);
+		bankDegrees += rollStep;
 	}
 
 	private void snapRotationToMotion() {
@@ -220,8 +222,7 @@ public class AirCourierEntity extends Entity implements Container {
 		setYRot(yRot);
 		xRotO = xRot;
 		yRotO = yRot;
-		oldDeltaYaw = 0;
-		newDeltaYaw = 0;
+		resetVisualBank();
 	}
 
 	private void alignToDirection(Vec3 direction) {
@@ -232,8 +233,7 @@ public class AirCourierEntity extends Entity implements Container {
 		yRotO = yRot;
 		setXRot(0);
 		xRotO = 0;
-		oldDeltaYaw = 0;
-		newDeltaYaw = 0;
+		resetVisualBank();
 	}
 
 	private void lockTakeoffRotation() {
@@ -247,8 +247,12 @@ public class AirCourierEntity extends Entity implements Container {
 			xRotO = xRot;
 			yRotO = yRot;
 		}
-		oldDeltaYaw = 0;
-		newDeltaYaw = 0;
+		resetVisualBank();
+	}
+
+	private void resetVisualBank() {
+		previousBankDegrees = 0;
+		bankDegrees = 0;
 	}
 
 	private void applyClientCorrection() {
@@ -337,6 +341,18 @@ public class AirCourierEntity extends Entity implements Container {
 
 	public void setHudEntryId(UUID hudEntryId) {
 		this.hudEntryId = hudEntryId;
+	}
+
+	public float getVisualYaw(float partialTick) {
+		return Mth.rotLerp(partialTick, yRotO, getYRot());
+	}
+
+	public float getVisualPitch(float partialTick) {
+		return Mth.lerp(partialTick, xRotO, getXRot());
+	}
+
+	public float getVisualRoll(float partialTick) {
+		return Mth.lerp(partialTick, previousBankDegrees, bankDegrees) * VISUAL_ROLL_MULTIPLIER;
 	}
 
 	private boolean exposesPackageContents() {
