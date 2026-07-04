@@ -29,13 +29,18 @@ public class CapturedEntityBoxItemRenderer extends CustomRenderedItemModelRender
 	}
 
 	private BakedModel getBoxModel(ItemStack stack, BakedModel fallback, ItemDisplayContext transformType) {
+		boolean captured = CapturedEntityBoxHelper.hasCapturedEntity(stack);
 		if (transformType == ItemDisplayContext.FIXED)
-			return getModel(CardboardBoxPartials.getLogisticsModelLocation(stack), fallback);
-		if (!CapturedEntityBoxHelper.hasCapturedEntity(stack))
+			return getModel(captured ? getCapturedModelLocation(stack) : CardboardBoxPartials.getLogisticsModelLocation(stack),
+				fallback);
+		if (!captured)
 			return fallback;
 
-		return getModel(stack.is(CBItems.LARGE_CARDBOARD_BOX.get()) ? LARGE_BOX_CAPTURED_MODEL : SMALL_BOX_CAPTURED_MODEL,
-			fallback);
+		return getModel(getCapturedModelLocation(stack), fallback);
+	}
+
+	private ResourceLocation getCapturedModelLocation(ItemStack stack) {
+		return stack.is(CBItems.LARGE_CARDBOARD_BOX.get()) ? LARGE_BOX_CAPTURED_MODEL : SMALL_BOX_CAPTURED_MODEL;
 	}
 
 	private BakedModel getModel(ResourceLocation location, BakedModel fallback) {

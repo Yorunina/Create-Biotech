@@ -232,10 +232,18 @@ public class CapturedEntityBoxHelper {
 	public static ItemStackHandler getVisiblePackageContents(ItemStack box) {
 		if (!PackageItem.isPackage(box))
 			return new ItemStackHandler(PackageItem.SLOTS);
-		ItemStackHandler contents = PackageItem.getContents(box);
+		ItemStackHandler contents = readPackageContentsWithoutMutation(box);
 		if (!hasOnlyVirtualSelfFallback(box, contents))
 			return contents;
 		return new ItemStackHandler(PackageItem.SLOTS);
+	}
+
+	private static ItemStackHandler readPackageContentsWithoutMutation(ItemStack box) {
+		ItemStackHandler contents = new ItemStackHandler(PackageItem.SLOTS);
+		CompoundTag tag = box.getTag();
+		if (tag != null && tag.contains("Items", Tag.TAG_COMPOUND))
+			contents.deserializeNBT(tag.getCompound("Items"));
+		return applyVirtualSelfFallbackContents(box, contents);
 	}
 
 	private static CompoundTag getCapturedEntityData(ItemStack stack) {
