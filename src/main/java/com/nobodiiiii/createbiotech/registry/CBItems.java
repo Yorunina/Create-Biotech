@@ -161,7 +161,7 @@ public class CBItems {
 		() -> new BlockItem(CBBlocks.PHANTOMPORT.get(), new Item.Properties()));
 
 	public static final RegistryObject<MiniPhantomItem> MINI_PHANTOM = ITEMS.register("mini_phantom",
-		() -> new MiniPhantomItem(new Item.Properties().stacksTo(1)));
+		() -> new MiniPhantomItem(new Item.Properties()));
 
 	public static final RegistryObject<Item> INCOMPLETE_CREEPER_BLAST_CHAMBER =
 		ITEMS.register("incomplete_creeper_blast_chamber", () -> new Item(new Item.Properties()));

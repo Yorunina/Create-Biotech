@@ -1,7 +1,6 @@
 package com.yision.phantom.block.phantomport;
 
 import com.simibubi.create.content.logistics.packagePort.PackagePortMenu;
-import com.yision.phantom.registry.AllItems;
 import com.yision.phantom.registry.AllMenuTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -51,7 +50,7 @@ public class PhantomPortMenu extends PackagePortMenu {
 			addSlot(new SlotItemHandler(phantomPortBlockEntity.getCarrierInventory(), 0, 12, 60) {
 				@Override
 				public boolean mayPlace(ItemStack stack) {
-					return stack.is(AllItems.MINI_PHANTOM.get());
+					return PhantomPortInventory.isEmptyCarrier(stack);
 				}
 			});
 		}
@@ -80,7 +79,7 @@ public class PhantomPortMenu extends PackagePortMenu {
 				result.setCount(moved);
 				return result;
 			}
-		} else if (stack.is(AllItems.MINI_PHANTOM.get())) {
+		} else if (PhantomPortInventory.isEmptyCarrier(stack)) {
 			Slot carrierSlot = slots.get(carrierSlotIndex);
 			ItemStack targetStack = carrierSlot.getItem();
 

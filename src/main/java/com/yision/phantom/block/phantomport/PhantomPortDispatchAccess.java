@@ -39,9 +39,10 @@ final class PhantomPortDispatchAccess {
 	}
 
 	@Nullable IItemHandler getItemHandler(@Nullable Direction side) {
-		if (side != null && side == beltAccess.specialSide() && beltAccess.hasManualDispatchFunnel(side))
+		if (side != null && side == beltAccess.specialSide() && beltAccess.hasManualDispatchFunnel(side)) {
 			return launchFunnelHandlers.get(side);
-		return null;
+		}
+		return inventory.combinedHandler();
 	}
 
 	void clearPendingHudEntries() {

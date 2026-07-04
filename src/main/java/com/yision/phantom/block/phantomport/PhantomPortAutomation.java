@@ -9,7 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
 final class PhantomPortAutomation {
@@ -27,59 +26,11 @@ final class PhantomPortAutomation {
 	}
 
 	void tick() {
-		tryPushingToAdjacentInventories();
-		tryPullingFromAdjacentInventories();
-	}
-
-	private void tryPushingToAdjacentInventories() {
-		IItemHandler itemHandler = port.getAutomationItemHandler();
-		if (itemHandler == null) {
-			return;
-		}
-
-		boolean empty = true;
-		for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
-			if (!itemHandler.getStackInSlot(slot).isEmpty()) {
-				empty = false;
-				break;
-			}
-		}
-		if (empty) {
-			return;
-		}
-
-		for (Direction side : Direction.Plane.HORIZONTAL) {
-			if (!isAdjacentInventorySide(side)) {
-				continue;
-			}
-			IItemHandler handler = getAdjacentInventory(side);
-			if (handler == null) {
-				continue;
-			}
-			for (int slot = 0; slot < itemHandler.getSlots(); slot++) {
-				ItemStack stackInSlot = itemHandler.extractItem(slot, 1, true);
-				if (stackInSlot.isEmpty()) {
-					continue;
-				}
-				ItemStack remainder = ItemHandlerHelper.insertItemStacked(handler, stackInSlot, false);
-				if (remainder.isEmpty()) {
-					itemHandler.extractItem(slot, 1, false);
-					port.markPortContentsChanged();
-				}
-			}
-		}
-	}
-
-	private void tryPullingFromAdjacentInventories() {
-		for (Direction side : Direction.Plane.HORIZONTAL) {
-			if (tryPullingFromSide(side)) {
-				return;
-			}
-		}
+		tryPullingFromSide(beltAccess.packagerSide());
 	}
 
 	boolean tryPullingFromSide(Direction side) {
-		if (!isAdjacentInventorySide(side)) {
+		if (!isAutomatedInputSide(side)) {
 			return false;
 		}
 		IItemHandler handler = getAdjacentInventory(side);
@@ -113,8 +64,8 @@ final class PhantomPortAutomation {
 		return inventory.addPackage(extracted, false);
 	}
 
-	private boolean isAdjacentInventorySide(Direction side) {
-		return side.getAxis().isHorizontal() && side != beltAccess.specialSide();
+	private boolean isAutomatedInputSide(Direction side) {
+		return side.getAxis().isHorizontal() && side == beltAccess.packagerSide();
 	}
 
 	private @Nullable IItemHandler getAdjacentInventory(Direction side) {

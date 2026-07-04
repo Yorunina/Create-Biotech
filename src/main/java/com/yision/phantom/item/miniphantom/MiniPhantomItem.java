@@ -34,6 +34,7 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 public class MiniPhantomItem extends Item {
+	private static final int EMPTY_CARRIER_MAX_STACK_SIZE = 64;
 	private static final String CARGO_KEY = "Cargo";
 	private static final String HEADING_KEY = "Heading";
 	private static final String HUD_ID_KEY = "HudEntryId";
@@ -42,6 +43,11 @@ public class MiniPhantomItem extends Item {
 
 	public MiniPhantomItem(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	public int getMaxStackSize(ItemStack stack) {
+		return isPlainCarrier(stack) ? EMPTY_CARRIER_MAX_STACK_SIZE : 1;
 	}
 
 	@Override
@@ -149,6 +155,14 @@ public class MiniPhantomItem extends Item {
 
 	public static boolean hasCargo(ItemStack phantom) {
 		return !copyCargoPackage(phantom).isEmpty();
+	}
+
+	public static boolean isPlainCarrier(ItemStack stack) {
+		return stack.is(AllItems.MINI_PHANTOM.get())
+			&& !hasCargo(stack)
+			&& getReturnTarget(stack).isEmpty()
+			&& getPlayerReturnTarget(stack).isEmpty()
+			&& !hasHudEntryId(stack);
 	}
 
 	public static void clearCargo(ItemStack phantom) {
