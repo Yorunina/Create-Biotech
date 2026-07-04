@@ -208,6 +208,10 @@ public final class AirCourierHelper {
 			return null;
 		}
 		BlockPos beltPos = belt.getBlockPos();
+		BlockEntity directlyAbove = belt.getLevel().getBlockEntity(beltPos.above());
+		if (directlyAbove instanceof PhantomPortBlockEntity phantomPortBlockEntity) {
+			return phantomPortBlockEntity.getBlockPos();
+		}
 		for (Direction direction : Direction.Plane.HORIZONTAL) {
 			BlockEntity blockEntity = belt.getLevel().getBlockEntity(beltPos.above().relative(direction));
 			if (blockEntity instanceof PhantomPortBlockEntity phantomPortBlockEntity) {

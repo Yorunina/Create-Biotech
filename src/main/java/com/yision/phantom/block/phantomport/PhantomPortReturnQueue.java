@@ -2,7 +2,6 @@ package com.yision.phantom.block.phantomport;
 
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -157,25 +156,15 @@ final class PhantomPortReturnQueue {
 		if (!inventory.hasStoredCarrier()) {
 			return false;
 		}
-		Direction side = beltAccess.specialSide();
-		if (!beltAccess.hasManualDispatchFunnel(side) || !beltAccess.isBeltOutputCompatible(side)) {
-			return false;
-		}
-		IItemHandler beltHandler = beltAccess.launchBeltHandler(side);
-		if (beltHandler == null) {
-			return false;
-		}
 		ItemStack returningCarrier = MiniPhantomItem.returningTo(returnDimension, returnPos);
-		if (!beltHandler.insertItem(0, returningCarrier.copy(), true).isEmpty()) {
+		if (!beltAccess.canAcceptLaunchStack(returningCarrier)) {
 			return false;
 		}
-
 		ItemStack storedCarrier = inventory.extractOneCarrier(false);
 		if (storedCarrier.isEmpty()) {
 			return false;
 		}
-		ItemStack remainder = beltHandler.insertItem(0, returningCarrier.copy(), false);
-		if (remainder.isEmpty()) {
+		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
 			port.markPortContentsChanged();
 			return true;
 		}
@@ -194,16 +183,8 @@ final class PhantomPortReturnQueue {
 		if (!inventory.hasStoredCarrier()) {
 			return false;
 		}
-		Direction side = beltAccess.specialSide();
-		if (!beltAccess.hasManualDispatchFunnel(side) || !beltAccess.isBeltOutputCompatible(side)) {
-			return false;
-		}
-		IItemHandler beltHandler = beltAccess.launchBeltHandler(side);
-		if (beltHandler == null) {
-			return false;
-		}
 		ItemStack returningCarrier = MiniPhantomItem.returningToPlayer(playerId);
-		if (!beltHandler.insertItem(0, returningCarrier.copy(), true).isEmpty()) {
+		if (!beltAccess.canAcceptLaunchStack(returningCarrier)) {
 			return false;
 		}
 
@@ -211,8 +192,7 @@ final class PhantomPortReturnQueue {
 		if (storedCarrier.isEmpty()) {
 			return false;
 		}
-		ItemStack remainder = beltHandler.insertItem(0, returningCarrier.copy(), false);
-		if (remainder.isEmpty()) {
+		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
 			port.markPortContentsChanged();
 			return true;
 		}

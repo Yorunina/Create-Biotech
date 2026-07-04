@@ -13,10 +13,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.items.IItemHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 final class PhantomPortDispatchAccess {
 
@@ -24,7 +25,6 @@ final class PhantomPortDispatchAccess {
 	private final PhantomPortInventory inventory;
 	private final PhantomPortBeltAccess beltAccess;
 
-	private final EnumMap<Direction, IItemHandler> launchFunnelHandlers = new EnumMap<>(Direction.class);
 	private final Map<Integer, PendingHudEntry> pendingHudEntries = new HashMap<>();
 
 	PhantomPortDispatchAccess(PhantomPortBlockEntity port,
@@ -33,15 +33,9 @@ final class PhantomPortDispatchAccess {
 		this.port = port;
 		this.inventory = inventory;
 		this.beltAccess = beltAccess;
-
-		for (Direction direction : Direction.Plane.HORIZONTAL)
-			launchFunnelHandlers.put(direction, createLaunchFunnelHandler(direction));
 	}
 
-	@Nullable IItemHandler getItemHandler(@Nullable Direction side) {
-		if (side != null && side == beltAccess.specialSide() && beltAccess.hasManualDispatchFunnel(side)) {
-			return launchFunnelHandlers.get(side);
-		}
+	@Nullable IItemHandler getItemHandler(@Nullable net.minecraft.core.Direction side) {
 		return inventory.combinedHandler();
 	}
 
@@ -49,92 +43,67 @@ final class PhantomPortDispatchAccess {
 		pendingHudEntries.clear();
 	}
 
-	private IItemHandler createLaunchFunnelHandler(Direction side) {
-		return new IItemHandler() {
-			@Override
-			public int getSlots() {
-				return 1;
-			}
-
-			@Override
-			public @NotNull ItemStack getStackInSlot(int slot) {
-				if (slot != 0) {
-					return ItemStack.EMPTY;
-				}
-				return getDispatchStack(side);
-			}
-
-			@Override
-			public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-				return stack;
-			}
-
-			@Override
-			public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-				if (slot != 0 || amount <= 0) {
-					return ItemStack.EMPTY;
-				}
-				DispatchCandidate candidate = findDispatchCandidate(side);
-				if (candidate == null) {
-					return ItemStack.EMPTY;
-				}
-
-				ItemStack extracted = candidate.phantomStack().copy();
-				extracted.setCount(1);
-
-				if (!simulate) {
-					if (candidate.target() instanceof AirCourierTarget.PlayerTarget playerTarget) {
-						ServerPlayer player = port.getLevel() instanceof ServerLevel sl
-							? sl.getServer().getPlayerList().getPlayer(playerTarget.playerId()) : null;
-						if (player != null) {
-							UUID hudEntryId = candidate.hudEntryId();
-							if (hudEntryId != null) {
-								MiniPhantomItem.setHudEntryId(extracted, hudEntryId);
-								AirCourierHudSync.onCourierPreparing(player, MiniPhantomItem.copyCargoPackage(extracted), hudEntryId);
-							}
-						}
-					}
-					port.inventory.extractItem(candidate.packageSlot(), 1, false);
-					inventory.carrierInventory.extractItem(0, 1, false);
-					pendingHudEntries.remove(candidate.packageSlot());
-					port.markPortContentsChanged();
-				}
-
-				return extracted;
-			}
-
-			@Override
-			public int getSlotLimit(int slot) {
-				return 1;
-			}
-
-			@Override
-			public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-				return false;
-			}
-		};
-	}
-
-	private @NotNull ItemStack getDispatchStack(Direction side) {
-		DispatchCandidate candidate = findDispatchCandidate(side);
-		if (candidate == null) {
-			return ItemStack.EMPTY;
-		}
-		return candidate.phantomStack().copy();
-	}
-
-	private @Nullable DispatchCandidate findDispatchCandidate(Direction side) {
+	boolean tryDispatchToLaunchBelt() {
 		if (!(port.getLevel() instanceof ServerLevel serverLevel)) {
-			return null;
+			return false;
 		}
-		if (!beltAccess.canDispatchThrough(side)) {
-			return null;
-		}
-		if (inventory.carrierInventory.getStackInSlot(0).isEmpty()) {
-			return null;
+		if (!beltAccess.canLaunchFromBelt() || !inventory.hasStoredCarrier()) {
+			return false;
 		}
 
-		Direction heading = beltAccess.resolveBeltHeading(side);
+		DispatchCandidate candidate = findDispatchCandidate(serverLevel);
+		if (candidate == null) {
+			return false;
+		}
+		ItemStack phantomStack = candidate.phantomStack().copy();
+		if (!beltAccess.canAcceptLaunchStack(phantomStack)) {
+			return false;
+		}
+
+		ItemStack extractedPackage = port.inventory.extractItem(candidate.packageSlot(), 1, false);
+		ItemStack extractedCarrier = inventory.extractOneCarrier(false);
+		if (extractedPackage.isEmpty() || extractedCarrier.isEmpty()) {
+			restoreFailedDispatch(candidate.packageSlot(), extractedPackage, extractedCarrier);
+			return false;
+		}
+		if (!beltAccess.insertToLaunchBelt(phantomStack)) {
+			restoreFailedDispatch(candidate.packageSlot(), extractedPackage, extractedCarrier);
+			return false;
+		}
+
+		notifyPreparingPlayer(serverLevel, candidate, phantomStack);
+		pendingHudEntries.remove(candidate.packageSlot());
+		port.markPortContentsChanged();
+		return true;
+	}
+
+	private void restoreFailedDispatch(int packageSlot, ItemStack extractedPackage, ItemStack extractedCarrier) {
+		if (!extractedPackage.isEmpty()) {
+			ItemStack remainder = port.inventory.insertItem(packageSlot, extractedPackage, false);
+			if (!remainder.isEmpty()) {
+				port.drop(remainder);
+			}
+		}
+		if (!extractedCarrier.isEmpty()) {
+			inventory.returnCarrier(extractedCarrier);
+		}
+		port.markPortContentsChanged();
+	}
+
+	private void notifyPreparingPlayer(ServerLevel serverLevel, DispatchCandidate candidate, ItemStack phantomStack) {
+		if (!(candidate.target() instanceof AirCourierTarget.PlayerTarget playerTarget)) {
+			return;
+		}
+		ServerPlayer player = serverLevel.getServer().getPlayerList().getPlayer(playerTarget.playerId());
+		UUID hudEntryId = candidate.hudEntryId();
+		if (player == null || hudEntryId == null) {
+			return;
+		}
+		AirCourierHudSync.onCourierPreparing(player, MiniPhantomItem.copyCargoPackage(phantomStack), hudEntryId);
+	}
+
+	private @Nullable DispatchCandidate findDispatchCandidate(ServerLevel serverLevel) {
+		Direction heading = beltAccess.resolveBeltHeading();
 		int headingAngle = AirCourierHelper.getHeadingAngle(heading);
 		String filterString = port.getFilterString();
 		for (int slot = 0; slot < port.inventory.getSlots(); slot++) {

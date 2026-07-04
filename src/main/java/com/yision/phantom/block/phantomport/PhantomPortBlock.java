@@ -1,6 +1,9 @@
 package com.yision.phantom.block.phantomport;
 
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.simibubi.create.content.kinetics.belt.BeltBlock;
+import com.simibubi.create.content.kinetics.belt.BeltSlope;
 import com.simibubi.create.foundation.block.IBE;
 import com.yision.phantom.registry.AllBlockEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -9,6 +12,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -18,6 +22,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -56,13 +61,36 @@ public class PhantomPortBlock extends HorizontalDirectionalBlock implements IWre
 
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		if (!isValidPositionForPlacement(context.getLevel(), context.getClickedPos())) {
+			return null;
+		}
+
+		BlockState beltState = context.getLevel().getBlockState(context.getClickedPos().below());
+		Direction beltFacing = beltState.getValue(BeltBlock.HORIZONTAL_FACING);
 		Direction facing = context.getHorizontalDirection().getOpposite();
+		if (facing.getAxis() != beltFacing.getAxis()) {
+			facing = beltFacing;
+		}
 		Player player = context.getPlayer();
 		if (player != null && player.isShiftKeyDown()) {
 			facing = facing.getOpposite();
 		}
 		return defaultBlockState().setValue(FACING, facing)
 			.setValue(OPEN, false);
+	}
+
+	@Override
+	public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
+		if (!isValidPositionForPlacement(level, pos)) {
+			return false;
+		}
+		BlockState beltState = level.getBlockState(pos.below());
+		return state.getValue(FACING).getAxis() == beltState.getValue(BeltBlock.HORIZONTAL_FACING).getAxis();
+	}
+
+	private boolean isValidPositionForPlacement(LevelReader level, BlockPos pos) {
+		BlockState beltState = level.getBlockState(pos.below());
+		return AllBlocks.BELT.has(beltState) && beltState.getValue(BeltBlock.SLOPE) == BeltSlope.HORIZONTAL;
 	}
 
 	@Override
@@ -98,6 +126,32 @@ public class PhantomPortBlock extends HorizontalDirectionalBlock implements IWre
 		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> rotated[0] = Shapes.or(rotated[0],
 			box(16 - maxZ * 16, minY * 16, minX * 16, 16 - minZ * 16, maxY * 16, maxX * 16)));
 		return rotated[0];
+	}
+
+	@Override
+	public @NotNull InteractionResult onWrenched(BlockState state, UseOnContext context) {
+		BlockState rotated = state.setValue(FACING, state.getValue(FACING).getOpposite());
+		Level level = context.getLevel();
+		BlockPos pos = context.getClickedPos();
+		if (!rotated.canSurvive(level, pos)) {
+			return InteractionResult.PASS;
+		}
+		if (level.isClientSide) {
+			return InteractionResult.SUCCESS;
+		}
+		level.setBlock(pos, rotated, 3);
+		IWrenchable.playRotateSound(level, pos);
+		return InteractionResult.SUCCESS;
+	}
+
+	@Override
+	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
+		boolean isMoving) {
+		if (!level.isClientSide && fromPos.equals(pos.below()) && !state.canSurvive(level, pos)) {
+			level.destroyBlock(pos, true);
+			return;
+		}
+		super.neighborChanged(state, level, pos, block, fromPos, isMoving);
 	}
 
 	@Override

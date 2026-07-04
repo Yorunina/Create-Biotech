@@ -60,6 +60,7 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		}
 		updateLandingOpenState();
 		returnQueue.tick();
+		dispatchAccess.tryDispatchToLaunchBelt();
 		if (serverLevel.getGameTime() % 20 == 0) {
 			PhantomPortTargetRegistry.update(serverLevel, worldPosition, addressFilter);
 		}
@@ -72,6 +73,7 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 			return;
 		}
 		automation.tick();
+		dispatchAccess.tryDispatchToLaunchBelt();
 	}
 
 	@Override
@@ -99,7 +101,18 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		if (level == null || level.isClientSide()) {
 			return false;
 		}
-		return automation.tryPullingFromSide(getPackagerSide());
+		boolean pulled = automation.tryPullingFromSide(getPackagerSide());
+		if (pulled) {
+			dispatchAccess.tryDispatchToLaunchBelt();
+		}
+		return pulled;
+	}
+
+	public boolean tryDispatchToLaunchBelt() {
+		if (level == null || level.isClientSide()) {
+			return false;
+		}
+		return dispatchAccess.tryDispatchToLaunchBelt();
 	}
 
 	public ItemStackHandler getCarrierInventory() {
