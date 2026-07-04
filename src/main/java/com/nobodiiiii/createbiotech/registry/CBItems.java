@@ -28,6 +28,7 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackageItem;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
+import com.yision.phantom.block.phantomport.PhantomPortItem;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
 
@@ -158,7 +159,7 @@ public class CBItems {
 		() -> new BlockItem(CBBlocks.SHULKER_TELEPORTER.get(), new Item.Properties()));
 
 	public static final RegistryObject<Item> PHANTOMPORT = ITEMS.register("phantomport",
-		() -> new BlockItem(CBBlocks.PHANTOMPORT.get(), new Item.Properties()));
+		() -> new PhantomPortItem(CBBlocks.PHANTOMPORT.get(), new Item.Properties()));
 
 	public static final RegistryObject<MiniPhantomItem> MINI_PHANTOM = ITEMS.register("mini_phantom",
 		() -> new MiniPhantomItem(new Item.Properties()));
