@@ -24,18 +24,24 @@ public class CapturedEntityBoxItemRenderer extends CustomRenderedItemModelRender
 	@Override
 	protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer,
 		ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource buffer, int light, int overlay) {
-		renderer.render(getBoxModel(stack, model.getOriginalModel()), light);
+		renderer.render(getBoxModel(stack, model.getOriginalModel(), transformType), light);
 		CapturedEntityBoxIconRenderer.renderOnItem(stack, poseStack, buffer, light);
 	}
 
-	private BakedModel getBoxModel(ItemStack stack, BakedModel fallback) {
+	private BakedModel getBoxModel(ItemStack stack, BakedModel fallback, ItemDisplayContext transformType) {
+		if (transformType == ItemDisplayContext.FIXED)
+			return getModel(CardboardBoxPartials.getLogisticsModelLocation(stack), fallback);
 		if (!CapturedEntityBoxHelper.hasCapturedEntity(stack))
 			return fallback;
 
+		return getModel(stack.is(CBItems.LARGE_CARDBOARD_BOX.get()) ? LARGE_BOX_CAPTURED_MODEL : SMALL_BOX_CAPTURED_MODEL,
+			fallback);
+	}
+
+	private BakedModel getModel(ResourceLocation location, BakedModel fallback) {
 		ModelManager modelManager = Minecraft.getInstance()
 			.getModelManager();
-		BakedModel model = modelManager.getModel(stack.is(CBItems.LARGE_CARDBOARD_BOX.get()) ? LARGE_BOX_CAPTURED_MODEL
-			: SMALL_BOX_CAPTURED_MODEL);
+		BakedModel model = modelManager.getModel(location);
 		return model == modelManager.getMissingModel() ? fallback : model;
 	}
 }
