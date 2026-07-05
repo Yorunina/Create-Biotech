@@ -90,7 +90,6 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.ItemProperties;
-import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
@@ -186,7 +185,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("item/large_cardboard_box"));
 		event.register(CreateBiotech.asResource("item/large_cardboard_box_captured"));
 		event.register(CardboardBoxPartials.LARGE_BOX_LOGISTICS_LOCATION);
-		event.register(new ModelResourceLocation(CreateBiotech.asResource("mini_phantom_package"), "inventory"));
+		event.register(CreateBiotech.asResource("item/mini_phantom_package"));
 	}
 
 	@SubscribeEvent
