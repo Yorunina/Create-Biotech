@@ -186,6 +186,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("item/large_cardboard_box"));
 		event.register(CreateBiotech.asResource("item/large_cardboard_box_captured"));
 		event.register(CardboardBoxPartials.LARGE_BOX_LOGISTICS_LOCATION);
+		event.register(new ModelResourceLocation(CreateBiotech.asResource("mini_phantom_attached_package"), "inventory"));
 		event.register(new ModelResourceLocation(CreateBiotech.asResource("mini_phantom_package"), "inventory"));
 	}
 
