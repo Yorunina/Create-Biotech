@@ -48,6 +48,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final float MODEL_Z_OFFSET = 0.1875f;
 	private static final float PHANTOM_MODEL_Y_TRANSLATE = 1.3125f;
 	private static final float LIVING_MODEL_Y_TRANSLATE = -1.501f;
+	private static final float WAITING_SUPPORT_PITCH_DEGREES = 18.0f;
 	private static final float STATIC_WING_Z_ROTATION = 0.0f;
 	private static final float STATIC_TAIL_X_ROTATION = -5.0f * ((float) Math.PI / 180.0f);
 	private static final float LOGISTICS_HAT_OFFSET_X = 0.0f;
@@ -104,6 +105,9 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private void applyCourierPose(AirCourierEntity entity, float partialTick, PoseStack poseStack) {
 		poseStack.mulPose(Axis.YP.rotationDegrees(entity.getVisualYaw(partialTick) + 180.0f));
 		poseStack.mulPose(Axis.XP.rotationDegrees(entity.getVisualPitch(partialTick)));
+		if (entity.getPhase() == AirCourierEntity.Phase.WAITING && entity.shouldRenderSupportPitch()) {
+			poseStack.mulPose(Axis.XP.rotationDegrees(WAITING_SUPPORT_PITCH_DEGREES));
+		}
 		poseStack.mulPose(Axis.ZP.rotationDegrees(entity.getVisualRoll(partialTick)));
 	}
 

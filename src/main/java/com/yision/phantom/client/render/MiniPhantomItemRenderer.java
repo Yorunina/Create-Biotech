@@ -78,6 +78,7 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 		courier.setPackage(MiniPhantomItem.copyCargoPackage(stack));
 		courier.setPhase(AirCourierEntity.Phase.WAITING);
 		courier.setRenderOnSupport(transformType == ItemDisplayContext.FIXED);
+		courier.setRenderSupportPitch(false);
 		courier.setNoGravity(true);
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.setPos(0, 0, 0);
