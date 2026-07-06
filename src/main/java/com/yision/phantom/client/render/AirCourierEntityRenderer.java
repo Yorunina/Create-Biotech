@@ -35,9 +35,12 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final float ACTIVE_SCALE = 0.66f;
 	private static final float ACTIVE_MODEL_Y_OFFSET = 0.24f;
 	private static final float WAITING_MODEL_Y_OFFSET = 0.66f;
+	private static final float WAITING_SURFACE_LIFT = 0.5f;
 	private static final float MODEL_Z_OFFSET = 0.1875f;
 	private static final float PHANTOM_MODEL_Y_TRANSLATE = 1.3125f;
 	private static final float LIVING_MODEL_Y_TRANSLATE = -1.501f;
+	private static final float STATIC_WING_Z_ROTATION = 0.0f;
+	private static final float STATIC_TAIL_X_ROTATION = -5.0f * ((float) Math.PI / 180.0f);
 
 	private final PhantomModel<RenderPhantom> phantomModel;
 	@Nullable
@@ -69,6 +72,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 
 		poseStack.pushPose();
 		applyCourierPose(entity, partialTick, poseStack);
+		applySupportLift(entity, poseStack);
 		applyModelTransform(entity, poseStack);
 		VertexConsumer bodyBuffer = buffer.getBuffer(phantomModel.renderType(PHANTOM_TEXTURE));
 		phantomModel.renderToBuffer(poseStack, bodyBuffer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
@@ -83,9 +87,6 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private void applyCourierPose(AirCourierEntity entity, float partialTick, PoseStack poseStack) {
 		poseStack.mulPose(Axis.YP.rotationDegrees(entity.getVisualYaw(partialTick) + 180.0f));
 		poseStack.mulPose(Axis.XP.rotationDegrees(entity.getVisualPitch(partialTick)));
-		if (entity.getPhase() == AirCourierEntity.Phase.WAITING) {
-			poseStack.mulPose(Axis.XP.rotationDegrees(18.0f));
-		}
 		poseStack.mulPose(Axis.ZP.rotationDegrees(entity.getVisualRoll(partialTick)));
 	}
 
@@ -100,12 +101,40 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		poseStack.translate(0.0f, LIVING_MODEL_Y_TRANSLATE, 0.0f);
 	}
 
+	private static void applySupportLift(AirCourierEntity entity, PoseStack poseStack) {
+		if (entity.getPhase() == AirCourierEntity.Phase.WAITING && entity.shouldRenderOnSupport()) {
+			// Waiting couriers rendered as world entities sit on a support surface instead of around a flight center.
+			poseStack.translate(0.0f, WAITING_SURFACE_LIFT, 0.0f);
+		}
+	}
+
 	private void preparePhantomModel(AirCourierEntity courier, RenderPhantom phantom, float partialTick) {
-		phantom.copyAnimationStateFrom(courier);
 		phantomModel.root()
 			.getAllParts()
 			.forEach(ModelPart::resetPose);
+		if (courier.getPhase() == AirCourierEntity.Phase.WAITING) {
+			applyStaticWaitingPose();
+			return;
+		}
+		phantom.copyAnimationStateFrom(courier);
 		phantomModel.setupAnim(phantom, 0.0f, 0.0f, courier.tickCount + partialTick, 0.0f, 0.0f);
+	}
+
+	private void applyStaticWaitingPose() {
+		ModelPart body = phantomModel.root().getChild("body");
+		ModelPart leftWingBase = body.getChild("left_wing_base");
+		ModelPart leftWingTip = leftWingBase.getChild("left_wing_tip");
+		ModelPart rightWingBase = body.getChild("right_wing_base");
+		ModelPart rightWingTip = rightWingBase.getChild("right_wing_tip");
+		ModelPart tailBase = body.getChild("tail_base");
+		ModelPart tailTip = tailBase.getChild("tail_tip");
+
+		leftWingBase.zRot = STATIC_WING_Z_ROTATION;
+		leftWingTip.zRot = STATIC_WING_Z_ROTATION;
+		rightWingBase.zRot = -STATIC_WING_Z_ROTATION;
+		rightWingTip.zRot = -STATIC_WING_Z_ROTATION;
+		tailBase.xRot = STATIC_TAIL_X_ROTATION;
+		tailTip.xRot = STATIC_TAIL_X_ROTATION;
 	}
 
 	private void renderCargo(AirCourierEntity entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {

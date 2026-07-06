@@ -75,6 +75,7 @@ public class AirCourierEntity extends Entity implements Container {
 
 	private float previousBankDegrees;
 	private float bankDegrees;
+	private boolean renderOnSupport = true;
 
 	public AirCourierEntity(EntityType<? extends AirCourierEntity> type, Level level) {
 		super(type, level);
@@ -353,6 +354,14 @@ public class AirCourierEntity extends Entity implements Container {
 
 	public float getVisualRoll(float partialTick) {
 		return Mth.lerp(partialTick, previousBankDegrees, bankDegrees) * VISUAL_ROLL_MULTIPLIER;
+	}
+
+	public boolean shouldRenderOnSupport() {
+		return renderOnSupport;
+	}
+
+	public void setRenderOnSupport(boolean renderOnSupport) {
+		this.renderOnSupport = renderOnSupport;
 	}
 
 	private boolean exposesPackageContents() {

@@ -43,7 +43,7 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 			return;
 		}
 
-		configureCourier(courier, stack);
+		configureCourier(courier, stack, transformType);
 
 		ms.pushPose();
 		applyHeadingRotation(stack, transformType, ms);
@@ -68,9 +68,10 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 		ms.popPose();
 	}
 
-	private void configureCourier(AirCourierEntity courier, ItemStack stack) {
+	private void configureCourier(AirCourierEntity courier, ItemStack stack, ItemDisplayContext transformType) {
 		courier.setPackage(MiniPhantomItem.copyCargoPackage(stack));
 		courier.setPhase(AirCourierEntity.Phase.WAITING);
+		courier.setRenderOnSupport(transformType == ItemDisplayContext.FIXED);
 		courier.setNoGravity(true);
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.setPos(0, 0, 0);
