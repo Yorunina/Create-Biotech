@@ -6,16 +6,18 @@ import java.util.function.Consumer;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.InputConstants;
-import com.simibubi.create.AllPackets;
-import com.simibubi.create.content.logistics.packagePort.PackagePortMenu;
-import com.simibubi.create.content.logistics.packagePort.PackagePortConfigurationPacket;
+import com.nobodiiiii.createbiotech.network.CBPackets;
 import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
+import com.simibubi.create.foundation.gui.widget.Label;
+import com.simibubi.create.foundation.gui.widget.ScrollInput;
+import com.simibubi.create.foundation.gui.widget.SelectionScrollInput;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.yision.phantom.CreatePhantom;
+import com.yision.phantom.logistics.courier.AirCourierReturnMode;
 
 import net.createmod.catnip.gui.element.GuiGameElement;
 import net.createmod.catnip.gui.widget.AbstractSimiWidget;
@@ -28,7 +30,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
-public class PhantomPortScreen extends AbstractSimiContainerScreen<PackagePortMenu> {
+public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMenu> {
 	private static final ResourceLocation PHANTOM_PORT_GUI =
 		CreatePhantom.asResource("textures/gui/phantomport_gui.png");
 	private static final int TEXTURE_SIZE = 256;
@@ -56,10 +58,16 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PackagePortMe
 	private IconButton confirmButton;
 	private IconButton dontAcceptPackages;
 	private IconButton acceptPackages;
+	private ScrollInput returnModeInput;
+	private Label returnModeLabel;
 	private ItemStack icon;
 	private List<Rect2i> extraAreas = Collections.emptyList();
+	private final List<Component> returnModeOptions = List.of(
+		Component.translatable("gui.createphantom.phantomport.return_mode.always_dock"),
+		Component.translatable("gui.createphantom.phantomport.return_mode.always_return"),
+		Component.translatable("gui.createphantom.phantomport.return_mode.return_when_unable"));
 
-	public PhantomPortScreen(PackagePortMenu menu, Inventory inventory, Component title) {
+	public PhantomPortScreen(PhantomPortMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
 		icon = new ItemStack(menu.contentHolder.getBlockState()
 			.getBlock()
@@ -111,6 +119,14 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PackagePortMe
 		dontAcceptPackages.green = !menu.contentHolder.acceptsPackages;
 		dontAcceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_only"));
 		addRenderableWidget(dontAcceptPackages);
+
+		returnModeLabel = new Label(x + 83, y + WINDOW_HEIGHT - 19, Component.empty()).withShadow();
+		returnModeInput = new SelectionScrollInput(x + 78, y + WINDOW_HEIGHT - 25, 101, 18)
+			.forOptions(returnModeOptions)
+			.titled(Component.translatable("gui.createphantom.phantomport.return_mode"))
+			.setState(port().getReturnMode().id())
+			.writingTo(returnModeLabel);
+		addRenderableWidgets(returnModeInput, returnModeLabel);
 
 		containerTick();
 
@@ -197,9 +213,13 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PackagePortMe
 
 	@Override
 	public void removed() {
-		AllPackets.getChannel().sendToServer(new PackagePortConfigurationPacket(menu.contentHolder.getBlockPos(),
-			addressBox.getValue(), acceptPackages.green));
+		CBPackets.sendToServer(new PhantomPortConfigurationPacket(menu.contentHolder.getBlockPos(),
+			addressBox.getValue(), acceptPackages.green, AirCourierReturnMode.byId(returnModeInput.getState())));
 		super.removed();
+	}
+
+	private PhantomPortBlockEntity port() {
+		return (PhantomPortBlockEntity) menu.contentHolder;
 	}
 
 	@Override

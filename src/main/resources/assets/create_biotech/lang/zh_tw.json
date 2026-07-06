@@ -30,6 +30,10 @@
   "string.create_biotech.infinite": "無限供應",
   "string.create_biotech.no_bread": "麵包呢？",
   "string.create_biotech.no_butter": "奶油呢？",
-  "string.create_biotech.remaining" : "剩餘"
+  "string.create_biotech.remaining" : "剩餘",
+  "gui.createphantom.phantomport.return_mode": "幻翼返航模式",
+  "gui.createphantom.phantomport.return_mode.always_dock": "始終停靠",
+  "gui.createphantom.phantomport.return_mode.always_return": "始終返航",
+  "gui.createphantom.phantomport.return_mode.return_when_unable": "無法接收時返航"
 }
 

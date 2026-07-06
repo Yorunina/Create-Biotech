@@ -13,6 +13,7 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerPlace
 import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterConfigPacket;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueRemovalPacket;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueSelectionPacket;
+import com.yision.phantom.block.phantomport.PhantomPortConfigurationPacket;
 import com.yision.phantom.network.courier.AirCourierHudPacket;
 import com.yision.phantom.network.phantom.MiniPhantomConfirmPacket;
 
@@ -26,7 +27,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 public class CBPackets {
 
-	private static final String NETWORK_VERSION = "6";
+	private static final String NETWORK_VERSION = "7";
 	private static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder.named(CreateBiotech.asResource("main"))
 		.serverAcceptedVersions(NETWORK_VERSION::equals)
 		.clientAcceptedVersions(NETWORK_VERSION::equals)
@@ -67,6 +68,9 @@ public class CBPackets {
 			NetworkDirection.PLAY_TO_SERVER);
 		register(MiniPhantomConfirmPacket.class, MiniPhantomConfirmPacket::new,
 			MiniPhantomConfirmPacket::write, MiniPhantomConfirmPacket::handle,
+			NetworkDirection.PLAY_TO_SERVER);
+		register(PhantomPortConfigurationPacket.class, PhantomPortConfigurationPacket::new,
+			PhantomPortConfigurationPacket::write, (packet, context) -> packet.handle(context),
 			NetworkDirection.PLAY_TO_SERVER);
 		register(AirCourierHudPacket.class, AirCourierHudPacket::new,
 			AirCourierHudPacket::write, AirCourierHudPacket::handle,

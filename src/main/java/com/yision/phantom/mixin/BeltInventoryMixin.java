@@ -68,6 +68,7 @@ public abstract class BeltInventoryMixin {
 			.orElse(serverLevel.dimension());
 		var sourcePhantomPortPos = sourceReturnTarget.map(target -> target.pos())
 			.orElseGet(() -> AirCourierHelper.findSourcePhantomPortPos(belt));
+		var returnMode = MiniPhantomItem.getReturnMode(stack.stack);
 		AirCourierTarget target = AirCourierDispatchService.resolvePackageTarget(serverLevel, box,
 			Vec3.atCenterOf(belt.getBlockPos()), sourcePhantomPortDimension, sourcePhantomPortPos);
 		if (target == null) {
@@ -87,13 +88,13 @@ public abstract class BeltInventoryMixin {
 			task = AirCourierTask.forPackageToAirport(
 				taskId, box, serverLevel, phantomPort.dimension(), phantomPort.pos(),
 				spawnPos, launchDirection, launchMotion,
-				sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null);
+				sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null, returnMode);
 		} else if (target instanceof AirCourierTarget.PlayerTarget player) {
 			ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(player.playerId());
 			task = targetPlayer != null
 				? AirCourierTask.forPackageToPlayer(taskId, box, serverLevel, player.playerId(),
 					player.dimension(), spawnPos, launchDirection, launchMotion,
-					sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null)
+					sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null, returnMode)
 				: null;
 		} else {
 			task = null;

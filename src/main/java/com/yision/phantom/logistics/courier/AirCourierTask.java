@@ -43,6 +43,7 @@ public final class AirCourierTask {
 	private @Nullable UUID hudEntryId;
 	private @Nullable UUID sourcePlayerId;
 	private @Nullable ResourceKey<Level> sourceDimension;
+	private AirCourierReturnMode returnMode;
 	private AirCourierEntity.Mission mission;
 	private AirCourierEntity.Phase phase;
 	private Vec3 position;
@@ -68,6 +69,7 @@ public final class AirCourierTask {
 		@Nullable BlockPos sourcePhantomPortPos, @Nullable BlockPos targetPhantomPortPos,
 		@Nullable UUID targetPlayerId, @Nullable UUID hudPlayerId, @Nullable UUID hudEntryId,
 		@Nullable UUID sourcePlayerId, @Nullable ResourceKey<Level> sourceDimension,
+		AirCourierReturnMode returnMode,
 		AirCourierEntity.Mission mission, Vec3 position, Vec3 motion, Vec3 launchDirection
 	) {
 		this.id = id;
@@ -81,6 +83,7 @@ public final class AirCourierTask {
 		this.hudEntryId = hudEntryId;
 		this.sourcePlayerId = sourcePlayerId;
 		this.sourceDimension = sourceDimension;
+		this.returnMode = returnMode == null ? defaultReturnMode(sourcePhantomPortPos, sourcePlayerId) : returnMode;
 		this.mission = mission;
 		this.phase = AirCourierEntity.Phase.TAKEOFF;
 		this.position = position;
@@ -96,11 +99,12 @@ public final class AirCourierTask {
 		ServerLevel spawnLevel, ResourceKey<Level> targetDimension, BlockPos targetPhantomPortPos,
 		Vec3 spawnPos, Vec3 launchDirection, Vec3 launchMotion,
 		@Nullable ResourceKey<Level> sourceDimension, @Nullable BlockPos sourcePhantomPortPos,
-		@Nullable UUID hudPlayerId, @Nullable UUID hudEntryId, @Nullable UUID sourcePlayerId
+		@Nullable UUID hudPlayerId, @Nullable UUID hudEntryId, @Nullable UUID sourcePlayerId,
+		AirCourierReturnMode returnMode
 	) {
 		return new AirCourierTask(id, box, spawnLevel.dimension(), targetDimension,
 			sourcePhantomPortPos, targetPhantomPortPos, null, hudPlayerId, hudEntryId,
-			sourcePlayerId, sourceDimension, AirCourierEntity.Mission.PACKAGE_TO_AIRPORT,
+			sourcePlayerId, sourceDimension, returnMode, AirCourierEntity.Mission.PACKAGE_TO_AIRPORT,
 			spawnPos, launchMotion, launchDirection);
 	}
 
@@ -109,11 +113,12 @@ public final class AirCourierTask {
 		ServerLevel spawnLevel, UUID targetPlayerId, ResourceKey<Level> targetDimension,
 		Vec3 spawnPos, Vec3 launchDirection, Vec3 launchMotion,
 		@Nullable ResourceKey<Level> sourceDimension, @Nullable BlockPos sourcePhantomPortPos,
-		@Nullable UUID hudPlayerId, @Nullable UUID hudEntryId, @Nullable UUID sourcePlayerId
+		@Nullable UUID hudPlayerId, @Nullable UUID hudEntryId, @Nullable UUID sourcePlayerId,
+		AirCourierReturnMode returnMode
 	) {
 		return new AirCourierTask(id, box, spawnLevel.dimension(), targetDimension,
 			sourcePhantomPortPos, null, targetPlayerId, hudPlayerId, hudEntryId,
-			sourcePlayerId, sourceDimension, AirCourierEntity.Mission.PACKAGE_TO_PLAYER,
+			sourcePlayerId, sourceDimension, returnMode, AirCourierEntity.Mission.PACKAGE_TO_PLAYER,
 			spawnPos, launchMotion, launchDirection);
 	}
 
@@ -124,7 +129,7 @@ public final class AirCourierTask {
 	) {
 		return new AirCourierTask(id, ItemStack.EMPTY, spawnLevel.dimension(), targetDimension,
 			null, targetPhantomPortPos, null, null, null,
-			null, null, AirCourierEntity.Mission.CARRIER_RETURN,
+			null, null, AirCourierReturnMode.DEFAULT_FOR_PORT, AirCourierEntity.Mission.CARRIER_RETURN,
 			spawnPos, launchMotion, launchDirection);
 	}
 
@@ -135,7 +140,7 @@ public final class AirCourierTask {
 	) {
 		return new AirCourierTask(id, ItemStack.EMPTY, spawnLevel.dimension(), targetDimension,
 			null, null, targetPlayerId, null, null,
-			null, null, AirCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER,
+			null, null, AirCourierReturnMode.DEFAULT_FOR_PORT, AirCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER,
 			spawnPos, launchMotion, launchDirection);
 	}
 
@@ -371,14 +376,15 @@ public final class AirCourierTask {
 
 		setLandingOpen(rt != null ? rt.level : null, rt != null ? rt.phantomPort : null, false);
 
-		boolean handled = AirCourierDeliveryService.finishDelivery(
+		AirCourierDeliveryService.DeliveryResult result = AirCourierDeliveryService.finishDelivery(
 			server, box, mission, sourceDimension, sourcePhantomPortPos, sourcePlayerId,
+			returnMode,
 			targetDimension, targetPhantomPortPos, targetPlayerId, hudPlayerId, hudEntryId,
 			level, position, landingTarget);
 
-		if (handled) {
+		if (result.handled()) {
 			AirCourierDeliveryService.spawnDeliveryParticles(level, position);
-			if (mission == AirCourierEntity.Mission.PACKAGE_TO_PLAYER && !box.isEmpty()) {
+			if (result.returnCarrier()) {
 				startCarrierReturn(server);
 				return;
 			}
@@ -522,6 +528,14 @@ public final class AirCourierTask {
 		approachGateTicksSinceUpdate = 0;
 	}
 
+	private static AirCourierReturnMode defaultReturnMode(@Nullable BlockPos sourcePhantomPortPos,
+		@Nullable UUID sourcePlayerId) {
+		if (sourcePlayerId != null && sourcePhantomPortPos == null) {
+			return AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH;
+		}
+		return AirCourierReturnMode.DEFAULT_FOR_PORT;
+	}
+
 	private record ResolvedTarget(
 		ServerLevel level,
 		@Nullable PhantomPortBlockEntity phantomPort,
@@ -643,6 +657,7 @@ public final class AirCourierTask {
 	public @Nullable UUID hudEntryId() { return hudEntryId; }
 	public @Nullable UUID sourcePlayerId() { return sourcePlayerId; }
 	public @Nullable ResourceKey<Level> sourceDimension() { return sourceDimension; }
+	public AirCourierReturnMode returnMode() { return returnMode; }
 	public AirCourierEntity.Mission mission() { return mission; }
 	public AirCourierEntity.Phase phase() { return phase; }
 	public Vec3 position() { return position; }
@@ -676,6 +691,7 @@ public final class AirCourierTask {
 		if (hudPlayerId != null) tag.putUUID("HudPlayer", hudPlayerId);
 		if (hudEntryId != null) tag.putUUID("HudEntryId", hudEntryId);
 		if (sourcePlayerId != null) tag.putUUID("SourcePlayer", sourcePlayerId);
+		tag.putString("ReturnMode", returnMode.serializedName());
 		tag.putByte("Mission", (byte) mission.ordinal());
 		tag.putByte("Phase", (byte) phase.ordinal());
 		tag.put("Position", vecToTag(position));
@@ -713,6 +729,9 @@ public final class AirCourierTask {
 		UUID hudPlayer = tag.hasUUID("HudPlayer") ? tag.getUUID("HudPlayer") : null;
 		UUID hudEntry = tag.hasUUID("HudEntryId") ? tag.getUUID("HudEntryId") : null;
 		UUID sourcePlayer = tag.hasUUID("SourcePlayer") ? tag.getUUID("SourcePlayer") : null;
+		AirCourierReturnMode returnMode = tag.contains("ReturnMode")
+			? AirCourierReturnMode.byName(tag.getString("ReturnMode"))
+			: defaultReturnMode(sourcePP, sourcePlayer);
 		AirCourierEntity.Mission mission = AirCourierEntity.Mission.values()[tag.getByte("Mission")];
 		AirCourierEntity.Phase phase = AirCourierEntity.Phase.values()[tag.getByte("Phase")];
 		Vec3 position = vecFromTag(tag, "Position");
@@ -721,7 +740,7 @@ public final class AirCourierTask {
 
 		AirCourierTask task = new AirCourierTask(id, box, currentDim, targetDim,
 			sourcePP, targetPP, targetPlayer, hudPlayer, hudEntry,
-			sourcePlayer, sourceDim, mission, position, motion, launchDir);
+			sourcePlayer, sourceDim, returnMode, mission, position, motion, launchDir);
 		task.phase = phase;
 		task.phaseTicks = tag.getInt("PhaseTicks");
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");

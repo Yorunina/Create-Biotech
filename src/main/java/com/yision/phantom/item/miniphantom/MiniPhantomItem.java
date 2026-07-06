@@ -4,6 +4,7 @@ import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
 import com.yision.phantom.client.render.MiniPhantomItemRenderer;
 import com.yision.phantom.entity.courier.AirCourierEntity;
+import com.yision.phantom.logistics.courier.AirCourierReturnMode;
 import com.yision.phantom.registry.AllItems;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class MiniPhantomItem extends Item {
 	private static final String HUD_ID_KEY = "HudEntryId";
 	private static final String RETURN_TARGET_KEY = "ReturnTarget";
 	private static final String PLAYER_RETURN_TARGET_KEY = "PlayerReturnTarget";
+	private static final String RETURN_MODE_KEY = "ReturnMode";
 
 	public MiniPhantomItem(Properties properties) {
 		super(properties);
@@ -162,6 +164,7 @@ public class MiniPhantomItem extends Item {
 			&& !hasCargo(stack)
 			&& getReturnTarget(stack).isEmpty()
 			&& getPlayerReturnTarget(stack).isEmpty()
+			&& !hasReturnMode(stack)
 			&& !hasHudEntryId(stack);
 	}
 
@@ -237,6 +240,26 @@ public class MiniPhantomItem extends Item {
 		return tag != null && tag.hasUUID(PLAYER_RETURN_TARGET_KEY)
 			? Optional.of(tag.getUUID(PLAYER_RETURN_TARGET_KEY))
 			: Optional.empty();
+	}
+
+	public static void setReturnMode(ItemStack stack, AirCourierReturnMode mode) {
+		stack.getOrCreateTag().putString(RETURN_MODE_KEY,
+			(mode == null ? AirCourierReturnMode.DEFAULT_FOR_PORT : mode).serializedName());
+	}
+
+	public static AirCourierReturnMode getReturnMode(ItemStack stack) {
+		CompoundTag tag = stack.getTag();
+		if (tag != null && tag.contains(RETURN_MODE_KEY, Tag.TAG_STRING)) {
+			return AirCourierReturnMode.byName(tag.getString(RETURN_MODE_KEY));
+		}
+		return getReturnTarget(stack).isPresent()
+			? AirCourierReturnMode.DEFAULT_FOR_PORT
+			: AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH;
+	}
+
+	public static boolean hasReturnMode(ItemStack stack) {
+		CompoundTag tag = stack.getTag();
+		return tag != null && tag.contains(RETURN_MODE_KEY, Tag.TAG_STRING);
 	}
 
 	private static void remove(ItemStack stack, String key) {

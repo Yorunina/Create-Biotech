@@ -1,7 +1,6 @@
 package com.yision.phantom.logistics.courier;
 
 import com.yision.phantom.block.phantomport.PhantomPortBlockEntity;
-import com.yision.phantom.block.phantomport.PhantomPortBlockEntity.CourierReceiveResult;
 import com.yision.phantom.entity.courier.AirCourierEntity;
 import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 import com.yision.phantom.registry.AllItems;
@@ -24,13 +23,28 @@ public final class AirCourierDeliveryService {
 
 	private AirCourierDeliveryService() {}
 
-	public static boolean finishDelivery(
+	public record DeliveryResult(boolean handled, boolean returnCarrier) {
+		static DeliveryResult done() {
+			return new DeliveryResult(true, false);
+		}
+
+		static DeliveryResult returning() {
+			return new DeliveryResult(true, true);
+		}
+
+		static DeliveryResult unhandled() {
+			return new DeliveryResult(false, false);
+		}
+	}
+
+	public static DeliveryResult finishDelivery(
 		MinecraftServer server,
 		ItemStack box,
 		AirCourierEntity.Mission mission,
 		@Nullable ResourceKey<Level> sourceDimension,
 		@Nullable BlockPos sourcePhantomPortPos,
 		@Nullable UUID sourcePlayerId,
+		AirCourierReturnMode returnMode,
 		@Nullable ResourceKey<Level> targetDimension,
 		@Nullable BlockPos targetPhantomPortPos,
 		@Nullable UUID targetPlayerId,
@@ -51,52 +65,17 @@ public final class AirCourierDeliveryService {
 				if (targetPlayer == null) {
 					failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
 						targetPlayerId, hudPlayerId, hudEntryId);
-					return true;
+					return DeliveryResult.done();
 				}
-				if (!AirCourierHelper.deliverPackageOnly(targetPlayer, box)) {
-					failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-						targetPlayerId, hudPlayerId, hudEntryId);
-					return true;
-				}
-				AirCourierHudSync.onCourierDelivered(targetPlayer, box, hudEntryId);
-				if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
-					AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
-				}
-				return true;
+				return finishPlayerDelivery(box, targetPlayer, hudPlayer, hudEntryId, returnMode, landingTarget);
 			}
 			case PACKAGE_TO_AIRPORT -> {
 				if (targetPhantomPort == null) {
 					failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
 						targetPlayerId, hudPlayerId, hudEntryId);
-					return true;
+					return DeliveryResult.done();
 				}
-				if (sourcePhantomPortPos != null && sourceDimension != null) {
-					CourierReceiveResult result = targetPhantomPort.receivePackageAndHandleCarrier(box,
-						sourceDimension, sourcePhantomPortPos);
-					if (result == CourierReceiveResult.REJECTED) {
-						failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-							targetPlayerId, hudPlayerId, hudEntryId);
-						return true;
-					}
-				} else if (sourcePlayerId != null) {
-					if (!targetPhantomPort.receivePackageAndScheduleCarrierReturnToPlayer(box, sourcePlayerId)) {
-						failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-							targetPlayerId, hudPlayerId, hudEntryId);
-						return true;
-					}
-				} else {
-					CourierReceiveResult result = targetPhantomPort.receivePackageAndHandleCarrier(box,
-						sourceDimension, sourcePhantomPortPos);
-					if (result == CourierReceiveResult.REJECTED) {
-						failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-							targetPlayerId, hudPlayerId, hudEntryId);
-						return true;
-					}
-				}
-				if (hudPlayer != null) {
-					AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
-				}
-				return true;
+				return finishPhantomPortDelivery(box, targetPhantomPort, hudPlayer, hudEntryId, returnMode, landingTarget);
 			}
 			case CARRIER_RETURN -> {
 				if (targetPhantomPort != null) {
@@ -106,7 +85,7 @@ public final class AirCourierDeliveryService {
 				} else {
 					dropCarrierOnly(currentLevel, landingTarget);
 				}
-				return true;
+				return DeliveryResult.done();
 			}
 			case CARRIER_RETURN_TO_PLAYER -> {
 				if (targetPlayer != null && AirCourierHelper.canReceiveCarrier(targetPlayer)) {
@@ -118,10 +97,71 @@ public final class AirCourierDeliveryService {
 					}
 					dropCarrierOnly(currentLevel, targetPlayer != null ? landingTarget : currentPosition);
 				}
-				return true;
+				return DeliveryResult.done();
 			}
 		}
-		return false;
+		return DeliveryResult.unhandled();
+	}
+
+	private static DeliveryResult finishPhantomPortDelivery(ItemStack box, PhantomPortBlockEntity targetPhantomPort,
+		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode, Vec3 landingTarget) {
+		boolean packageAccepted = targetPhantomPort.receivePackage(box);
+		ServerLevel targetLevel = targetPhantomPort.getLevel() instanceof ServerLevel serverLevel ? serverLevel : null;
+
+		if (!packageAccepted) {
+			AirCourierHelper.dropPackageOnly(targetLevel, landingTarget, box);
+			if (hudPlayer != null) {
+				AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
+			}
+		} else if (hudPlayer != null) {
+			AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
+		}
+
+		return switch (returnMode) {
+			case ALWAYS_RETURN -> DeliveryResult.returning();
+			case ALWAYS_DOCK -> {
+				if (!targetPhantomPort.receiveCarrier()) {
+					dropCarrierOnly(targetLevel, landingTarget);
+				}
+				yield DeliveryResult.done();
+			}
+			case RETURN_WHEN_UNABLE -> targetPhantomPort.receiveCarrier()
+				? DeliveryResult.done()
+				: DeliveryResult.returning();
+		};
+	}
+
+	private static DeliveryResult finishPlayerDelivery(ItemStack box, ServerPlayer targetPlayer,
+		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode, Vec3 landingTarget) {
+		boolean packageDelivered = AirCourierHelper.deliverPackageOnly(targetPlayer, box);
+		if (!packageDelivered) {
+			AirCourierHelper.dropPackageOnly(targetPlayer.serverLevel(), landingTarget, box);
+			AirCourierHudSync.onCourierFailed(targetPlayer, box, hudEntryId);
+			if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
+				AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
+			}
+		} else {
+			AirCourierHudSync.onCourierDelivered(targetPlayer, box, hudEntryId);
+			if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
+				AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
+			}
+		}
+
+		return switch (returnMode) {
+			case ALWAYS_RETURN -> DeliveryResult.returning();
+			case ALWAYS_DOCK -> {
+				if (!AirCourierHelper.deliverCarrier(targetPlayer)) {
+					dropCarrierOnly(targetPlayer.serverLevel(), landingTarget);
+				}
+				yield DeliveryResult.done();
+			}
+			case RETURN_WHEN_UNABLE -> {
+				if (!packageDelivered || !AirCourierHelper.deliverCarrier(targetPlayer)) {
+					yield DeliveryResult.returning();
+				}
+				yield DeliveryResult.done();
+			}
+		};
 	}
 
 	public static void failAndDrop(

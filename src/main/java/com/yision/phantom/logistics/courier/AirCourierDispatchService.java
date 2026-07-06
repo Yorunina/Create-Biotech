@@ -57,8 +57,7 @@ public final class AirCourierDispatchService {
 		if (target instanceof AirCourierTarget.PlayerTarget playerTarget) {
 			ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerTarget.playerId());
 			return player != null && player.isAlive()
-				&& player.serverLevel().dimension().equals(playerTarget.dimension())
-				&& AirCourierHelper.canReceiveDelivery(player, box);
+				&& player.serverLevel().dimension().equals(playerTarget.dimension());
 		}
 		if (target instanceof AirCourierTarget.PhantomPortTarget phantomPortTarget) {
 			return canReceivePhantomPortTarget(level,
@@ -73,6 +72,6 @@ public final class AirCourierDispatchService {
 			return false;
 		}
 		BlockEntity blockEntity = targetLevel.getBlockEntity(target.pos());
-		return blockEntity instanceof PhantomPortBlockEntity phantomPort && phantomPort.canReceiveCourier(box);
+		return blockEntity instanceof PhantomPortBlockEntity phantomPort && phantomPort.acceptsPackages;
 	}
 }

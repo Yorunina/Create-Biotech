@@ -3,6 +3,7 @@ package com.yision.phantom.block.phantomport;
 import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.yision.phantom.logistics.courier.AirCourierReturnMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -37,6 +38,7 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	private final PhantomPortAutomation automation;
 	private final PhantomPortReturnQueue returnQueue;
 	private final Set<UUID> landingCouriers = new HashSet<>();
+	private AirCourierReturnMode returnMode = AirCourierReturnMode.DEFAULT_FOR_PORT;
 
 	public PhantomPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -165,6 +167,14 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		return returnQueue.tryQueueReturnCarrier(returnDimension, returnPos);
 	}
 
+	public AirCourierReturnMode getReturnMode() {
+		return returnMode;
+	}
+
+	public void setReturnMode(@Nullable AirCourierReturnMode returnMode) {
+		this.returnMode = returnMode == null ? AirCourierReturnMode.DEFAULT_FOR_PORT : returnMode;
+	}
+
 	public enum CourierReceiveResult {
 		REJECTED,
 		CARRIER_STORED,
@@ -217,6 +227,7 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	protected void write(CompoundTag tag, boolean clientPacket) {
 		super.write(tag, clientPacket);
+		tag.putString("ReturnMode", returnMode.serializedName());
 		portInventory.write(tag);
 		returnQueue.write(tag);
 	}
@@ -224,6 +235,9 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	protected void read(CompoundTag tag, boolean clientPacket) {
 		super.read(tag, clientPacket);
+		returnMode = tag.contains("ReturnMode")
+			? AirCourierReturnMode.byName(tag.getString("ReturnMode"))
+			: AirCourierReturnMode.DEFAULT_FOR_PORT;
 		portInventory.read(tag);
 		returnQueue.read(tag);
 	}

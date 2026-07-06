@@ -3,6 +3,7 @@ package com.yision.phantom.entity.courier;
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.phantom.logistics.courier.AirCourierDispatchService;
+import com.yision.phantom.logistics.courier.AirCourierReturnMode;
 import com.yision.phantom.logistics.courier.AirCourierTarget;
 import com.yision.phantom.logistics.courier.flight.AirCourierFlightMath;
 import com.yision.phantom.logistics.courier.flight.AirCourierFlightProfile;
@@ -524,7 +525,8 @@ public class AirCourierEntity extends Entity implements Container {
 					null, null,
 					player instanceof ServerPlayer sp ? sp.getUUID() : null,
 					hudEntryId,
-					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null);
+					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null,
+					AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
 			} else if (target instanceof AirCourierTarget.PlayerTarget playerTarget) {
 				ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(playerTarget.playerId());
 				if (targetPlayer == null) {
@@ -540,7 +542,8 @@ public class AirCourierEntity extends Entity implements Container {
 					null, null,
 					player instanceof ServerPlayer sp ? sp.getUUID() : null,
 					hudEntryId,
-					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null);
+					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null,
+					AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
 			} else {
 				return InteractionResult.CONSUME;
 			}

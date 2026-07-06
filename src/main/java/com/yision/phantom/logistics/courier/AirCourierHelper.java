@@ -75,8 +75,8 @@ public final class AirCourierHelper {
 		if (!PackageItem.isPackage(box)) {
 			return false;
 		}
-		player.getInventory().placeItemBackInInventory(box.copy());
-		return true;
+		ItemStack copy = box.copy();
+		return canFitInInventory(player.getInventory(), copy) && player.getInventory().add(copy);
 	}
 
 	public static boolean canReceiveCarrier(ServerPlayer player) {
@@ -84,8 +84,8 @@ public final class AirCourierHelper {
 	}
 
 	public static boolean deliverCarrier(ServerPlayer player) {
-		player.getInventory().placeItemBackInInventory(AllItems.MINI_PHANTOM.asStack());
-		return true;
+		ItemStack carrier = AllItems.MINI_PHANTOM.asStack();
+		return canFitInInventory(player.getInventory(), carrier) && player.getInventory().add(carrier);
 	}
 
 	public static void dropPackage(ServerLevel level, Vec3 position, ItemStack box) {
@@ -93,6 +93,12 @@ public final class AirCourierHelper {
 			level.addFreshEntity(PackageEntity.fromItemStack(level, position, box.copy()));
 		}
 		level.addFreshEntity(new ItemEntity(level, position.x, position.y, position.z, AllItems.MINI_PHANTOM.asStack()));
+	}
+
+	public static void dropPackageOnly(ServerLevel level, Vec3 position, ItemStack box) {
+		if (level != null && PackageItem.isPackage(box)) {
+			level.addFreshEntity(PackageEntity.fromItemStack(level, position, box.copy()));
+		}
 	}
 
 	private static boolean canFitInInventory(Inventory inventory, ItemStack... stacks) {

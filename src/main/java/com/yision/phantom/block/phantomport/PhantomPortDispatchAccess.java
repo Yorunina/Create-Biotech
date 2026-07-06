@@ -125,6 +125,7 @@ final class PhantomPortDispatchAccess {
 			singlePackage.setCount(1);
 			ItemStack phantomStack = MiniPhantomItem.createLoadedWithHeading(singlePackage, headingAngle);
 			MiniPhantomItem.setReturnTarget(phantomStack, serverLevel.dimension(), port.getBlockPos());
+			MiniPhantomItem.setReturnMode(phantomStack, port.getReturnMode());
 
 			UUID hudEntryId = null;
 			if (target instanceof AirCourierTarget.PlayerTarget) {

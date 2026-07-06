@@ -433,5 +433,9 @@
   "gui.createphantom.phantomport.order_status.returning": "返航中",
   "gui.createphantom.phantomport.order_status.cross_dimension": "正在跨越维度",
   "gui.createphantom.phantomport.order_status.delivered": "已抵达目的地",
-  "gui.createphantom.phantomport.order_status.failed": "无法发出"
+  "gui.createphantom.phantomport.order_status.failed": "无法发出",
+  "gui.createphantom.phantomport.return_mode": "幻翼返航模式",
+  "gui.createphantom.phantomport.return_mode.always_dock": "始终停靠",
+  "gui.createphantom.phantomport.return_mode.always_return": "始终返航",
+  "gui.createphantom.phantomport.return_mode.return_when_unable": "无法接收时返航"
 }
