@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 
 @OnlyIn(Dist.CLIENT)
 public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
+	private static final float FIXED_CONTEXT_ROLL_DEGREES = 90.0f;
+
 	@Nullable
 	private AirCourierEntity cachedCourier;
 	@Nullable
@@ -45,6 +47,7 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 
 		ms.pushPose();
 		applyHeadingRotation(stack, transformType, ms);
+		applyDisplayCorrection(transformType, ms);
 		boolean guiLighting = transformType == ItemDisplayContext.GUI;
 		if (guiLighting) {
 			Lighting.setupForEntityInInventory();
@@ -98,5 +101,12 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 			return;
 		}
 		ms.mulPose(Axis.YP.rotationDegrees(MiniPhantomItem.getHeadingAngle(stack)));
+	}
+
+	private static void applyDisplayCorrection(ItemDisplayContext transformType, PoseStack ms) {
+		if (transformType != ItemDisplayContext.FIXED) {
+			return;
+		}
+		ms.mulPose(Axis.ZP.rotationDegrees(FIXED_CONTEXT_ROLL_DEGREES));
 	}
 }

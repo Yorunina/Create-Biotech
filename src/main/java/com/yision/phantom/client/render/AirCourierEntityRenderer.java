@@ -121,6 +121,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		}
 
 		poseStack.pushPose();
+		poseStack.mulPose(Axis.YP.rotationDegrees(180.0f));
 		poseStack.translate(0.5f, 0.5f, 0.5f);
 		PartialItemModelRenderer.of(entity.getPackage(), ItemDisplayContext.NONE, poseStack, buffer,
 			OverlayTexture.NO_OVERLAY)
