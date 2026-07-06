@@ -3,9 +3,11 @@ package com.yision.phantom.client.render;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import com.nobodiiiii.createbiotech.mixin.client.ModelPartAccessor;
 import com.simibubi.create.foundation.item.render.PartialItemModelRenderer;
 import com.yision.phantom.CreatePhantom;
 import com.yision.phantom.entity.courier.AirCourierEntity;
+import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.PhantomModel;
 import net.minecraft.client.model.geom.ModelLayers;
@@ -13,6 +15,7 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
@@ -21,7 +24,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
+import net.createmod.catnip.render.CachedBuffers;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -32,6 +37,8 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		new ResourceLocation("textures/entity/phantom_eyes.png");
 	private static final ResourceLocation CARGO_MODEL =
 		CreatePhantom.asResource("item/mini_phantom_package");
+	private static final PartialModel LOGISTICS_HAT =
+		PartialModel.of(new ResourceLocation("create", "entity/logistics_hat"));
 	private static final int EYES_LIGHT = 15728640;
 	private static final float CRUISE_SCALE = 0.58f;
 	private static final float ACTIVE_SCALE = 0.66f;
@@ -43,6 +50,11 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final float LIVING_MODEL_Y_TRANSLATE = -1.501f;
 	private static final float STATIC_WING_Z_ROTATION = 0.0f;
 	private static final float STATIC_TAIL_X_ROTATION = -5.0f * ((float) Math.PI / 180.0f);
+	private static final float LOGISTICS_HAT_OFFSET_X = 0.0f;
+	private static final float LOGISTICS_HAT_OFFSET_Y = 0.0f;
+	private static final float LOGISTICS_HAT_OFFSET_Z = -1.0f;
+	private static final float LOGISTICS_HAT_MODEL_Y_OFFSET = -2.25f;
+	private static final float LOGISTICS_HAT_X_ROTATION_DEGREES = -8.5f;
 
 	private final PhantomModel<RenderPhantom> phantomModel;
 	private final float phantomModelCenterX;
@@ -82,6 +94,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		phantomModel.renderToBuffer(poseStack, bodyBuffer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 		VertexConsumer eyesBuffer = buffer.getBuffer(RenderType.eyes(PHANTOM_EYES_TEXTURE));
 		phantomModel.renderToBuffer(poseStack, eyesBuffer, EYES_LIGHT, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
+		renderLogisticsHatOnHead(poseStack, buffer, packedLight);
 		renderCargo(entity, poseStack, buffer, packedLight);
 		poseStack.popPose();
 
@@ -139,6 +152,35 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		rightWingTip.zRot = -STATIC_WING_Z_ROTATION;
 		tailBase.xRot = STATIC_TAIL_X_ROTATION;
 		tailTip.xRot = STATIC_TAIL_X_ROTATION;
+	}
+
+	private void renderLogisticsHatOnHead(PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+		ModelPart body = phantomModel.root().getChild("body");
+		ModelPart head = body.getChild("head");
+		if (head.isEmpty()) {
+			return;
+		}
+
+		poseStack.pushPose();
+		body.translateAndRotate(poseStack);
+		head.translateAndRotate(poseStack);
+
+		ModelPart.Cube headCube = ((ModelPartAccessor) (Object) head).createBiotech$getCubes()
+			.get(0);
+		poseStack.translate(LOGISTICS_HAT_OFFSET_X / 16.0f,
+			(headCube.minY - headCube.maxY + LOGISTICS_HAT_OFFSET_Y) / 16.0f,
+			LOGISTICS_HAT_OFFSET_Z / 16.0f);
+		float hatScale = Math.max(headCube.maxX - headCube.minX, headCube.maxZ - headCube.minZ) / 8.0f;
+		poseStack.scale(hatScale, hatScale, hatScale);
+
+		poseStack.scale(1.0f, -1.0f, -1.0f);
+		poseStack.translate(0.0f, LOGISTICS_HAT_MODEL_Y_OFFSET / 16.0f, 0.0f);
+		poseStack.mulPose(Axis.XP.rotationDegrees(LOGISTICS_HAT_X_ROTATION_DEGREES));
+		CachedBuffers.partial(LOGISTICS_HAT, Blocks.AIR.defaultBlockState())
+			.disableDiffuse()
+			.light(packedLight)
+			.renderInto(poseStack, buffer.getBuffer(Sheets.cutoutBlockSheet()));
+		poseStack.popPose();
 	}
 
 	private void renderCargo(AirCourierEntity entity, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {

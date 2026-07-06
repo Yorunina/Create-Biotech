@@ -2,19 +2,19 @@
   "parent": "create_biotech:block/spider_assembly_table/inventory",
   "display": {
     "thirdperson_righthand": {
-      "rotation": [30, 160, 0],
+      "rotation": [75, 45, 0],
       "translation": [0, 3, -2],
       "scale": [0.23, 0.23, 0.23]
     },
     "firstperson_righthand": {
-      "rotation": [30, 160, 0],
-      "translation": [0, 3, 0],
+      "rotation": [0, 45, 0],
+      "translation": [0, 3, 1],
       "scale": [0.375, 0.375, 0.375]
     },
     "gui": {
-      "rotation": [30, 160, 0],
+      "rotation": [30, 135, 0],
       "translation": [2, 2, 0],
-      "scale": [0.5325, 0.5325, 0.5325]
+      "scale": [0.45, 0.45, 0.45]
     },
     "ground": {
       "rotation": [0, 0, 0],
