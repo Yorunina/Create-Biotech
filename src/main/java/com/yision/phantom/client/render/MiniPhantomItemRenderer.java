@@ -1,6 +1,7 @@
 package com.yision.phantom.client.render;
 
 import com.mojang.blaze3d.platform.Lighting;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import com.simibubi.create.foundation.item.render.CustomRenderedItemModel;
@@ -13,6 +14,7 @@ import com.nobodiiiii.createbiotech.foundation.render.EntityRenderHelper;
 import net.createmod.catnip.animation.AnimationTickHolder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -21,10 +23,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
 public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 	private static final float FIXED_CONTEXT_ROLL_DEGREES = 90.0f;
+	private static final Vector3f GUI_TOP_LIGHT_0 = new Vector3f(0.15f, 1.0f, -0.35f).normalize();
+	private static final Vector3f GUI_TOP_LIGHT_1 = new Vector3f(-0.2f, 0.8f, 0.35f).normalize();
 
 	@Nullable
 	private AirCourierEntity cachedCourier;
@@ -50,16 +55,17 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 		applyDisplayCorrection(transformType, ms);
 		boolean guiLighting = transformType == ItemDisplayContext.GUI;
 		if (guiLighting) {
-			Lighting.setupForEntityInInventory();
+			setupGuiTopLighting();
 		}
+		int entityLight = guiLighting ? LightTexture.FULL_BRIGHT : light;
 		try {
 			EntityRenderHelper.render(EntityRenderHelper.settings(courier)
-				.packedLight(light)
+				.packedLight(entityLight)
 				.partialTicks(AnimationTickHolder.getPartialTicks())
 				.ticks((int) AnimationTickHolder.getRenderTime())
 				.dispatcherYaw(0.0f)
 				.preserveOrientation()
-				.flushBuffers(false), ms, buffer);
+				.flushBuffers(guiLighting), ms, buffer);
 		} finally {
 			if (guiLighting) {
 				Lighting.setupFor3DItems();
@@ -109,5 +115,9 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 			return;
 		}
 		ms.mulPose(Axis.ZP.rotationDegrees(FIXED_CONTEXT_ROLL_DEGREES));
+	}
+
+	private static void setupGuiTopLighting() {
+		RenderSystem.setShaderLights(GUI_TOP_LIGHT_0, GUI_TOP_LIGHT_1);
 	}
 }
