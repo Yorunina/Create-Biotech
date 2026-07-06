@@ -23,6 +23,8 @@ import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final ResourceLocation PHANTOM_TEXTURE = new ResourceLocation("textures/entity/phantom.png");
@@ -35,7 +37,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final float ACTIVE_SCALE = 0.66f;
 	private static final float ACTIVE_MODEL_Y_OFFSET = 0.24f;
 	private static final float WAITING_MODEL_Y_OFFSET = 0.66f;
-	private static final float WAITING_SURFACE_LIFT = 0.5f;
+	private static final float WAITING_SURFACE_LIFT = 7.0f / 16.0f;
 	private static final float MODEL_Z_OFFSET = 0.1875f;
 	private static final float PHANTOM_MODEL_Y_TRANSLATE = 1.3125f;
 	private static final float LIVING_MODEL_Y_TRANSLATE = -1.501f;
@@ -43,6 +45,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	private static final float STATIC_TAIL_X_ROTATION = -5.0f * ((float) Math.PI / 180.0f);
 
 	private final PhantomModel<RenderPhantom> phantomModel;
+	private final float phantomModelCenterX;
 	@Nullable
 	private ClientLevel cachedLevel;
 	@Nullable
@@ -51,6 +54,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	public AirCourierEntityRenderer(EntityRendererProvider.Context context) {
 		super(context);
 		this.phantomModel = new PhantomModel<>(context.bakeLayer(ModelLayers.PHANTOM));
+		this.phantomModelCenterX = measureModelCenterX(phantomModel.root());
 		this.shadowRadius = 0.45f;
 	}
 
@@ -97,7 +101,7 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 			? WAITING_MODEL_Y_OFFSET
 			: ACTIVE_MODEL_Y_OFFSET;
 		poseStack.scale(scale, scale, scale);
-		poseStack.translate(0.0f, PHANTOM_MODEL_Y_TRANSLATE + yOffset, MODEL_Z_OFFSET);
+		poseStack.translate(-phantomModelCenterX, PHANTOM_MODEL_Y_TRANSLATE + yOffset, MODEL_Z_OFFSET);
 		poseStack.translate(0.0f, LIVING_MODEL_Y_TRANSLATE, 0.0f);
 	}
 
@@ -172,6 +176,38 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 	@Override
 	public ResourceLocation getTextureLocation(AirCourierEntity entity) {
 		return PHANTOM_TEXTURE;
+	}
+
+	private static float measureModelCenterX(ModelPart root) {
+		ModelBounds bounds = new ModelBounds();
+		root.visit(new PoseStack(), (pose, path, index, cube) -> bounds.include(pose.pose(), cube));
+		return bounds.centerX();
+	}
+
+	private static class ModelBounds {
+		private float minX = Float.POSITIVE_INFINITY;
+		private float maxX = Float.NEGATIVE_INFINITY;
+
+		private void include(Matrix4f matrix, ModelPart.Cube cube) {
+			includeCorner(matrix, cube.minX, cube.minY, cube.minZ);
+			includeCorner(matrix, cube.minX, cube.minY, cube.maxZ);
+			includeCorner(matrix, cube.minX, cube.maxY, cube.minZ);
+			includeCorner(matrix, cube.minX, cube.maxY, cube.maxZ);
+			includeCorner(matrix, cube.maxX, cube.minY, cube.minZ);
+			includeCorner(matrix, cube.maxX, cube.minY, cube.maxZ);
+			includeCorner(matrix, cube.maxX, cube.maxY, cube.minZ);
+			includeCorner(matrix, cube.maxX, cube.maxY, cube.maxZ);
+		}
+
+		private void includeCorner(Matrix4f matrix, float x, float y, float z) {
+			Vector3f transformed = matrix.transformPosition(x / 16.0f, y / 16.0f, z / 16.0f, new Vector3f());
+			minX = Math.min(minX, transformed.x());
+			maxX = Math.max(maxX, transformed.x());
+		}
+
+		private float centerX() {
+			return minX == Float.POSITIVE_INFINITY ? 0.0f : (minX + maxX) * 0.5f;
+		}
 	}
 
 	private static class RenderPhantom extends Phantom {
