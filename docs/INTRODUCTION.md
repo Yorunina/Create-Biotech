@@ -1,31 +1,36 @@
-# Create: Biotech — Player Introduction
+# Create: Biotech - Player Introduction
 
-[English](INTRODUCTION.md) · [中文](INTRODUCTION.zh-CN.md) · [README](../README.md) · [中文 README](../README.zh-CN.md)
+[English](INTRODUCTION.md) · [Chinese](INTRODUCTION.zh-CN.md) · [Permissions](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/PERMISSIONS.md) · [README](../README.md) · [Chinese README](../README.zh-CN.md)
 
-> A Create addon that brings living creatures into the factory.
+> A Create addon that plugs living creatures directly into the factory.
 
-Create: Biotech is a Create addon built around the idea of biological machine parts. Instead of adding a completely separate gameplay loop, it tries to plug living creatures directly into Create's existing stress, logistics, processing, and contraption systems.
+Create: Biotech is a Create addon that adds "biological components" to Create, plugging living creatures directly into its existing stress, logistics, processing, and contraption systems.
 
-**Mobs are not just sources of drops; they can become machine parts themselves.** Just as a blaze can serve as a burner, slimes can become drive components, ghasts can become balloons, spiders can become assembly stations, and squids, evokers, and creepers can each take on a mechanical role of their own.
+**Living creatures are not just sources of materials. They can become part of the machine itself.** Just as blazes can serve as burners, slimes can become transmission parts, ghasts can become balloons, spiders can become assembly stations, and squids, evokers, creepers, and more can each become a mechanism in their own right.
 
-## What's inside
+## Mod Features
 
-Here are some of the things you will find:
+You will probably run into things like these:
 
-- **Catch mobs with cardboard boxes.** Bring living resources in from the wild and into the factory.
-- **Biological power.** Use Power Belts to turn the running motion of living creatures into stress.
-- **You can process more than items.** Drop a small slime into a Basin and let the Mechanical Press handle it like any other ingredient.
-- **Lift, float, and roam.** Suspend your contraption beneath a ghast and let it carry you.
-- **Turn explosions into industry.** The Creeper Blast Chamber uses controlled explosions as part of your production line.
-- **Slime biomimetic creatures.** Shape slime into the form of other creatures.
-- **A full enchanting pipeline.** Let the Squid Printer handle copying while the Evoker Enchanting Chamber handles enchanting.
-- **Spider assembly stations.** Let eight legs take over parts of sequenced assembly.
-- **And more living machinery in the same spirit.** Slime universal joints, bone ratchets, Schrödinger's Cat, and more.
+- **Catch mobs with cardboard boxes.** Bring scattered living resources back to your factory.
+- **Biological power.** Use Power Belts to turn a creature's running force into Stress Units.
+- **Not just items, but creatures can be processed too.** Drop a small slime into a Basin and watch the Mechanical Press process it like any other raw material.
+- **Rise, float, and roam.** Hang your contraption beneath a ghast and let it carry you on a journey.
+- **Turn explosions into industry.** The Creeper Blast Chamber produces controlled explosions for your production line.
+- **Spider Assembly Table.** Let a spider's eight legs perform sequenced assembly for you.
+- **Shulker teleportation.** Use the power of shulkers to teleport creatures or packages.
+- **Slime mimic creatures.** Shape slime into the form of any creature.
+- **A complete enchanting production line.** Let the Squid Printer make copies for you, and let the Evoker Enchanting Chamber handle the enchanting.
+- **And more biomechanical contraptions in the same spirit.** Slime Universal Joints, Bone Ratchets, Schrodinger's Cat, and more.
 
-You do not need to memorize all of this. The mod includes carefully made Ponder scenes for all of its machines, so you can check what each part does and how it works.
+You do not need to memorize all of this. Every machine in the mod comes with carefully made Ponder scenes, created and exported with **[The Ponderer](https://modrinth.com/mod/the-ponderer)**.
 
-## Status
+## Current Status
 
-This is still an actively developed passion project. Content and balance may continue to change, and some parts are still rough around the edges. Feedback and bug reports are welcome, and so are strange new ideas.
+This is still a hobby project under active development. Content and balance may continue to change, and some parts are still a bit rough around the edges. Feedback and bug reports are welcome, and even more welcome are new strange and interesting ideas.
 
-If you want to read or contribute to the code, start at the [project README](../README.md).
+## Credits and Notice
+
+Parts of this mod's Butter Cat content were integrated and modified with permission from **[Sylvia](https://www.mcmod.cn/author/39181.html)**'s **[Create: Butter Cat](https://www.mcmod.cn/class/25765.html)**; parts of the Phantom logistics code were integrated and modified with permission from bilibili creators **[@改名字困难户](https://space.bilibili.com/286926825)** and **[@咖喱之恶魔](https://space.bilibili.com/3493112578050237)**'s **[Create Phantom](https://www.curseforge.com/minecraft/mc-mods/create-phantom)**.
+
+Thanks to the original creators for their work and for granting permission. The adapted content has been adjusted and modified to fit this mod's gameplay, while the rights to the original works and their assets remain with the original authors. See the separate [Permissions and Sources](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/PERMISSIONS.md) page for details.

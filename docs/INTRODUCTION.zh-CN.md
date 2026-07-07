@@ -1,6 +1,6 @@
 # 机械动力：生物科技 —— 玩家介绍
 
-[English](INTRODUCTION.md) · [中文](INTRODUCTION.zh-CN.md) · [README](../README.zh-CN.md) · [English README](../README.md)
+[English](INTRODUCTION.md) · [中文](INTRODUCTION.zh-CN.md) · [授权说明](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/PERMISSIONS.zh-CN.md) · [README](../README.zh-CN.md) · [English README](../README.md)
 
 > 一个把活体生物接进工厂里的机械动力附属模组。
 
@@ -17,15 +17,19 @@
 - **加工的不只是物品，还有生物。** 把小史莱姆扔进工作盆，看机械压机像处理任何原料那样处理它。
 - **能升、能飘、能漫游。** 把你的动态结构挂在恶魂上，让它带你旅行。
 - **把爆炸变成工艺。** 苦力怕爆破室产生可控爆炸服务于你的生产线。
+- **蜘蛛装配站。** 让蜘蛛的八只手替你进行序列装配。
+- **潜影传送。** 借助潜影贝的能力，传送生物或包裹。
 - **史莱姆拟态生物。** 把史莱姆塑形成任何生物的样子。
 - **完整的附魔流水线。** 鱿鱼打印机为你复印，唤魔者附魔室为你附魔。
-- **蜘蛛装配站。** 让蜘蛛的八只手替你进行序列装配。
 - **以及更多同样风格的生物机械。** 史莱姆万向节、骨制棘轮、薛定谔的猫……
 
-不需要把这些全部记住，本模组所有机械均有精心制作的思索，由模组思索者制作并导出。
+不需要把这些全部记住，本模组所有机械均有精心制作的思索，由模组 **[思索者](https://modrinth.com/mod/the-ponderer)** 制作并导出。
 
 ## 当前状态
 
 这是一个还在持续开发中的兴趣项目，内容和数值都可能继续调整，有些地方也还比较粗糙。欢迎反馈和 bug 报告，更欢迎更多有趣新奇的想法。
 
-如果你想阅读或贡献代码，请从[项目 README](../README.zh-CN.md) 开始。
+## 致谢与声明
+本模组的黄油猫部分内容经授权整合并修改自 **[Sylvia](https://www.mcmod.cn/author/39181.html)** 制作的 **[机械动力：黄油猫](https://www.mcmod.cn/class/25765.html)**；幻翼物流部分代码经授权整合并修改自 **bilibili [@改名字困难户](https://space.bilibili.com/286926825) [@咖喱之恶魔](https://space.bilibili.com/3493112578050237)** 制作的 **[Create Phantom](https://www.curseforge.com/minecraft/mc-mods/create-phantom)**。
+
+感谢以上原作者的创作与授权支持。相关内容已根据本模组玩法进行适配与修改，原作及其资源权利仍归原作者所有。详见[授权与来源说明](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/PERMISSIONS.zh-CN.md)。
