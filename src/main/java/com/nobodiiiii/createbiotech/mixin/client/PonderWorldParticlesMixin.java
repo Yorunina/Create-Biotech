@@ -93,6 +93,13 @@ public abstract class PonderWorldParticlesMixin {
 		// scene's rotation will undo it during render, leaving a screen-facing quad.
 		Matrix3f rot3 = new Matrix3f(sceneMatrix);
 		Quaternionf sceneRotation = rot3.normal().getNormalizedRotation(new Quaternionf());
+		// The scene matrix carries ponder's GUI scale (30 * scaleFactor, plus a Y-flip),
+		// which normal() does not remove, so the extracted quaternion is far from unit
+		// length. Vanilla tolerates that (JOML's Quaternionf.transform divides by |q|^2),
+		// but Sodium/Embeddium's particle fast path rotates quad corners with a raw
+		// hamilton product q*v*q', which scales them by |q|^2 — blowing every ponder
+		// particle up ~30x. Normalizing is a no-op for the vanilla path.
+		sceneRotation.normalize();
 		Quaternionf inverse = sceneRotation.invert(new Quaternionf());
 
 		BillboardCamera cam = new BillboardCamera();
