@@ -67,7 +67,7 @@ public final class AirCourierDeliveryService {
 						targetPlayerId, hudPlayerId, hudEntryId);
 					return DeliveryResult.done();
 				}
-				return finishPlayerDelivery(box, targetPlayer, hudPlayer, hudEntryId, returnMode, landingTarget);
+				return finishPlayerDelivery(box, targetPlayer, hudPlayer, hudEntryId, returnMode);
 			}
 			case PACKAGE_TO_AIRPORT -> {
 				if (targetPhantomPort == null) {
@@ -88,14 +88,11 @@ public final class AirCourierDeliveryService {
 				return DeliveryResult.done();
 			}
 			case CARRIER_RETURN_TO_PLAYER -> {
-				if (targetPlayer != null && AirCourierHelper.canReceiveCarrier(targetPlayer)) {
+				if (targetPlayer != null) {
 					AirCourierHelper.deliverCarrier(targetPlayer);
 					AirCourierHudSync.onCourierDelivered(targetPlayer, box, hudEntryId);
 				} else {
-					if (targetPlayer != null) {
-						AirCourierHudSync.onCourierFailed(targetPlayer, box, hudEntryId);
-					}
-					dropCarrierOnly(currentLevel, targetPlayer != null ? landingTarget : currentPosition);
+					dropCarrierOnly(currentLevel, currentPosition);
 				}
 				return DeliveryResult.done();
 			}
@@ -132,10 +129,9 @@ public final class AirCourierDeliveryService {
 	}
 
 	private static DeliveryResult finishPlayerDelivery(ItemStack box, ServerPlayer targetPlayer,
-		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode, Vec3 landingTarget) {
-		boolean packageDelivered = AirCourierHelper.deliverPackageOnly(targetPlayer, box);
+		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode) {
+		boolean packageDelivered = AirCourierHelper.deliverPackage(targetPlayer, box);
 		if (!packageDelivered) {
-			AirCourierHelper.dropPackageOnly(targetPlayer.serverLevel(), landingTarget, box);
 			AirCourierHudSync.onCourierFailed(targetPlayer, box, hudEntryId);
 			if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
 				AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
@@ -150,15 +146,14 @@ public final class AirCourierDeliveryService {
 		return switch (returnMode) {
 			case ALWAYS_RETURN -> DeliveryResult.returning();
 			case ALWAYS_DOCK -> {
-				if (!AirCourierHelper.deliverCarrier(targetPlayer)) {
-					dropCarrierOnly(targetPlayer.serverLevel(), landingTarget);
-				}
+				AirCourierHelper.deliverCarrier(targetPlayer);
 				yield DeliveryResult.done();
 			}
 			case RETURN_WHEN_UNABLE -> {
-				if (!packageDelivered || !AirCourierHelper.deliverCarrier(targetPlayer)) {
+				if (!packageDelivered || !AirCourierHelper.canReceiveCarrier(targetPlayer)) {
 					yield DeliveryResult.returning();
 				}
+				AirCourierHelper.deliverCarrier(targetPlayer);
 				yield DeliveryResult.done();
 			}
 		};

@@ -19,11 +19,12 @@ import net.minecraft.core.Vec3i;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.items.ItemHandlerHelper;
+import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 
 public final class AirCourierHelper {
 	private AirCourierHelper() {}
@@ -60,32 +61,35 @@ public final class AirCourierHelper {
 	}
 
 	public static boolean canReceiveDelivery(ServerPlayer player, ItemStack box) {
-		return canFitInInventory(player.getInventory(), box.copy());
+		return PackageItem.isPackage(box)
+			&& ItemHandlerHelper.insertItemStacked(new PlayerMainInvWrapper(player.getInventory()), box.copy(), true)
+				.isEmpty();
 	}
 
 	public static boolean deliverPackage(ServerPlayer player, ItemStack box) {
-		if (PackageItem.isPackage(box)) {
-			player.getInventory().placeItemBackInInventory(box.copy());
-			return true;
+		if (!PackageItem.isPackage(box)) {
+			return false;
 		}
-		return false;
+		ItemHandlerHelper.giveItemToPlayer(player, box.copy());
+		return true;
 	}
 
 	public static boolean deliverPackageOnly(ServerPlayer player, ItemStack box) {
 		if (!PackageItem.isPackage(box)) {
 			return false;
 		}
-		ItemStack copy = box.copy();
-		return canFitInInventory(player.getInventory(), copy) && player.getInventory().add(copy);
+		return ItemHandlerHelper.insertItemStacked(new PlayerMainInvWrapper(player.getInventory()), box.copy(), false)
+			.isEmpty();
 	}
 
 	public static boolean canReceiveCarrier(ServerPlayer player) {
-		return canFitInInventory(player.getInventory(), AllItems.MINI_PHANTOM.asStack());
+		return ItemHandlerHelper.insertItemStacked(new PlayerMainInvWrapper(player.getInventory()),
+			AllItems.MINI_PHANTOM.asStack(), true).isEmpty();
 	}
 
 	public static boolean deliverCarrier(ServerPlayer player) {
-		ItemStack carrier = AllItems.MINI_PHANTOM.asStack();
-		return canFitInInventory(player.getInventory(), carrier) && player.getInventory().add(carrier);
+		ItemHandlerHelper.giveItemToPlayer(player, AllItems.MINI_PHANTOM.asStack());
+		return true;
 	}
 
 	public static void dropPackage(ServerLevel level, Vec3 position, ItemStack box) {
@@ -97,49 +101,10 @@ public final class AirCourierHelper {
 
 	public static void dropPackageOnly(ServerLevel level, Vec3 position, ItemStack box) {
 		if (level != null && PackageItem.isPackage(box)) {
-			level.addFreshEntity(PackageEntity.fromItemStack(level, position, box.copy()));
+			PackageEntity packageEntity = PackageEntity.fromItemStack(level, position, box.copy());
+			packageEntity.insertionDelay = 0;
+			level.addFreshEntity(packageEntity);
 		}
-	}
-
-	private static boolean canFitInInventory(Inventory inventory, ItemStack... stacks) {
-		List<ItemStack> slots = new ArrayList<>();
-		for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-			slots.add(inventory.getItem(slot).copy());
-		}
-
-		for (ItemStack stack : stacks) {
-			ItemStack remaining = stack.copy();
-			if (remaining.isEmpty()) {
-				continue;
-			}
-			for (int slot = 0; slot < slots.size() && !remaining.isEmpty(); slot++) {
-				ItemStack existing = slots.get(slot);
-				if (existing.isEmpty() || !ItemStack.isSameItemSameTags(existing, remaining)) {
-					continue;
-				}
-				int limit = Math.min(existing.getMaxStackSize(), remaining.getMaxStackSize());
-				int move = Math.min(remaining.getCount(), limit - existing.getCount());
-				if (move <= 0) {
-					continue;
-				}
-				existing.grow(move);
-				remaining.shrink(move);
-			}
-			for (int slot = 0; slot < slots.size() && !remaining.isEmpty(); slot++) {
-				if (!slots.get(slot).isEmpty()) {
-					continue;
-				}
-				int move = Math.min(remaining.getCount(), remaining.getMaxStackSize());
-				ItemStack inserted = remaining.copy();
-				inserted.setCount(move);
-				slots.set(slot, inserted);
-				remaining.shrink(move);
-			}
-			if (!remaining.isEmpty()) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	public static TransportedItemStack createAlignedTransportedStack(ItemStack stack, Direction movementDirection) {
