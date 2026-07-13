@@ -12,9 +12,6 @@ import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
-import com.simibubi.create.foundation.gui.widget.Label;
-import com.simibubi.create.foundation.gui.widget.ScrollInput;
-import com.simibubi.create.foundation.gui.widget.SelectionScrollInput;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.yision.phantom.CreatePhantom;
 import com.yision.phantom.logistics.courier.AirCourierReturnMode;
@@ -58,8 +55,8 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 	private IconButton confirmButton;
 	private IconButton dontAcceptPackages;
 	private IconButton acceptPackages;
-	private ScrollInput returnModeInput;
-	private Label returnModeLabel;
+	private IconButton[] returnModeButtons;
+	private AirCourierReturnMode selectedReturnMode;
 	private ItemStack icon;
 	private List<Rect2i> extraAreas = Collections.emptyList();
 	private final List<Component> returnModeOptions = List.of(
@@ -120,13 +117,17 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 		dontAcceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_only"));
 		addRenderableWidget(dontAcceptPackages);
 
-		returnModeLabel = new Label(x + 83, y + WINDOW_HEIGHT - 19, Component.empty()).withShadow();
-		returnModeInput = new SelectionScrollInput(x + 78, y + WINDOW_HEIGHT - 25, 101, 18)
-			.forOptions(returnModeOptions)
-			.titled(Component.translatable("gui.createphantom.phantomport.return_mode"))
-			.setState(port().getReturnMode().id())
-			.writingTo(returnModeLabel);
-		addRenderableWidgets(returnModeInput, returnModeLabel);
+		int returnModeX = x + 102;
+		int returnModeY = y + WINDOW_HEIGHT - 24;
+		returnModeButtons = new IconButton[] {
+			createReturnModeButton(returnModeX, returnModeY, AirCourierReturnMode.ALWAYS_DOCK, AllIcons.I_STOP),
+			createReturnModeButton(returnModeX + 18, returnModeY, AirCourierReturnMode.ALWAYS_RETURN,
+				AllIcons.I_REFRESH),
+			createReturnModeButton(returnModeX + 36, returnModeY, AirCourierReturnMode.RETURN_WHEN_UNABLE,
+				AllIcons.I_ROTATE_PLACE_RETURNED)
+		};
+		addRenderableWidgets(returnModeButtons);
+		selectReturnMode(port().getReturnMode());
 
 		containerTick();
 
@@ -135,6 +136,22 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 
 	private int nameBoxX(String s, EditBox nameBox) {
 		return getGuiLeft() + WINDOW_WIDTH / 2 - (Math.min(font.width(s), nameBox.getWidth()) + 10) / 2;
+	}
+
+	private IconButton createReturnModeButton(int x, int y, AirCourierReturnMode mode, AllIcons icon) {
+		IconButton button = new IconButton(x, y, icon);
+		button.withCallback(() -> selectReturnMode(mode));
+		button.setToolTip(Component.translatable("gui.createphantom.phantomport.return_mode")
+			.append(": ")
+			.append(returnModeOptions.get(mode.id())));
+		return button;
+	}
+
+	private void selectReturnMode(AirCourierReturnMode mode) {
+		selectedReturnMode = mode;
+		for (AirCourierReturnMode option : AirCourierReturnMode.values()) {
+			returnModeButtons[option.id()].green = option == mode;
+		}
 	}
 
 	@Override
@@ -214,7 +231,7 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 	@Override
 	public void removed() {
 		CBPackets.sendToServer(new PhantomPortConfigurationPacket(menu.contentHolder.getBlockPos(),
-			addressBox.getValue(), acceptPackages.green, AirCourierReturnMode.byId(returnModeInput.getState())));
+			addressBox.getValue(), acceptPackages.green, selectedReturnMode));
 		super.removed();
 	}
 

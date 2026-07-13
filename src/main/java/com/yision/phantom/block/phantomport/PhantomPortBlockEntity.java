@@ -4,6 +4,8 @@ import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.yision.phantom.logistics.courier.AirCourierReturnMode;
+import net.createmod.catnip.animation.LerpedFloat;
+import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -37,8 +39,10 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	private final PhantomPortDispatchAccess dispatchAccess;
 	private final PhantomPortAutomation automation;
 	private final PhantomPortReturnQueue returnQueue;
+	private final LerpedFloat flap;
 	private final Set<UUID> landingCouriers = new HashSet<>();
 	private AirCourierReturnMode returnMode = AirCourierReturnMode.DEFAULT_FOR_PORT;
+	private boolean wasOpen;
 
 	public PhantomPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -48,6 +52,8 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		dispatchAccess = new PhantomPortDispatchAccess(this, portInventory, beltAccess);
 		automation = new PhantomPortAutomation(this, portInventory, beltAccess);
 		returnQueue = new PhantomPortReturnQueue(this, portInventory, beltAccess);
+		flap = createChasingFlap();
+		wasOpen = state.getValue(PhantomPortBlock.OPEN);
 	}
 
 	public PhantomPortBlockEntity(BlockPos pos, BlockState state) {
@@ -57,6 +63,10 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	public void tick() {
 		super.tick();
+		if (level != null && level.isClientSide()) {
+			tickFlap();
+			return;
+		}
 		if (!(level instanceof ServerLevel serverLevel)) {
 			return;
 		}
@@ -194,6 +204,25 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		}
 		level.playSound(null, worldPosition, open ? SoundEvents.BARREL_OPEN : SoundEvents.BARREL_CLOSE,
 			SoundSource.BLOCKS);
+	}
+
+	public float getFlap(float partialTicks) {
+		return flap.getValue(partialTicks);
+	}
+
+	private void tickFlap() {
+		boolean open = getBlockState().getValue(PhantomPortBlock.OPEN);
+		if (open != wasOpen) {
+			flap.setValue(open ? 1 : -1);
+			wasOpen = open;
+		}
+		flap.tickChaser();
+	}
+
+	private static LerpedFloat createChasingFlap() {
+		return LerpedFloat.linear()
+			.startWithValue(0)
+			.chase(0, .05f, Chaser.EXP);
 	}
 
 	public void setCourierLandingOpen(UUID courierId, boolean open) {

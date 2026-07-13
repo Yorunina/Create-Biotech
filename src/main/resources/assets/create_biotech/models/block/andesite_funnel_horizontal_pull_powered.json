@@ -1,0 +1,10 @@
+{
+  "parent": "create_biotech:block/funnel/block_horizontal",
+  "textures": {
+    "base": "create_biotech:block/funnel/andesite_funnel",
+    "block": "create_biotech:block/andesite_block",
+    "direction": "create_biotech:block/funnel/andesite_funnel_pull",
+    "particle": "create_biotech:block/andesite_block",
+    "redstone": "create_biotech:block/funnel/andesite_funnel_powered"
+  }
+}

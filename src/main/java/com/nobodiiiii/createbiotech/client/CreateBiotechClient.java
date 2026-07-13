@@ -52,6 +52,7 @@ import com.yision.phantom.block.phantomport.PhantomPortMenu;
 import com.yision.phantom.block.phantomport.PhantomPortScreen;
 import com.yision.phantom.client.gui.hud.AirCourierHudOverlay;
 import com.yision.phantom.client.render.AirCourierEntityRenderer;
+import com.yision.phantom.client.render.PhantomPortRenderer;
 import com.yision.phantom.item.miniphantom.MiniPhantomMenu;
 import com.yision.phantom.item.miniphantom.MiniPhantomScreen;
 import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
@@ -140,6 +141,7 @@ public class CreateBiotechClient {
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.SHULKER_TELEPORTER.get(), ShulkerTeleporterRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.BONE_RATCHET.get(), BoneRatchetRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.PETRI_DISH.get(), PetriDishRenderer::new);
+		event.registerBlockEntityRenderer(CBBlockEntityTypes.PHANTOMPORT.get(), PhantomPortRenderer::new);
 		event.registerEntityRenderer(CBEntityTypes.GHAST_HOT_AIR_BALLOON.get(),
 			GhastHotAirBalloonEntityRenderer::new);
 		event.registerEntityRenderer(CBEntityTypes.GHAST_HOT_AIR_BALLOON_SEAT.get(),
@@ -177,6 +179,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_open"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_closed"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/tray"));
+		event.register(PhantomPortRenderer.FLAP_MODEL_LOCATION);
 		event.register(CreateBiotech.asResource("item/shulker_package"));
 		event.register(CreateBiotech.asResource("item/cardboard_box"));
 		event.register(CreateBiotech.asResource("item/small_cardboard_box"));

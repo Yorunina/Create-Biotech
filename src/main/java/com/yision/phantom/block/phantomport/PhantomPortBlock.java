@@ -33,15 +33,11 @@ public class PhantomPortBlock extends HorizontalDirectionalBlock implements IWre
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final BooleanProperty OPEN = BooleanProperty.create("open");
 	private static final VoxelShape SHAPE_NORTH = Shapes.or(
-		box(0, 0, 0, 16, 2, 16),
-		box(1, 4, 5, 15, 13, 14),
-		box(2, 2, 2, 14, 13, 5),
-		box(2, 2, 14, 14, 4, 16),
-		box(0, 10, 0, 2, 14, 16),
-		box(1, 13, 1, 15, 16, 15),
-		box(14, 2, 0, 16, 4, 16),
-		box(0, 2, 0, 2, 4, 16),
-		box(14, 10, 0, 16, 14, 16)
+		box(0, 0, 2, 3, 16, 14),
+		box(13, 0, 2, 16, 16, 14),
+		box(3, 2, 11, 13, 16, 15),
+		box(3, 9, 1, 13, 16, 4),
+		box(3, 6, 3, 13, 8, 13)
 	);
 	private static final VoxelShape SHAPE_EAST = rotateY(SHAPE_NORTH);
 	private static final VoxelShape SHAPE_SOUTH = rotateY(SHAPE_EAST);
