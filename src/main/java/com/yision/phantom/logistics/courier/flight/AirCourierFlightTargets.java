@@ -117,6 +117,7 @@ public final class AirCourierFlightTargets {
 		}
 		double horizontalDist = AirCourierFlightMath.horizontalDistance(currentPos, landingTarget);
 		double approachDistance = Mth.clamp(horizontalDist * 0.22, 6.0, 18.0);
-		return landingTarget.add(approachDir.normalize().scale(approachDistance));
+		return landingTarget.add(approachDir.normalize().scale(approachDistance))
+			.add(0, profile.phantomPortApproachHeight(), 0);
 	}
 }

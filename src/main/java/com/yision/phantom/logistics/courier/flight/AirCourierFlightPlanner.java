@@ -107,9 +107,7 @@ public final class AirCourierFlightPlanner {
 	public static FlightStep landing(AirCourierFlightProfile profile,
 		Vec3 position, Vec3 currentMotion, Vec3 landingTarget,
 		double completionDistance, boolean playerTarget, boolean horizontalEntry) {
-		double distance = horizontalEntry
-			? AirCourierFlightMath.horizontalDistance(position, landingTarget)
-			: landingTarget.distanceTo(position);
+		double distance = landingTarget.distanceTo(position);
 		double normalizedDistance = Math.max(0.0, distance - completionDistance);
 
 		double speedFactor = Mth.clamp(normalizedDistance / profile.landingDecelerationRange(), 0.0, 1.0);
@@ -117,22 +115,44 @@ public final class AirCourierFlightPlanner {
 
 		double curveAmount = distanceResponsiveCurve(profile, normalizedDistance,
 			profile.landingCurveNear(), profile.landingCurveFar(), 0);
+		double horizontalDistance = AirCourierFlightMath.horizontalDistance(position, landingTarget);
+		double heightDistance = Math.abs(position.y - landingTarget.y);
+		double heightLevelingRange = Math.max(0.75, completionDistance * 4.0);
+		double levelingFactor = horizontalEntry
+			? Mth.clamp(1.0 - horizontalDistance / profile.landingDecelerationRange(), 0.0, 1.0)
+				* Mth.clamp(1.0 - heightDistance / heightLevelingRange, 0.0, 1.0)
+			: 0.0;
 		Vec3 steeringTarget = horizontalEntry
-			? new Vec3(landingTarget.x, position.y, landingTarget.z)
+			? new Vec3(landingTarget.x, Mth.lerp(levelingFactor * 0.85, landingTarget.y, position.y), landingTarget.z)
 			: landingTarget;
 		Vec3 motion = steerTowards(position, currentMotion, steeringTarget,
 			speed, curveAmount, profile.landingTurnDegrees());
 
 		if (horizontalEntry) {
-			motion = new Vec3(motion.x, 0, motion.z);
+			motion = new Vec3(motion.x,
+				Mth.clamp(motion.y * Mth.lerp(levelingFactor, 1.0, 0.12),
+					-profile.landingMaxDownSpeed(), profile.landingMaxUpSpeed()),
+				motion.z);
 		} else {
 			motion = new Vec3(motion.x,
 				Mth.clamp(motion.y, -profile.landingMaxDownSpeed(), profile.landingMaxUpSpeed()),
 				motion.z);
 		}
 
-		boolean complete = distance < completionDistance;
+		double completionTolerance = horizontalEntry ? Math.max(completionDistance, 0.45) : completionDistance;
+		boolean complete = distance < completionTolerance
+			|| (horizontalEntry && segmentDistanceTo(position, position.add(motion), landingTarget) < completionTolerance);
 		return new FlightStep(motion, complete);
+	}
+
+	private static double segmentDistanceTo(Vec3 from, Vec3 to, Vec3 point) {
+		Vec3 segment = to.subtract(from);
+		double segmentLengthSqr = segment.lengthSqr();
+		if (segmentLengthSqr < 1.0E-6) {
+			return from.distanceTo(point);
+		}
+		double t = Mth.clamp(point.subtract(from).dot(segment) / segmentLengthSqr, 0.0, 1.0);
+		return from.add(segment.scale(t)).distanceTo(point);
 	}
 
 	public static Vec3 steerTowards(Vec3 position, Vec3 currentMotion,
