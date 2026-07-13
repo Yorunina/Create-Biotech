@@ -74,6 +74,12 @@ public final class AirCourierFlightPlanner {
 	public static FlightStep cruise(AirCourierFlightProfile profile,
 		Vec3 position, Vec3 currentMotion, Vec3 approachGate, Vec3 landingTarget,
 		int phaseTicks, boolean playerTarget) {
+		return cruise(profile, position, currentMotion, approachGate, landingTarget, phaseTicks, playerTarget, false);
+	}
+
+	public static FlightStep cruise(AirCourierFlightProfile profile,
+		Vec3 position, Vec3 currentMotion, Vec3 approachGate, Vec3 landingTarget,
+		int phaseTicks, boolean playerTarget, boolean horizontalEntry) {
 		double distanceToGate = approachGate.distanceTo(position);
 		double distanceToLanding = landingTarget.distanceTo(position);
 		double horizontalToLanding = AirCourierFlightMath.horizontalDistance(position, landingTarget);
@@ -85,7 +91,8 @@ public final class AirCourierFlightPlanner {
 			profile.cruiseSpeed(), curveAmount, profile.cruiseTurnDegrees());
 
 		boolean complete = distanceToGate < profile.approachGateNearDistance()
-			|| (horizontalToLanding < profile.approachGateHorizontalThreshold() && position.y > landingTarget.y)
+			|| (!horizontalEntry && horizontalToLanding < profile.approachGateHorizontalThreshold()
+				&& position.y > landingTarget.y)
 			|| (playerTarget && distanceToLanding < profile.playerCompletionDistance());
 
 		return new FlightStep(motion, complete);
@@ -94,7 +101,15 @@ public final class AirCourierFlightPlanner {
 	public static FlightStep landing(AirCourierFlightProfile profile,
 		Vec3 position, Vec3 currentMotion, Vec3 landingTarget,
 		double completionDistance, boolean playerTarget) {
-		double distance = landingTarget.distanceTo(position);
+		return landing(profile, position, currentMotion, landingTarget, completionDistance, playerTarget, false);
+	}
+
+	public static FlightStep landing(AirCourierFlightProfile profile,
+		Vec3 position, Vec3 currentMotion, Vec3 landingTarget,
+		double completionDistance, boolean playerTarget, boolean horizontalEntry) {
+		double distance = horizontalEntry
+			? AirCourierFlightMath.horizontalDistance(position, landingTarget)
+			: landingTarget.distanceTo(position);
 		double normalizedDistance = Math.max(0.0, distance - completionDistance);
 
 		double speedFactor = Mth.clamp(normalizedDistance / profile.landingDecelerationRange(), 0.0, 1.0);
@@ -102,12 +117,19 @@ public final class AirCourierFlightPlanner {
 
 		double curveAmount = distanceResponsiveCurve(profile, normalizedDistance,
 			profile.landingCurveNear(), profile.landingCurveFar(), 0);
-		Vec3 motion = steerTowards(position, currentMotion, landingTarget,
+		Vec3 steeringTarget = horizontalEntry
+			? new Vec3(landingTarget.x, position.y, landingTarget.z)
+			: landingTarget;
+		Vec3 motion = steerTowards(position, currentMotion, steeringTarget,
 			speed, curveAmount, profile.landingTurnDegrees());
 
-		motion = new Vec3(motion.x,
-			Mth.clamp(motion.y, -profile.landingMaxDownSpeed(), profile.landingMaxUpSpeed()),
-			motion.z);
+		if (horizontalEntry) {
+			motion = new Vec3(motion.x, 0, motion.z);
+		} else {
+			motion = new Vec3(motion.x,
+				Mth.clamp(motion.y, -profile.landingMaxDownSpeed(), profile.landingMaxUpSpeed()),
+				motion.z);
+		}
 
 		boolean complete = distance < completionDistance;
 		return new FlightStep(motion, complete);

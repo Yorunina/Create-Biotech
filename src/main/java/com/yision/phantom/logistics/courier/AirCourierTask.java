@@ -9,6 +9,7 @@ import com.yision.phantom.logistics.courier.flight.AirCourierFlightProfile;
 import com.yision.phantom.logistics.courier.flight.AirCourierFlightTargets;
 import com.yision.phantom.logistics.courier.hud.AirCourierHudStatus;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -180,8 +181,9 @@ public final class AirCourierTask {
 		ResolvedTarget rt = resolveTarget(server);
 		if (rt == null) { doFail(server, currentLevel); return; }
 
-	Vec3 landingTarget = AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, rt.player);
-		Vec3 exitTarget = getInitialApproachGate(landingTarget, rt.player != null);
+		Direction entryFacing = horizontalEntryFacing(rt.phantomPort);
+		Vec3 landingTarget = landingTarget(rt.phantomPort, rt.player);
+		Vec3 exitTarget = getInitialApproachGate(landingTarget, rt.player != null, entryFacing);
 		AirCourierFlightPlanner.FlightStep step = AirCourierFlightPlanner.takeoff(FLIGHT,
 			position, motion, launchDirection, phaseTicks, takeoffTarget,
 			takeoffStart, takeoffInitialMotion, exitTarget);
@@ -221,10 +223,12 @@ public final class AirCourierTask {
 		ResolvedTarget rt = resolveTarget(server);
 		if (rt == null) { doFail(server, currentLevel); return; }
 
-		Vec3 landingTarget = AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, rt.player);
-		Vec3 approachGate = getApproachGate(landingTarget, rt.player != null);
+		boolean horizontalEntry = usesHorizontalPhantomPortEntry(rt.phantomPort);
+		Direction entryFacing = horizontalEntryFacing(rt.phantomPort);
+		Vec3 landingTarget = landingTarget(rt.phantomPort, rt.player);
+		Vec3 approachGate = getApproachGate(landingTarget, rt.player != null, entryFacing);
 		AirCourierFlightPlanner.FlightStep step = AirCourierFlightPlanner.cruise(FLIGHT,
-			position, motion, approachGate, landingTarget, phaseTicks, rt.player != null);
+			position, motion, approachGate, landingTarget, phaseTicks, rt.player != null, horizontalEntry);
 		motion = step.motion();
 
 		if (step.complete()) {
@@ -249,12 +253,13 @@ public final class AirCourierTask {
 			return;
 		}
 
+		boolean horizontalEntry = usesHorizontalPhantomPortEntry(rt.phantomPort);
 		Vec3 landingTarget = getSmoothedLandingTarget(
-			AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, rt.player), rt.player != null);
+			landingTarget(rt.phantomPort, rt.player), rt.player != null);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, rt.phantomPort, rt.player);
 
 		AirCourierFlightPlanner.FlightStep step = AirCourierFlightPlanner.landing(FLIGHT,
-			position, motion, landingTarget, completionDistance, rt.player != null);
+			position, motion, landingTarget, completionDistance, rt.player != null, horizontalEntry);
 		motion = step.motion();
 
 		if (step.complete() || (rt.player != null && hasReachedPlayer(rt.player))) {
@@ -300,7 +305,7 @@ public final class AirCourierTask {
 	}
 
 	private Vec3 computeNearTargetSpawn(@Nullable PhantomPortBlockEntity phantomPort, @Nullable ServerPlayer targetPlayer) {
-		Vec3 landingTarget = AirCourierFlightTargets.landingTarget(FLIGHT, phantomPort, targetPlayer);
+		Vec3 landingTarget = landingTarget(phantomPort, targetPlayer);
 		Vec3 cruiseTarget = AirCourierFlightTargets.cruiseTarget(FLIGHT, phantomPort, targetPlayer);
 
 		Vec3 away = new Vec3(position.x - landingTarget.x, 0, position.z - landingTarget.z);
@@ -351,7 +356,7 @@ public final class AirCourierTask {
 			rt.level.getChunkAt(targetPhantomPortPos);
 		}
 
-		position = AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, rt.player);
+		position = landingTarget(rt.phantomPort, rt.player);
 		currentDimension = rt.level.dimension();
 		doFinishDeliveryAt(server, rt.level);
 	}
@@ -371,7 +376,7 @@ public final class AirCourierTask {
 
 		ResolvedTarget rt = resolveTarget(server);
 		Vec3 landingTarget = rt != null
-			? AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, rt.player)
+			? landingTarget(rt.phantomPort, rt.player)
 			: position;
 
 		setLandingOpen(rt != null ? rt.level : null, rt != null ? rt.phantomPort : null, false);
@@ -396,7 +401,7 @@ public final class AirCourierTask {
 		if (currentLevel == null) { markRemoved(); return; }
 
 		ResolvedTarget rt = resolveTarget(server);
-		Vec3 dropTarget = rt != null ? AirCourierFlightTargets.landingTarget(FLIGHT, rt.phantomPort, null) : position;
+		Vec3 dropTarget = rt != null ? landingTarget(rt.phantomPort, null) : position;
 		Vec3 dropPos = rt != null && rt.phantomPort != null ? dropTarget : position;
 
 		setLandingOpen(rt != null ? rt.level : null, rt != null ? rt.phantomPort : null, false);
@@ -481,14 +486,18 @@ public final class AirCourierTask {
 		}
 	}
 
-	private Vec3 getInitialApproachGate(Vec3 landingTarget, boolean playerTarget) {
+	private Vec3 getInitialApproachGate(Vec3 landingTarget, boolean playerTarget,
+		@Nullable Direction horizontalEntryFacing) {
 		Vec3 gatePos = takeoffTarget != null ? takeoffTarget : position;
 		Vec3 gateMotion = takeoffMotion != null ? takeoffMotion : motion;
-		return AirCourierFlightTargets.approachGate(FLIGHT, gatePos, gateMotion, landingTarget, playerTarget);
+		return AirCourierFlightTargets.approachGate(FLIGHT, gatePos, gateMotion, landingTarget,
+			playerTarget, horizontalEntryFacing);
 	}
 
-	private Vec3 getApproachGate(Vec3 landingTarget, boolean playerTarget) {
-		Vec3 nextGate = AirCourierFlightTargets.approachGate(FLIGHT, position, motion, landingTarget, playerTarget);
+	private Vec3 getApproachGate(Vec3 landingTarget, boolean playerTarget,
+		@Nullable Direction horizontalEntryFacing) {
+		Vec3 nextGate = AirCourierFlightTargets.approachGate(FLIGHT, position, motion, landingTarget,
+			playerTarget, horizontalEntryFacing);
 		if (cachedApproachGate == null || !playerTarget) {
 			cachedApproachGate = cachedApproachGate == null ? nextGate : cachedApproachGate;
 			return cachedApproachGate;
@@ -509,6 +518,21 @@ public final class AirCourierTask {
 			smoothedLandingTarget = smoothedLandingTarget.lerp(landingTarget, FLIGHT.playerLandingTargetLerp());
 		}
 		return smoothedLandingTarget;
+	}
+
+	private Vec3 landingTarget(@Nullable PhantomPortBlockEntity phantomPort, @Nullable ServerPlayer targetPlayer) {
+		return AirCourierFlightTargets.landingTarget(FLIGHT, phantomPort, targetPlayer,
+			usesHorizontalPhantomPortEntry(phantomPort));
+	}
+
+	private @Nullable Direction horizontalEntryFacing(@Nullable PhantomPortBlockEntity phantomPort) {
+		return usesHorizontalPhantomPortEntry(phantomPort)
+			? AirCourierFlightTargets.phantomPortFacing(phantomPort)
+			: null;
+	}
+
+	private boolean usesHorizontalPhantomPortEntry(@Nullable PhantomPortBlockEntity phantomPort) {
+		return mission == AirCourierEntity.Mission.CARRIER_RETURN && phantomPort != null;
 	}
 
 	private boolean hasReachedPlayer(ServerPlayer targetPlayer) {
@@ -623,14 +647,14 @@ public final class AirCourierTask {
 	private int estimateCruiseTicksFrom(Vec3 from, @Nullable PhantomPortBlockEntity phantomPort,
 		@Nullable ServerPlayer targetPlayer) {
 		Vec3 cruiseTarget = AirCourierFlightTargets.cruiseTarget(FLIGHT, phantomPort, targetPlayer);
-		Vec3 landingTarget = AirCourierFlightTargets.landingTarget(FLIGHT, phantomPort, targetPlayer);
+		Vec3 landingTarget = landingTarget(phantomPort, targetPlayer);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, phantomPort, targetPlayer);
 		return AirCourierFlightEstimate.cruiseAndLandingTicks(FLIGHT, from, cruiseTarget, landingTarget,
 			completionDistance, targetPlayer != null);
 	}
 
 	private int estimateLandingTicks(@Nullable PhantomPortBlockEntity phantomPort, @Nullable ServerPlayer targetPlayer) {
-		Vec3 landingTarget = AirCourierFlightTargets.landingTarget(FLIGHT, phantomPort, targetPlayer);
+		Vec3 landingTarget = landingTarget(phantomPort, targetPlayer);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, phantomPort, targetPlayer);
 		return AirCourierFlightEstimate.landingTicks(FLIGHT, position, landingTarget, completionDistance);
 	}
