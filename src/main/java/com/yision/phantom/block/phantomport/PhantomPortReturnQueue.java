@@ -89,7 +89,11 @@ final class PhantomPortReturnQueue {
 		if (!(port.getLevel() instanceof ServerLevel) || returnDimension == null || returnPos == null) {
 			return false;
 		}
-		return beltAccess.tryInsertToLaunchBelt(MiniPhantomItem.returningTo(returnDimension, returnPos));
+		boolean queued = beltAccess.tryInsertToLaunchBelt(MiniPhantomItem.returningTo(returnDimension, returnPos));
+		if (queued) {
+			port.flap(false);
+		}
+		return queued;
 	}
 
 	boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId, int delayTicks) {
@@ -165,6 +169,7 @@ final class PhantomPortReturnQueue {
 			return false;
 		}
 		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
+			port.flap(false);
 			port.markPortContentsChanged();
 			return true;
 		}
@@ -193,6 +198,7 @@ final class PhantomPortReturnQueue {
 			return false;
 		}
 		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
+			port.flap(false);
 			port.markPortContentsChanged();
 			return true;
 		}

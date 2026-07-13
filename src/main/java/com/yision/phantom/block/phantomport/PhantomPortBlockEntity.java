@@ -1,7 +1,9 @@
 package com.yision.phantom.block.phantomport;
 
-import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
+import com.nobodiiiii.createbiotech.network.CBPackets;
+import com.simibubi.create.AllSoundEvents;
+import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.yision.phantom.logistics.courier.AirCourierReturnMode;
 import net.createmod.catnip.animation.LerpedFloat;
@@ -42,7 +44,6 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	private final LerpedFloat flap;
 	private final Set<UUID> landingCouriers = new HashSet<>();
 	private AirCourierReturnMode returnMode = AirCourierReturnMode.DEFAULT_FOR_PORT;
-	private boolean wasOpen;
 
 	public PhantomPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -53,7 +54,6 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		automation = new PhantomPortAutomation(this, portInventory, beltAccess);
 		returnQueue = new PhantomPortReturnQueue(this, portInventory, beltAccess);
 		flap = createChasingFlap();
-		wasOpen = state.getValue(PhantomPortBlock.OPEN);
 	}
 
 	public PhantomPortBlockEntity(BlockPos pos, BlockState state) {
@@ -63,8 +63,8 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	public void tick() {
 		super.tick();
+		flap.tickChaser();
 		if (level != null && level.isClientSide()) {
-			tickFlap();
 			return;
 		}
 		if (!(level instanceof ServerLevel serverLevel)) {
@@ -152,7 +152,11 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receivePackage(ItemStack box) {
-		return portInventory.receivePackage(box);
+		boolean received = portInventory.receivePackage(box);
+		if (received) {
+			flap(true);
+		}
+		return received;
 	}
 
 	public boolean canReceiveCarrier() {
@@ -160,11 +164,19 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receiveCarrier() {
-		return portInventory.receiveCarrier();
+		boolean received = portInventory.receiveCarrier();
+		if (received) {
+			flap(true);
+		}
+		return received;
 	}
 
 	public boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId, int delayTicks) {
-		return returnQueue.receivePackageAndScheduleCarrierReturnToPlayer(box, playerId, delayTicks);
+		boolean received = returnQueue.receivePackageAndScheduleCarrierReturnToPlayer(box, playerId, delayTicks);
+		if (received) {
+			flap(true);
+		}
+		return received;
 	}
 
 	public boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId) {
@@ -194,7 +206,11 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 
 	public CourierReceiveResult receivePackageAndHandleCarrier(ItemStack box,
 		@Nullable ResourceKey<net.minecraft.world.level.Level> returnDimension, @Nullable BlockPos returnPos) {
-		return returnQueue.receivePackageAndHandleCarrier(box, returnDimension, returnPos);
+		CourierReceiveResult result = returnQueue.receivePackageAndHandleCarrier(box, returnDimension, returnPos);
+		if (result != CourierReceiveResult.REJECTED) {
+			flap(true);
+		}
+		return result;
 	}
 
 	@Override
@@ -210,18 +226,21 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 		return flap.getValue(partialTicks);
 	}
 
-	private void tickFlap() {
-		boolean open = getBlockState().getValue(PhantomPortBlock.OPEN);
-		if (open != wasOpen) {
-			flap.setValue(open ? 1 : -1);
-			wasOpen = open;
+	public void flap(boolean inward) {
+		if (level == null) {
+			return;
 		}
-		flap.tickChaser();
+		if (!level.isClientSide()) {
+			CBPackets.send(packetTarget(), new PhantomPortFlapPacket(this, inward));
+		} else {
+			flap.setValue(inward ? -1 : 1);
+			AllSoundEvents.FUNNEL_FLAP.playAt(level, worldPosition, 1, 1, true);
+		}
 	}
 
 	private static LerpedFloat createChasingFlap() {
 		return LerpedFloat.linear()
-			.startWithValue(0)
+			.startWithValue(.25f)
 			.chase(0, .05f, Chaser.EXP);
 	}
 

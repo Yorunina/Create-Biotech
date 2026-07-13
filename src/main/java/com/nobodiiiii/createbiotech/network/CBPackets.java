@@ -14,6 +14,7 @@ import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterC
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueRemovalPacket;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueSelectionPacket;
 import com.yision.phantom.block.phantomport.PhantomPortConfigurationPacket;
+import com.yision.phantom.block.phantomport.PhantomPortFlapPacket;
 import com.yision.phantom.network.courier.AirCourierHudPacket;
 import com.yision.phantom.network.phantom.MiniPhantomConfirmPacket;
 
@@ -23,11 +24,12 @@ import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkEvent.Context;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.PacketDistributor.PacketTarget;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class CBPackets {
 
-	private static final String NETWORK_VERSION = "7";
+	private static final String NETWORK_VERSION = "8";
 	private static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder.named(CreateBiotech.asResource("main"))
 		.serverAcceptedVersions(NETWORK_VERSION::equals)
 		.clientAcceptedVersions(NETWORK_VERSION::equals)
@@ -72,6 +74,9 @@ public class CBPackets {
 		register(PhantomPortConfigurationPacket.class, PhantomPortConfigurationPacket::new,
 			PhantomPortConfigurationPacket::write, (packet, context) -> packet.handle(context),
 			NetworkDirection.PLAY_TO_SERVER);
+		register(PhantomPortFlapPacket.class, PhantomPortFlapPacket::new,
+			PhantomPortFlapPacket::write, PhantomPortFlapPacket::handle,
+			NetworkDirection.PLAY_TO_CLIENT);
 		register(AirCourierHudPacket.class, AirCourierHudPacket::new,
 			AirCourierHudPacket::write, AirCourierHudPacket::handle,
 			NetworkDirection.PLAY_TO_CLIENT);
@@ -83,6 +88,10 @@ public class CBPackets {
 
 	public static void sendToTrackingEntity(Object packet, Entity entity) {
 		CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> entity), packet);
+	}
+
+	public static void send(PacketTarget target, Object packet) {
+		CHANNEL.send(target, packet);
 	}
 
 	public static void sendToPlayer(Object packet, net.minecraft.server.level.ServerPlayer player) {

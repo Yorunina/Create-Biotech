@@ -61,7 +61,11 @@ final class PhantomPortAutomation {
 		if (extracted.isEmpty()) {
 			return false;
 		}
-		return inventory.addPackage(extracted, false);
+		boolean inserted = inventory.addPackage(extracted, false);
+		if (inserted) {
+			port.flap(true);
+		}
+		return inserted;
 	}
 
 	private boolean isAutomatedInputSide(Direction side) {

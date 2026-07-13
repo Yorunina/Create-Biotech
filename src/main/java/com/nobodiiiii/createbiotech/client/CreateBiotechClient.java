@@ -53,6 +53,7 @@ import com.yision.phantom.block.phantomport.PhantomPortScreen;
 import com.yision.phantom.client.gui.hud.AirCourierHudOverlay;
 import com.yision.phantom.client.render.AirCourierEntityRenderer;
 import com.yision.phantom.client.render.PhantomPortRenderer;
+import com.yision.phantom.client.render.PhantomPortVisual;
 import com.yision.phantom.item.miniphantom.MiniPhantomMenu;
 import com.yision.phantom.item.miniphantom.MiniPhantomScreen;
 import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
@@ -238,6 +239,9 @@ public class CreateBiotechClient {
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.SHULKER_PACKAGER.get())
 				.factory(ShulkerPackagerVisual::new)
 				.neverSkipVanillaRender()
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.PHANTOMPORT.get())
+				.factory(PhantomPortVisual::new)
 				.apply();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.BONE_RATCHET.get())
 				.factory((context, blockEntity, partialTick) -> new EncasedCogVisual(context, blockEntity, false,

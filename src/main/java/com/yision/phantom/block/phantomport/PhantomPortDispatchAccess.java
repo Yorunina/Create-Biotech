@@ -73,6 +73,7 @@ final class PhantomPortDispatchAccess {
 
 		notifyPreparingPlayer(serverLevel, candidate, phantomStack);
 		pendingHudEntries.remove(candidate.packageSlot());
+		port.flap(false);
 		port.markPortContentsChanged();
 		return true;
 	}

@@ -8,6 +8,7 @@ import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRende
 import com.yision.phantom.block.phantomport.PhantomPortBlock;
 import com.yision.phantom.block.phantomport.PhantomPortBlockEntity;
 
+import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.createmod.catnip.math.VecHelper;
 import net.createmod.catnip.render.CachedBuffers;
@@ -22,8 +23,8 @@ import net.minecraft.world.phys.Vec3;
 
 public class PhantomPortRenderer extends SmartBlockEntityRenderer<PhantomPortBlockEntity> {
 	public static final ResourceLocation FLAP_MODEL_LOCATION = CreateBiotech.asResource("block/phantomport/flap");
-	private static final PartialModel FLAP = PartialModel.of(FLAP_MODEL_LOCATION);
-	private static final Vec3 FLAP_PIVOT = VecHelper.voxelSpace(0, 1, 1.5f);
+	public static final PartialModel FLAP = PartialModel.of(FLAP_MODEL_LOCATION);
+	public static final Vec3 FLAP_PIVOT = VecHelper.voxelSpace(0, 1, 1.5f);
 
 	public PhantomPortRenderer(BlockEntityRendererProvider.Context context) {
 		super(context);
@@ -33,6 +34,10 @@ public class PhantomPortRenderer extends SmartBlockEntityRenderer<PhantomPortBlo
 	protected void renderSafe(PhantomPortBlockEntity be, float partialTicks, PoseStack ms, MultiBufferSource buffer,
 		int light, int overlay) {
 		super.renderSafe(be, partialTicks, ms, buffer, light, overlay);
+
+		if (VisualizationManager.supportsVisualization(be.getLevel())) {
+			return;
+		}
 
 		BlockState blockState = be.getBlockState();
 		Direction facing = blockState.getValue(PhantomPortBlock.FACING);

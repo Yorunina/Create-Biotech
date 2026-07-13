@@ -88,21 +88,26 @@ final class PhantomPortInventory {
 	}
 
 	private @NotNull ItemStack insertIntoCombinedSlot(int slot, @NotNull ItemStack stack, boolean simulate) {
+		ItemStack remainder;
 		if (stack.is(AllItems.MINI_PHANTOM.get())) {
 			if (!isCarrierSlot(slot) || !isEmptyCarrier(stack)) {
 				return stack;
 			}
-			return carrierInventory.insertItem(0, stack, simulate);
-		}
-		if (!PackageItem.isPackage(stack) || !isPackageSlot(slot)) {
+			remainder = carrierInventory.insertItem(0, stack, simulate);
+		} else if (!PackageItem.isPackage(stack) || !isPackageSlot(slot)) {
 			return stack;
+		} else {
+			String filterString = port.getFilterString();
+			if (filterString != null && !PhantomAddressRules.isBlank(filterString)
+				&& PhantomAddressRules.matchesPackage(stack, filterString)) {
+				return stack;
+			}
+			remainder = port.inventory.insertItem(slot, stack, simulate);
 		}
-		String filterString = port.getFilterString();
-		if (filterString != null && !PhantomAddressRules.isBlank(filterString)
-			&& PhantomAddressRules.matchesPackage(stack, filterString)) {
-			return stack;
+		if (!simulate && remainder.getCount() != stack.getCount()) {
+			port.flap(true);
 		}
-		return port.inventory.insertItem(slot, stack, simulate);
+		return remainder;
 	}
 
 	private @NotNull ItemStack extractFromCombinedSlot(int slot, int amount, boolean simulate) {
@@ -123,6 +128,7 @@ final class PhantomPortInventory {
 			? carrierInventory.extractItem(0, amount, simulate)
 			: port.inventory.extractItem(slot, amount, simulate);
 		if (!simulate && !extracted.isEmpty()) {
+			port.flap(false);
 			port.markPortContentsChanged();
 		}
 		return extracted;
