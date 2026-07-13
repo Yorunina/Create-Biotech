@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class AirCourierFlightPlanner {
 
+	private static final double FACE_ENTRY_DOCKING_RADIUS = 0.45;
+
 	private AirCourierFlightPlanner() {}
 
 	public record FlightStep(Vec3 motion, boolean complete) {}
@@ -139,10 +141,20 @@ public final class AirCourierFlightPlanner {
 				motion.z);
 		}
 
-		double completionTolerance = horizontalEntry ? Math.max(completionDistance, 0.45) : completionDistance;
-		boolean complete = distance < completionTolerance
-			|| (horizontalEntry && segmentDistanceTo(position, position.add(motion), landingTarget) < completionTolerance);
+		boolean complete = horizontalEntry
+			? reachesFaceEntryDockingVolume(position, motion, landingTarget, completionDistance)
+			: distance < completionDistance;
 		return new FlightStep(motion, complete);
+	}
+
+	private static boolean reachesFaceEntryDockingVolume(Vec3 position, Vec3 motion,
+		Vec3 landingTarget, double completionDistance) {
+		double radius = faceEntryDockingRadius(completionDistance);
+		return segmentDistanceTo(position, position.add(motion), landingTarget) < radius;
+	}
+
+	static double faceEntryDockingRadius(double completionDistance) {
+		return Math.max(completionDistance, FACE_ENTRY_DOCKING_RADIUS);
 	}
 
 	private static double segmentDistanceTo(Vec3 from, Vec3 to, Vec3 point) {

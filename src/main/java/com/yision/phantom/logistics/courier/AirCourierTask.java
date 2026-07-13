@@ -223,12 +223,12 @@ public final class AirCourierTask {
 		ResolvedTarget rt = resolveTarget(server);
 		if (rt == null) { doFail(server, currentLevel); return; }
 
-		boolean horizontalEntry = usesHorizontalPhantomPortEntry(rt.phantomPort);
+		boolean phantomPortDocking = usesPhantomPortDockingPath(rt.phantomPort);
 		Direction entryFacing = horizontalEntryFacing(rt.phantomPort);
 		Vec3 landingTarget = landingTarget(rt.phantomPort, rt.player);
 		Vec3 approachGate = getApproachGate(landingTarget, rt.player != null, entryFacing);
 		AirCourierFlightPlanner.FlightStep step = AirCourierFlightPlanner.cruise(FLIGHT,
-			position, motion, approachGate, landingTarget, phaseTicks, rt.player != null, horizontalEntry);
+			position, motion, approachGate, landingTarget, phaseTicks, rt.player != null, phantomPortDocking);
 		motion = step.motion();
 
 		if (step.complete()) {
@@ -253,16 +253,19 @@ public final class AirCourierTask {
 			return;
 		}
 
-		boolean horizontalEntry = usesHorizontalPhantomPortEntry(rt.phantomPort);
+		boolean phantomPortDocking = usesPhantomPortDockingPath(rt.phantomPort);
 		Vec3 landingTarget = getSmoothedLandingTarget(
 			landingTarget(rt.phantomPort, rt.player), rt.player != null);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, rt.phantomPort, rt.player);
 
 		AirCourierFlightPlanner.FlightStep step = AirCourierFlightPlanner.landing(FLIGHT,
-			position, motion, landingTarget, completionDistance, rt.player != null, horizontalEntry);
+			position, motion, landingTarget, completionDistance, rt.player != null, phantomPortDocking);
 		motion = step.motion();
 
 		if (step.complete() || (rt.player != null && hasReachedPlayer(rt.player))) {
+			if (phantomPortDocking) {
+				position = landingTarget;
+			}
 			doFinishDelivery(server, currentLevel);
 			return;
 		}
@@ -522,17 +525,17 @@ public final class AirCourierTask {
 
 	private Vec3 landingTarget(@Nullable PhantomPortBlockEntity phantomPort, @Nullable ServerPlayer targetPlayer) {
 		return AirCourierFlightTargets.landingTarget(FLIGHT, phantomPort, targetPlayer,
-			usesHorizontalPhantomPortEntry(phantomPort));
+			usesPhantomPortDockingPath(phantomPort));
 	}
 
 	private @Nullable Direction horizontalEntryFacing(@Nullable PhantomPortBlockEntity phantomPort) {
-		return usesHorizontalPhantomPortEntry(phantomPort)
+		return usesPhantomPortDockingPath(phantomPort)
 			? AirCourierFlightTargets.phantomPortFacing(phantomPort)
 			: null;
 	}
 
-	private boolean usesHorizontalPhantomPortEntry(@Nullable PhantomPortBlockEntity phantomPort) {
-		return mission == AirCourierEntity.Mission.CARRIER_RETURN && phantomPort != null;
+	private boolean usesPhantomPortDockingPath(@Nullable PhantomPortBlockEntity phantomPort) {
+		return phantomPort != null;
 	}
 
 	private boolean hasReachedPlayer(ServerPlayer targetPlayer) {
@@ -650,13 +653,14 @@ public final class AirCourierTask {
 		Vec3 landingTarget = landingTarget(phantomPort, targetPlayer);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, phantomPort, targetPlayer);
 		return AirCourierFlightEstimate.cruiseAndLandingTicks(FLIGHT, from, cruiseTarget, landingTarget,
-			completionDistance, targetPlayer != null);
+			completionDistance, targetPlayer != null, horizontalEntryFacing(phantomPort));
 	}
 
 	private int estimateLandingTicks(@Nullable PhantomPortBlockEntity phantomPort, @Nullable ServerPlayer targetPlayer) {
 		Vec3 landingTarget = landingTarget(phantomPort, targetPlayer);
 		double completionDistance = AirCourierFlightTargets.completionDistance(FLIGHT, phantomPort, targetPlayer);
-		return AirCourierFlightEstimate.landingTicks(FLIGHT, position, landingTarget, completionDistance);
+		return AirCourierFlightEstimate.landingTicks(FLIGHT, position, landingTarget, completionDistance,
+			usesPhantomPortDockingPath(phantomPort));
 	}
 
 	private AirCourierHudStatus getHudStatus() {
