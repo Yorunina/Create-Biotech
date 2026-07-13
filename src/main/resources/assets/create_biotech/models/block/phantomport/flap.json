@@ -1,8 +1,8 @@
 {
   "credit": "Made with Blockbench",
   "textures": {
-    "base": "create_biotech:block/funnel/andesite_funnel",
-    "particle": "create_biotech:block/andesite_block"
+    "base": "create:block/funnel/andesite_funnel",
+    "particle": "create:block/andesite_block"
   },
   "elements": [
     {
