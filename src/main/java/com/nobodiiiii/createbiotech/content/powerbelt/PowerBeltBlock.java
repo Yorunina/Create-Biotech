@@ -24,6 +24,7 @@ import com.simibubi.create.content.logistics.funnel.FunnelBlock;
 import com.simibubi.create.content.logistics.tunnel.BeltTunnelBlock;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
+import com.yision.phantom.block.phantomport.PhantomPortBlock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -426,6 +427,8 @@ public class PowerBeltBlock extends HorizontalKineticBlock implements IBE<PowerB
 		if (FunnelBlock.isFunnel(blockState) && FunnelBlock.getFunnelFacing(blockState) != Direction.UP)
 			return false;
 		if (blockState.getBlock() instanceof BeltTunnelBlock)
+			return false;
+		if (blockState.getBlock() instanceof PhantomPortBlock)
 			return false;
 		return true;
 	}

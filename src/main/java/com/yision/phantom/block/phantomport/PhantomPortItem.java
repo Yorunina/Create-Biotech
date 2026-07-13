@@ -1,5 +1,6 @@
 package com.yision.phantom.block.phantomport;
 
+import com.simibubi.create.content.kinetics.belt.BeltBlock;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
 import com.simibubi.create.content.kinetics.belt.BeltHelper;
@@ -22,9 +23,14 @@ public class PhantomPortItem extends BlockItem {
 		BlockState state) {
 		boolean updated = super.updateCustomBlockEntityTag(pos, world, player, stack, state);
 		if (!world.isClientSide) {
-			BeltBlockEntity belt = BeltHelper.getSegmentBE(world, pos.below());
+			BlockPos beltPos = pos.below();
+			BeltBlockEntity belt = BeltHelper.getSegmentBE(world, beltPos);
 			if (belt != null && belt.casing == CasingType.NONE) {
 				belt.setCasingType(CasingType.ANDESITE);
+			}
+			BlockState beltState = world.getBlockState(beltPos);
+			if (beltState.getBlock() instanceof BeltBlock beltBlock) {
+				beltBlock.updateCoverProperty(world, beltPos, beltState);
 			}
 		}
 		return updated;

@@ -39,6 +39,7 @@ import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import com.simibubi.create.foundation.block.render.MultiPosDestructionHandler;
 import com.simibubi.create.foundation.block.render.ReducedDestroyEffects;
 import com.simibubi.create.foundation.item.ItemHelper;
+import com.yision.phantom.block.phantomport.PhantomPortBlock;
 
 import net.createmod.catnip.data.Iterate;
 import net.createmod.catnip.math.VecHelper;
@@ -558,6 +559,8 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 		if (FunnelBlock.isFunnel(blockState) && FunnelBlock.getFunnelFacing(blockState) != Direction.UP)
 			return false;
 		if (blockState.getBlock() instanceof BeltTunnelBlock)
+			return false;
+		if (blockState.getBlock() instanceof PhantomPortBlock)
 			return false;
 		return true;
 	}
