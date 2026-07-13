@@ -17,7 +17,6 @@ import com.nobodiiiii.createbiotech.content.explosionproofitemvault.ExplosionPro
 import com.nobodiiiii.createbiotech.content.cardboardbox.LargeCardboardBoxItem;
 import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltConnectorItem;
 import com.nobodiiiii.createbiotech.content.powerbelt.PowerBeltConnectorItem;
-import com.nobodiiiii.createbiotech.content.phantom.CapturedPhantomItem;
 import com.nobodiiiii.createbiotech.content.processing.basin.CapturedSmallSlimeItem;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltConnectorItem;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueItem;
@@ -108,9 +107,6 @@ public class CBItems {
 
 	public static final RegistryObject<Item> CAPTURED_SMALL_SLIME = ITEMS.register("captured_small_slime",
 		() -> new CapturedSmallSlimeItem(new Item.Properties().stacksTo(4)));
-
-	public static final RegistryObject<Item> CAPTURED_PHANTOM = ITEMS.register("captured_phantom",
-		() -> new CapturedPhantomItem(new Item.Properties().stacksTo(1)));
 
 	public static final RegistryObject<Item> UNIVERSAL_JOINT = ITEMS.register("universal_joint",
 		() -> new UniversalJointItem(new Item.Properties()));

@@ -1,6 +1,6 @@
 {
   "parent": "create_biotech:block/phantomport/block",
   "textures": {
-    "front": "create_biotech:block/phantomport/phantom_port_on"
+    "front": "create_biotech:block/phantomport/phantomport_on"
   }
 }

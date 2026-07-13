@@ -4,7 +4,7 @@
 	"parent": "block/block",
 	"texture_size": [32, 32],
 	"textures": {
-		"0": "create_biotech:block/phantomport/phantom_port",
+		"0": "create_biotech:block/phantomport/phantomport",
 		"7": "create_biotech:block/phantomport/mini_phantom",
 		"back": "create:block/funnel/funnel_back",
 		"base": "create:block/funnel/andesite_funnel",

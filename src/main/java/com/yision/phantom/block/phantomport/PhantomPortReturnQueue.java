@@ -215,7 +215,7 @@ final class PhantomPortReturnQueue {
 					entry.putString("Type", "player");
 					entry.putUUID("PlayerId", task.playerId());
 				} else {
-					entry.putString("Type", "phantom_port");
+					entry.putString("Type", "phantomport");
 					if (task.dimension() != null) {
 						entry.putString("Dimension", task.dimension().location().toString());
 					}
@@ -242,7 +242,7 @@ final class PhantomPortReturnQueue {
 				int retry = entry.contains("RetryTicks") ? entry.getInt("RetryTicks") : RETURN_RETRY_TICKS;
 				if ("player".equals(type) && entry.hasUUID("PlayerId")) {
 					pendingReturnCarriers.addLast(PendingReturnCarrier.toPlayer(entry.getUUID("PlayerId"), delay, retry));
-				} else if ("phantom_port".equals(type)) {
+				} else if ("phantomport".equals(type)) {
 					ResourceKey<Level> dim = entry.contains("Dimension")
 						? ResourceKey.create(Registries.DIMENSION, new ResourceLocation(entry.getString("Dimension")))
 						: null;
