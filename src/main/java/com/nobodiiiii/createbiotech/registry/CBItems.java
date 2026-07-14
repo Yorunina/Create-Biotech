@@ -29,6 +29,7 @@ import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
 import com.yision.phantom.block.phantomport.PhantomPortItem;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
+import com.yision.phantom.item.miniphantom.IncompleteMiniPhantomItem;
 import com.yision.phantom.item.storagecard.StorageChannelExtensionCardItem;
 
 import net.minecraft.world.item.BlockItem;
@@ -159,6 +160,8 @@ public class CBItems {
 
 	public static final RegistryObject<MiniPhantomItem> MINI_PHANTOM = ITEMS.register("mini_phantom",
 		() -> new MiniPhantomItem(new Item.Properties()));
+	public static final RegistryObject<IncompleteMiniPhantomItem> INCOMPLETE_MINI_PHANTOM =
+		ITEMS.register("incomplete_mini_phantom", () -> new IncompleteMiniPhantomItem(new Item.Properties()));
 
 	public static final RegistryObject<Item> INCOMPLETE_CREEPER_BLAST_CHAMBER =
 		ITEMS.register("incomplete_creeper_blast_chamber", () -> new Item(new Item.Properties()));

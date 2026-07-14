@@ -423,6 +423,7 @@
   "block.create_biotech.phantomport": "货物翼站",
   "item.create_biotech.phantomport": "货物翼站",
   "item.create_biotech.mini_phantom": "运输幻翼",
+  "item.create_biotech.incomplete_mini_phantom": "未完成的运输幻翼",
   "gui.createphantom.mini_phantom.invalid_target_phantomport": "找不到有效目标",
   "gui.createphantom.phantomport.arrival_time_display": "抵达剩余时间：%s",
   "gui.createphantom.phantomport.order_status.preparing": "即将起飞",

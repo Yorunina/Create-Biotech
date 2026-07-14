@@ -95,7 +95,9 @@ public class AirCourierEntityRenderer extends EntityRenderer<AirCourierEntity> {
 		phantomModel.renderToBuffer(poseStack, bodyBuffer, packedLight, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
 		VertexConsumer eyesBuffer = buffer.getBuffer(RenderType.eyes(PHANTOM_EYES_TEXTURE));
 		phantomModel.renderToBuffer(poseStack, eyesBuffer, EYES_LIGHT, OverlayTexture.NO_OVERLAY, 1, 1, 1, 1);
-		renderLogisticsHatOnHead(poseStack, buffer, packedLight);
+		if (entity.shouldRenderLogisticsHat()) {
+			renderLogisticsHatOnHead(poseStack, buffer, packedLight);
+		}
 		renderCargo(entity, poseStack, buffer, packedLight);
 		poseStack.popPose();
 

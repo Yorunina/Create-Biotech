@@ -35,6 +35,15 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 	private AirCourierEntity cachedCourier;
 	@Nullable
 	private ClientLevel cachedLevel;
+	private final boolean renderLogisticsHat;
+
+	public MiniPhantomItemRenderer() {
+		this(true);
+	}
+
+	public MiniPhantomItemRenderer(boolean renderLogisticsHat) {
+		this.renderLogisticsHat = renderLogisticsHat;
+	}
 
 	@Override
 	protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer,
@@ -79,6 +88,7 @@ public class MiniPhantomItemRenderer extends CustomRenderedItemModelRenderer {
 		courier.setPhase(AirCourierEntity.Phase.WAITING);
 		courier.setRenderOnSupport(transformType == ItemDisplayContext.FIXED);
 		courier.setRenderSupportPitch(false);
+		courier.setRenderLogisticsHat(renderLogisticsHat);
 		courier.setNoGravity(true);
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.setPos(0, 0, 0);

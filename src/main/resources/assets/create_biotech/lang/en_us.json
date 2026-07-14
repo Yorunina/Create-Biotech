@@ -423,6 +423,7 @@
   "block.create_biotech.phantomport": "Phantom Port",
   "item.create_biotech.phantomport": "Phantom Port",
   "item.create_biotech.mini_phantom": "Cargo Phantom",
+  "item.create_biotech.incomplete_mini_phantom": "Incomplete Cargo Phantom",
   "gui.createphantom.mini_phantom.invalid_target_phantomport": "No valid target Phantom Port was found",
   "gui.createphantom.phantomport.arrival_time_display": "Arrival ETA: %s",
   "gui.createphantom.phantomport.order_status.preparing": "Preparing for takeoff",

@@ -78,6 +78,7 @@ public class AirCourierEntity extends Entity implements Container {
 	private float bankDegrees;
 	private boolean renderOnSupport = true;
 	private boolean renderSupportPitch = true;
+	private boolean renderLogisticsHat = true;
 
 	public AirCourierEntity(EntityType<? extends AirCourierEntity> type, Level level) {
 		super(type, level);
@@ -372,6 +373,14 @@ public class AirCourierEntity extends Entity implements Container {
 
 	public void setRenderSupportPitch(boolean renderSupportPitch) {
 		this.renderSupportPitch = renderSupportPitch;
+	}
+
+	public boolean shouldRenderLogisticsHat() {
+		return renderLogisticsHat;
+	}
+
+	public void setRenderLogisticsHat(boolean renderLogisticsHat) {
+		this.renderLogisticsHat = renderLogisticsHat;
 	}
 
 	private boolean exposesPackageContents() {

@@ -9,8 +9,7 @@
 		"back": "create:block/funnel/funnel_back",
 		"base": "create:block/funnel/andesite_funnel",
 		"redstone": "create:block/funnel/andesite_funnel_unpowered",
-		"particle": "create:block/andesite_block",
-		"block": "create:block/andesite_block"
+		"particle": "create:block/andesite_block"
 	},
 	"elements": [
 		{
@@ -98,20 +97,8 @@
 			"faces": {
 				"north": {"uv": [0.5, 9, 7.5, 10.5], "texture": "#0"},
 				"south": {"uv": [0.5, 9, 7.5, 10.5], "texture": "#0"},
-				"up": {"uv": [8.5, 9, 15.5, 16], "rotation": 180, "texture": "#0"},
+				"up": {"uv": [0.5, 9, 7.5, 16], "rotation": 180, "texture": "#0"},
 				"down": {"uv": [8.5, 9, 15.5, 16], "rotation": 180, "texture": "#0"}
-			}
-		},
-		{
-			"name": "BackPlateLeft",
-			"from": [15, -5, 14],
-			"to": [16, -2, 16.05],
-			"rotation": {"angle": 0, "axis": "y", "origin": [8, -8, 6]},
-			"faces": {
-				"east": {"uv": [7.5, 15, 9, 16], "rotation": 90, "texture": "#base"},
-				"south": {"uv": [7.5, 8, 9, 8.5], "rotation": 90, "texture": "#base"},
-				"up": {"uv": [16, 14, 15, 16], "texture": "#block"},
-				"down": {"uv": [0, 14, 1, 16], "rotation": 180, "texture": "#block"}
 			}
 		},
 		{
@@ -120,10 +107,22 @@
 			"to": [1, -2, 16.05],
 			"rotation": {"angle": 0, "axis": "y", "origin": [8, -8, 6]},
 			"faces": {
-				"south": {"uv": [6.5, 9, 8, 9.5], "rotation": 90, "texture": "#0"},
-				"west": {"uv": [7, 9, 8, 10.5], "texture": "#0"},
+				"south": {"uv": [8, 10, 6.5, 10.5], "rotation": 90, "texture": "#0"},
+				"west": {"uv": [8, 9.5, 6.5, 10.5], "rotation": 90, "texture": "#0"},
 				"up": {"uv": [8, 9.5, 7.5, 10.5], "texture": "#0"},
-				"down": {"uv": [7.5, 9.5, 8, 10.5], "rotation": 180, "texture": "#0"}
+				"down": {"uv": [6.5, 9.5, 7, 10.5], "texture": "#0"}
+			}
+		},
+		{
+			"name": "BackPlateRight",
+			"from": [15, -5, 14],
+			"to": [16, -2, 16.05],
+			"rotation": {"angle": 0, "axis": "y", "origin": [8, -8, 6]},
+			"faces": {
+				"east": {"uv": [8, 10.5, 6.5, 9.5], "rotation": 90, "texture": "#0"},
+				"south": {"uv": [8, 10.5, 6.5, 10], "rotation": 90, "texture": "#0"},
+				"up": {"uv": [7.5, 9.5, 8, 10.5], "texture": "#0"},
+				"down": {"uv": [7, 9.5, 6.5, 10.5], "texture": "#0"}
 			}
 		},
 		{
