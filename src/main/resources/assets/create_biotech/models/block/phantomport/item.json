@@ -258,7 +258,7 @@
 			"to": [16, -2, 2],
 			"rotation": {"angle": 0, "axis": "y", "origin": [0, -3, 0]},
 			"faces": {
-				"down": {"uv": [0, 8.5, 8, 9.5], "texture": "#0"}
+				"down": {"uv": [0, 7.5, 8, 8.5], "texture": "#0"}
 			}
 		}
 	],

@@ -111,15 +111,13 @@ public class MiniPhantomItem extends Item {
 	}
 
 	protected static void openMenu(ServerPlayer serverPlayer, ItemStack stack, InteractionHand usedHand) {
-		PlayerMiniPhantomClipboardInventory clipboard = PlayerMiniPhantomClipboardInventory.get(serverPlayer);
+		LegacyMiniPhantomClipboardData.recoverClipboard(serverPlayer);
 		NetworkHooks.openScreen(serverPlayer,
 			new SimpleMenuProvider((id, inv, p) -> MiniPhantomMenu.create(id, inv, stack, usedHand),
 				Component.translatable("item.create_biotech.mini_phantom")),
 			buffer -> {
 				buffer.writeItem(stack);
 				buffer.writeEnum(usedHand);
-				buffer.writeItem(clipboard.getStackInSlot(0));
-				buffer.writeUtf(clipboard.getAddress());
 			});
 	}
 

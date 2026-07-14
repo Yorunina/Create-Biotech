@@ -2,7 +2,6 @@ package com.yision.phantom.item.miniphantom;
 
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxItem;
-import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.phantom.registry.AllItems;
 import com.yision.phantom.registry.AllMenuTypes;
@@ -25,15 +24,11 @@ import org.jetbrains.annotations.NotNull;
 
 public class MiniPhantomMenu extends AbstractContainerMenu {
 	private static final int PACKAGE_SLOT_COUNT = 9;
-	private static final int CLIPBOARD_SLOT_INDEX = PACKAGE_SLOT_COUNT;
-	private static final int PLAYER_SLOT_START = PACKAGE_SLOT_COUNT + 1;
+	private static final int PLAYER_SLOT_START = PACKAGE_SLOT_COUNT;
 	private static final int SLOT_X = 27;
 	private static final int SLOT_Y = 28;
-	private static final int CLIPBOARD_SLOT_X = 13;
-	private static final int CLIPBOARD_SLOT_Y = 96;
 
 	private final ItemStackHandler packageInventory = new ItemStackHandler(PackageItem.SLOTS);
-	private final PlayerMiniPhantomClipboardInventory clipboardInventory;
 	private final int ownerHotbarSlot;
 	private final int ownerMenuSlot;
 	private final List<ItemStack> initialPackageContents;
@@ -56,10 +51,7 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		this.playerInventory = playerInventory;
 		this.openedStack = extraData.readItem();
 		this.hand = extraData.readEnum(InteractionHand.class);
-		this.clipboardInventory = new PlayerMiniPhantomClipboardInventory();
-		this.clipboardInventory.setStackInSlot(0, extraData.readItem());
-		this.clipboardInventory.setAddress(extraData.readUtf());
-		this.initialAddress = readInitialContents(openedStack, clipboardInventory.getAddress());
+		this.initialAddress = readInitialContents(openedStack);
 		this.initialPackageContents = snapshotPackageInventory();
 		this.ownerHotbarSlot = hand == InteractionHand.MAIN_HAND ? playerInventory.selected : -1;
 		this.ownerMenuSlot = ownerHotbarSlot >= 0 ? PLAYER_SLOT_START + 27 + ownerHotbarSlot : -1;
@@ -72,8 +64,7 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		this.playerInventory = playerInventory;
 		this.openedStack = openedStack.copy();
 		this.hand = hand;
-		this.clipboardInventory = PlayerMiniPhantomClipboardInventory.get(player);
-		this.initialAddress = readInitialContents(this.openedStack, clipboardInventory.getAddress());
+		this.initialAddress = readInitialContents(this.openedStack);
 		this.initialPackageContents = snapshotPackageInventory();
 		this.ownerHotbarSlot = hand == InteractionHand.MAIN_HAND ? playerInventory.selected : -1;
 		this.ownerMenuSlot = ownerHotbarSlot >= 0 ? PLAYER_SLOT_START + 27 + ownerHotbarSlot : -1;
@@ -93,18 +84,6 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 				}
 			});
 		}
-
-		addSlot(new SlotItemHandler(clipboardInventory, 0, CLIPBOARD_SLOT_X, CLIPBOARD_SLOT_Y) {
-			@Override
-			public boolean mayPlace(@NotNull ItemStack stack) {
-				return AllBlocks.CLIPBOARD.isIn(stack);
-			}
-
-			@Override
-			public int getMaxStackSize() {
-				return 1;
-			}
-		});
 
 		for (int row = 0; row < 3; ++row) {
 			for (int col = 0; col < 9; ++col) {
@@ -131,14 +110,14 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		};
 	}
 
-	private String readInitialContents(ItemStack stack, String cachedAddress) {
+	private String readInitialContents(ItemStack stack) {
 		if (!MiniPhantomItem.hasCargo(stack)) {
-			return cachedAddress;
+			return "";
 		}
 
 		ItemStack box = MiniPhantomItem.copyCargoPackage(stack);
 		if (!PackageItem.isPackage(box)) {
-			return cachedAddress;
+			return "";
 		}
 
 		ItemStackHandler contents = CapturedEntityBoxHelper.getVisiblePackageContents(box);
@@ -154,8 +133,6 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		}
 
 		String normalizedAddress = address == null ? "" : address.trim();
-		clipboardInventory.setAddress(normalizedAddress);
-		PlayerMiniPhantomClipboardInventory.save(player, clipboardInventory);
 		ItemStack packageBox = createPackageBox();
 		if (packageBox.isEmpty()) {
 			if (MiniPhantomItem.hasCargo(openedStack)) {
@@ -226,9 +203,6 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 	@Override
 	public void removed(Player player) {
 		super.removed(player);
-		if (!player.level().isClientSide) {
-			PlayerMiniPhantomClipboardInventory.save(player, clipboardInventory);
-		}
 		if (player.level().isClientSide || confirmed) {
 			return;
 		}
@@ -360,17 +334,7 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		ItemStack stack = slot.getItem();
 		ItemStack copy = stack.copy();
 
-		if (index == CLIPBOARD_SLOT_INDEX) {
-			if (!moveItemStackTo(stack, PLAYER_SLOT_START, slots.size(), false)) {
-				return ItemStack.EMPTY;
-			}
-		} else if (index >= PLAYER_SLOT_START && AllBlocks.CLIPBOARD.isIn(stack)) {
-			if (!moveItemStackTo(stack, CLIPBOARD_SLOT_INDEX, CLIPBOARD_SLOT_INDEX + 1, false)) {
-				if (!moveItemStackTo(stack, 0, PACKAGE_SLOT_COUNT, false)) {
-					return ItemStack.EMPTY;
-				}
-			}
-		} else if (index < PACKAGE_SLOT_COUNT) {
+		if (index < PACKAGE_SLOT_COUNT) {
 			if (!moveItemStackTo(stack, PLAYER_SLOT_START, slots.size(), false)) {
 				return ItemStack.EMPTY;
 			}
@@ -387,10 +351,6 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		}
 
 		return copy;
-	}
-
-	public ItemStack getClipboardStack() {
-		return clipboardInventory.getStackInSlot(0);
 	}
 
 	@OnlyIn(Dist.CLIENT)

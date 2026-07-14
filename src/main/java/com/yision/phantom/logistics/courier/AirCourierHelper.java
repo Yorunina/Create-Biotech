@@ -5,13 +5,8 @@ import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
 import com.simibubi.create.content.logistics.box.PackageEntity;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.phantom.block.phantomport.PhantomPortBlockEntity;
-import com.yision.phantom.logistics.address.PhantomAddressRules;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 import com.yision.phantom.registry.AllItems;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 import net.createmod.catnip.math.AngleHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,20 +24,17 @@ import net.minecraftforge.items.wrapper.PlayerMainInvWrapper;
 public final class AirCourierHelper {
 	private AirCourierHelper() {}
 
-	public static ServerPlayer findTargetPlayer(ServerLevel level, ItemStack box) {
-		return findTargetPlayer(level, box, true);
+	public static ServerPlayer findTargetPlayer(ServerLevel level, String playerName) {
+		return findTargetPlayer(level, playerName, true);
 	}
 
-	public static ServerPlayer findTargetPlayerAnyDimension(ServerLevel level, ItemStack box) {
-		return findTargetPlayer(level, box, false);
+	public static ServerPlayer findTargetPlayerAnyDimension(ServerLevel level, String playerName) {
+		return findTargetPlayer(level, playerName, false);
 	}
 
-	private static ServerPlayer findTargetPlayer(ServerLevel level, ItemStack box, boolean requireSameDimension) {
-		if (!PackageItem.isPackage(box)) {
-			return null;
-		}
-		String address = PhantomAddressRules.canonical(PackageItem.getAddress(box));
-		if (address.isBlank()) {
+	private static ServerPlayer findTargetPlayer(ServerLevel level, String playerName, boolean requireSameDimension) {
+		String normalizedName = playerName == null ? "" : playerName.trim();
+		if (normalizedName.isBlank()) {
 			return null;
 		}
 		for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
@@ -52,7 +44,7 @@ public final class AirCourierHelper {
 			if (!player.isAlive()) {
 				continue;
 			}
-			if (!matchesPlayerAddress(address, player.getGameProfile().getName())) {
+			if (!normalizedName.equalsIgnoreCase(player.getGameProfile().getName())) {
 				continue;
 			}
 			return player;
@@ -192,45 +184,4 @@ public final class AirCourierHelper {
 		return null;
 	}
 
-	private static boolean matchesPlayerAddress(String address, String playerName) {
-		for (String candidate : extractAddressCandidates(address)) {
-			if (PhantomAddressRules.matches(candidate, playerName)) {
-				return true;
-			}
-			if (candidate.equalsIgnoreCase(playerName)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private static List<String> extractAddressCandidates(String address) {
-		Set<String> candidates = new LinkedHashSet<>();
-		String trimmed = PhantomAddressRules.canonical(address);
-		candidates.add(trimmed);
-
-		int atIndex = trimmed.lastIndexOf('@');
-		if (atIndex >= 0 && atIndex + 1 < trimmed.length()) {
-			candidates.add(trimmed.substring(atIndex + 1).trim());
-		}
-
-		int ltIndex = trimmed.indexOf('<');
-		int gtIndex = trimmed.indexOf('>');
-		if (ltIndex >= 0 && gtIndex > ltIndex + 1) {
-			candidates.add(trimmed.substring(ltIndex + 1, gtIndex).trim());
-		}
-
-		for (String separator : new String[] { ",", ";", "|" }) {
-			if (trimmed.contains(separator)) {
-				for (String part : trimmed.split(java.util.regex.Pattern.quote(separator))) {
-					String partTrimmed = part.trim();
-					if (!partTrimmed.isEmpty()) {
-						candidates.add(partTrimmed);
-					}
-				}
-			}
-		}
-
-		return new ArrayList<>(candidates);
-	}
 }

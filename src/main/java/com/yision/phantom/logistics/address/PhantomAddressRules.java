@@ -4,38 +4,37 @@ import com.simibubi.create.content.logistics.box.PackageItem;
 import net.minecraft.world.item.ItemStack;
 
 public final class PhantomAddressRules {
-	private static final String COMMENT_MARKER = "//";
-
 	private PhantomAddressRules() {}
 
-	public static String canonical(String address) {
-		if (address == null) {
-			return "";
-		}
-		String trimmed = address.trim();
-		int commentIndex = trimmed.indexOf(COMMENT_MARKER);
-		if (commentIndex >= 0) {
-			trimmed = trimmed.substring(0, commentIndex).trim();
-		}
-		return trimmed;
+	public static String normalize(String address) {
+		return address == null ? "" : address.trim();
 	}
 
 	public static boolean isBlank(String address) {
-		return canonical(address).isBlank();
+		return normalize(address).isBlank();
+	}
+
+	public static boolean isExplicitPlayerAddress(String address) {
+		return address != null && address.startsWith("@");
+	}
+
+	public static String explicitPlayerName(String address) {
+		return isExplicitPlayerAddress(address) ? address.substring(1).trim() : "";
 	}
 
 	public static boolean matches(String left, String right) {
-		return PackageItem.matchAddress(canonical(left), canonical(right));
+		return PackageItem.matchAddress(normalize(left), normalize(right));
 	}
 
 	public static boolean exact(String left, String right) {
-		return canonical(left).equalsIgnoreCase(canonical(right));
+		return normalize(left).equals(normalize(right));
 	}
 
 	public static boolean matchesPackage(ItemStack box, String address) {
 		if (!PackageItem.isPackage(box)) {
 			return false;
 		}
-		return matches(PackageItem.getAddress(box), address);
+		String packageAddress = PackageItem.getAddress(box);
+		return !isExplicitPlayerAddress(packageAddress) && matches(packageAddress, address);
 	}
 }

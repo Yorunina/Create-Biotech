@@ -121,7 +121,7 @@ public final class PhantomPortTargetRegistry {
 	}
 
 	private static boolean exactMatch(String left, String right) {
-		return PhantomAddressRules.canonical(left).equalsIgnoreCase(PhantomAddressRules.canonical(right));
+		return PhantomAddressRules.exact(left, right);
 	}
 
 	private static double distanceTo(@Nullable Vec3 origin, BlockPos pos) {

@@ -20,27 +20,40 @@ public final class AirCourierDispatchService {
 
 	public static @Nullable AirCourierTarget resolvePackageTarget(ServerLevel level, ItemStack box,
 		Vec3 origin, @Nullable ResourceKey<Level> sourceDimension, @Nullable BlockPos sourcePos) {
-		ServerPlayer player = AirCourierDimensionRules.allowCrossDimensionDelivery()
-			? AirCourierHelper.findTargetPlayerAnyDimension(level, box)
-			: AirCourierHelper.findTargetPlayer(level, box);
-		if (player != null && canReceivePackageTarget(level, new AirCourierTarget.PlayerTarget(player.getUUID(),
-			player.serverLevel().dimension()), box)) {
-			return new AirCourierTarget.PlayerTarget(player.getUUID(), player.serverLevel().dimension());
-		}
-
-		AirCourierTarget.PhantomPortTarget phantomPort = findPhantomPortExcludingSource(level, box, origin, sourceDimension, sourcePos);
-		return phantomPort;
-	}
-
-	private static @Nullable AirCourierTarget.PhantomPortTarget findPhantomPortExcludingSource(ServerLevel level, ItemStack box,
-		Vec3 origin, @Nullable ResourceKey<Level> sourceDimension, @Nullable BlockPos sourcePos) {
 		if (!PackageItem.isPackage(box)) {
 			return null;
 		}
-		String address = PhantomAddressRules.canonical(PackageItem.getAddress(box));
+
+		String rawAddress = PackageItem.getAddress(box);
+		String address = PhantomAddressRules.normalize(rawAddress);
 		if (address.isBlank()) {
 			return null;
 		}
+
+		if (PhantomAddressRules.isExplicitPlayerAddress(rawAddress)) {
+			return findPlayer(level, PhantomAddressRules.explicitPlayerName(rawAddress), box);
+		}
+
+		AirCourierTarget.PhantomPortTarget phantomPort =
+			findPhantomPortExcludingSource(level, address, box, origin, sourceDimension, sourcePos);
+		return phantomPort != null ? phantomPort : findPlayer(level, address, box);
+	}
+
+	private static @Nullable AirCourierTarget.PlayerTarget findPlayer(ServerLevel level, String playerName, ItemStack box) {
+		ServerPlayer player = AirCourierDimensionRules.allowCrossDimensionDelivery()
+			? AirCourierHelper.findTargetPlayerAnyDimension(level, playerName)
+			: AirCourierHelper.findTargetPlayer(level, playerName);
+		if (player == null) {
+			return null;
+		}
+		AirCourierTarget.PlayerTarget target =
+			new AirCourierTarget.PlayerTarget(player.getUUID(), player.serverLevel().dimension());
+		return canReceivePackageTarget(level, target, box) ? target : null;
+	}
+
+	private static @Nullable AirCourierTarget.PhantomPortTarget findPhantomPortExcludingSource(ServerLevel level,
+		String address, ItemStack box, Vec3 origin, @Nullable ResourceKey<Level> sourceDimension,
+		@Nullable BlockPos sourcePos) {
 		TargetLocation location = PhantomPortTargetRegistry.findMatchingAnyDimension(level, address, origin,
 			sourceDimension, sourcePos, target -> AirCourierDimensionRules.canTarget(level, target.dimension())
 					&& canReceivePhantomPortTarget(level, target, box));

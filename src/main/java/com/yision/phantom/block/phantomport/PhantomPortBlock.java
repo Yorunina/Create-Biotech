@@ -32,13 +32,7 @@ import org.jetbrains.annotations.NotNull;
 public class PhantomPortBlock extends HorizontalDirectionalBlock implements IWrenchable, IBE<PhantomPortBlockEntity> {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final BooleanProperty OPEN = BooleanProperty.create("open");
-	private static final VoxelShape SHAPE_NORTH = Shapes.or(
-		box(0, 0, 2, 3, 16, 14),
-		box(13, 0, 2, 16, 16, 14),
-		box(3, 2, 11, 13, 16, 15),
-		box(3, 9, 1, 13, 16, 4),
-		box(3, 6, 3, 13, 8, 13)
-	);
+	private static final VoxelShape SHAPE_NORTH = box(0, -5, 0, 16, 15, 14);
 	private static final VoxelShape SHAPE_EAST = rotateY(SHAPE_NORTH);
 	private static final VoxelShape SHAPE_SOUTH = rotateY(SHAPE_EAST);
 	private static final VoxelShape SHAPE_WEST = rotateY(SHAPE_SOUTH);
