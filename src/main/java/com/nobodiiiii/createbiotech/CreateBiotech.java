@@ -24,8 +24,8 @@ import com.nobodiiiii.createbiotech.registry.CBRecipeTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.behaviour.interaction.MovingInteractionBehaviour;
-import com.yision.phantom.block.phantomport.PhantomPortTargetRegistry;
-import com.yision.phantom.logistics.courier.AirCourierTaskManager;
+import com.yision.allay.block.allayport.AllayPortTargetRegistry;
+import com.yision.allay.logistics.courier.AllayCourierTaskManager;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
@@ -57,15 +57,15 @@ public class CreateBiotech {
 		modEventBus.addListener(CreateBiotech::onCommonSetup);
 		modEventBus.addListener(CreateBiotech::onRegister);
 		CBPackets.register();
-		registerPhantomEvents();
+		registerAllayEvents();
 		FixedCarrotFishingRodGoalHandler.register();
 	}
 
-	private static void registerPhantomEvents() {
-		MinecraftForge.EVENT_BUS.addListener(AirCourierTaskManager::onServerTick);
-		MinecraftForge.EVENT_BUS.addListener(PhantomPortTargetRegistry::onServerTick);
+	private static void registerAllayEvents() {
+		MinecraftForge.EVENT_BUS.addListener(AllayCourierTaskManager::onServerTick);
+		MinecraftForge.EVENT_BUS.addListener(AllayPortTargetRegistry::onServerTick);
 		MinecraftForge.EVENT_BUS.addListener((ServerStartingEvent event) ->
-			AirCourierTaskManager.onServerStarting(event.getServer()));
+			AllayCourierTaskManager.onServerStarting(event.getServer()));
 	}
 
 	private static void onCommonSetup(FMLCommonSetupEvent event) {

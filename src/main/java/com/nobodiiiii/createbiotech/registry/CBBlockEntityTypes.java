@@ -25,7 +25,7 @@ import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterBlockEntity
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointBlockEntity;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainDriveBlockEntity;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlockEntity;
-import com.yision.phantom.block.phantomport.PhantomPortBlockEntity;
+import com.yision.allay.block.allayport.AllayPortBlockEntity;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -167,10 +167,10 @@ public class CBBlockEntityTypes {
 				.of(ShulkerTeleporterBlockEntity::new, CBBlocks.SHULKER_TELEPORTER.get())
 				.build(null));
 
-	public static final RegistryObject<BlockEntityType<PhantomPortBlockEntity>> PHANTOMPORT =
-		BLOCK_ENTITY_TYPES.register("phantomport",
+	public static final RegistryObject<BlockEntityType<AllayPortBlockEntity>> ALLAY_PORT =
+		BLOCK_ENTITY_TYPES.register("allay_port",
 			() -> BlockEntityType.Builder
-				.of(PhantomPortBlockEntity::new, CBBlocks.PHANTOMPORT.get())
+				.of(AllayPortBlockEntity::new, CBBlocks.ALLAY_PORT.get())
 				.build(null));
 
 	// Butter Cat content is registered through the shared ButterCat registrate, and re-exported

@@ -31,7 +31,7 @@ import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterB
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableBlock;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableCogBlock;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointBlock;
-import com.yision.phantom.block.phantomport.PhantomPortBlock;
+import com.yision.allay.block.allayport.AllayPortBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainDriveBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.ExplosionProofCasingBlock;
@@ -268,9 +268,9 @@ public class CBBlocks {
 				.mapColor(MapColor.COLOR_PURPLE)
 				.noOcclusion()));
 
-	public static final RegistryObject<PhantomPortBlock> PHANTOMPORT =
-		BLOCKS.register("phantomport",
-			() -> new PhantomPortBlock(Block.Properties.of()
+	public static final RegistryObject<AllayPortBlock> ALLAY_PORT =
+		BLOCKS.register("allay_port",
+			() -> new AllayPortBlock(Block.Properties.of()
 				.sound(SoundType.METAL)
 				.strength(3.0f)
 				.mapColor(MapColor.METAL)

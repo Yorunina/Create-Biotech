@@ -13,9 +13,9 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerPlace
 import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterConfigPacket;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueRemovalPacket;
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueSelectionPacket;
-import com.yision.phantom.block.phantomport.PhantomPortConfigurationPacket;
-import com.yision.phantom.block.phantomport.PhantomPortFlapPacket;
-import com.yision.phantom.network.phantom.MiniPhantomConfirmPacket;
+import com.yision.allay.block.allayport.AllayPortConfigurationPacket;
+import com.yision.allay.block.allayport.AllayPortFlapPacket;
+import com.yision.allay.network.allay.MiniAllayConfirmPacket;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
@@ -67,14 +67,14 @@ public class CBPackets {
 		register(ShulkerTeleporterConfigPacket.class, ShulkerTeleporterConfigPacket::new,
 			ShulkerTeleporterConfigPacket::write, ShulkerTeleporterConfigPacket::handle,
 			NetworkDirection.PLAY_TO_SERVER);
-		register(MiniPhantomConfirmPacket.class, MiniPhantomConfirmPacket::new,
-			MiniPhantomConfirmPacket::write, MiniPhantomConfirmPacket::handle,
+		register(MiniAllayConfirmPacket.class, MiniAllayConfirmPacket::new,
+			MiniAllayConfirmPacket::write, MiniAllayConfirmPacket::handle,
 			NetworkDirection.PLAY_TO_SERVER);
-		register(PhantomPortConfigurationPacket.class, PhantomPortConfigurationPacket::new,
-			PhantomPortConfigurationPacket::write, (packet, context) -> packet.handle(context),
+		register(AllayPortConfigurationPacket.class, AllayPortConfigurationPacket::new,
+			AllayPortConfigurationPacket::write, (packet, context) -> packet.handle(context),
 			NetworkDirection.PLAY_TO_SERVER);
-		register(PhantomPortFlapPacket.class, PhantomPortFlapPacket::new,
-			PhantomPortFlapPacket::write, PhantomPortFlapPacket::handle,
+		register(AllayPortFlapPacket.class, AllayPortFlapPacket::new,
+			AllayPortFlapPacket::write, AllayPortFlapPacket::handle,
 			NetworkDirection.PLAY_TO_CLIENT);
 	}
 

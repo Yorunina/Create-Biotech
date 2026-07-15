@@ -10,10 +10,10 @@
 
 - 通用 Mixin：30 个。
 - 客户端 Mixin：22 个。
-- Phantom Mixin：6 个。
+- Allay Mixin：6 个。
 - 使用 `remap = false` 的源文件：34 个。
 - 生成 refmap 中有映射记录的 Mixin 类：27 个。
-- `create_biotech.mixins.json` 和 `create_biotech_phantom.mixins.json` 均为 `required: true`，默认 `defaultRequire: 1`。
+- `create_biotech.mixins.json` 和 `create_biotech_allay.mixins.json` 均为 `required: true`，默认 `defaultRequire: 1`。
 - `compileJava --rerun-tasks` 成功，生成约 20 KiB 的 `build/mixin/create_biotech.refmap.json`，最终 JAR 已包含该文件。
 
 当前项目版本与 `ref/Create/gradle.properties` 精确匹配，可直接使用 `ref/Create/` 核对 Create 6.0.8 目标。`ref/jei/` 属于 Minecraft 1.20.1 版本线，但其 Forge 基线为 47.3.1且无法从快照直接确认 15.20.0.130 构建号；JEI 内部类核验需保留近似参考 caveat。

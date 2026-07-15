@@ -1,0 +1,71 @@
+{
+  "type": "create:sequenced_assembly",
+  "ingredient": {
+    "type": "create_biotech:captured_entity_box",
+    "entity": "minecraft:allay"
+  },
+  "loops": 1,
+  "results": [
+    {
+      "item": "create_biotech:mini_allay"
+    }
+  ],
+  "sequence": [
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        },
+        {
+          "item": "minecraft:firework_rocket"
+        }
+      ],
+      "results": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        }
+      ]
+    },
+    {
+      "type": "create:deploying",
+      "ingredients": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        },
+        {
+          "item": "minecraft:compass"
+        }
+      ],
+      "results": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        }
+      ]
+    },
+    {
+      "type": "create:filling",
+      "ingredients": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        },
+        {
+          "amount": 250,
+          "fluid": "create:potion",
+          "nbt": {
+            "Bottle": "REGULAR",
+            "Potion": "minecraft:fire_resistance"
+          }
+        }
+      ],
+      "results": [
+        {
+          "item": "create_biotech:incomplete_mini_allay"
+        }
+      ]
+    }
+  ],
+  "transitionalItem": {
+    "item": "create_biotech:incomplete_mini_allay"
+  }
+}

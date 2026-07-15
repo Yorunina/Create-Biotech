@@ -2,7 +2,7 @@
 
 ## 总结
 
-仓库当前可以编译和打包，但还不适合把“构建成功”当成可发布、可兼容或可扩展的证明。最优实施顺序不是先拆 3000 行大类，而是先封住客户端信任、错误发布、资源缺失和状态泄漏，再建立自动化门禁；有了测试与诊断后，再处理 Mixin 映射、Blast Chamber 热点和 Phantom/主体边界。
+仓库当前可以编译和打包，但还不适合把“构建成功”当成可发布、可兼容或可扩展的证明。最优实施顺序不是先拆 3000 行大类，而是先封住客户端信任、错误发布、资源缺失和状态泄漏，再建立自动化门禁；有了测试与诊断后，再处理 Mixin 映射、Blast Chamber 热点和 Allay/主体边界。
 
 本路线图汇总：
 
@@ -49,7 +49,7 @@
    - 每个点的服务端重建与范围/权限校验。
 2. `ShulkerTeleporterConfigPacket` 在 `new ArrayList<>(size)` 前拒绝负数与 `>64`。
 3. Smart Glue删除/选择校验工具、距离、权限和 server-side selection。
-4. `MiniPhantomConfirmPacket`、Phantom filter和 HUD count使用显式上限。
+4. `MiniAllayConfirmPacket`、Allay filter和 HUD count使用显式上限。
 
 验收：恶意输入测试全部拒绝且不产生部分 world修改；正常客户端流程保持兼容。
 
@@ -94,7 +94,7 @@ Java 17 / Windows
 ### 工作包 1B：第一批测试
 
 - 网络 decoder/authorization测试；
-- `PhantomAddressRules`、flight math、candidate normalize；
+- `AllayAddressRules`、flight math、candidate normalize；
 - publish.py 参数/失败语义；
 - 资源 JSON重复键、model/texture、语言 CJK/placeholder、advancement parent；
 - Mixin inventory/refmap关键 selector检查。
@@ -117,7 +117,7 @@ Java 17 / Windows
 建立统一 lifecycle coordinator：
 
 - server starting先 reset并绑定新 SavedData；
-- server stopped discard visual entities并清空 Phantom target/HUD/task引用；
+- server stopped discard visual entities并清空 Allay target/HUD/task引用；
 - 清空 liquid slime source hits、BioPackager tracker；
 - client level unload/disconnect清 Blast Chamber追踪与动画状态；
 - weak contraption ref为 null时移除 tracker entry。
@@ -161,8 +161,8 @@ Java 17 / Windows
 ### 工作包 3B：便宜短路与索引
 
 - Shulker Teleporter先检查 speed/address/target，再查询 entity；
-- Phantom target按 canonical address建立二级索引，取最优项不全量 sort；
-- Phantom target timeout cleanup从每 tick降到合理周期；
+- Allay target按 canonical address建立二级索引，取最优项不全量 sort；
+- Allay target timeout cleanup从每 tick降到合理周期；
 - Air Courier HUD按 player分桶 observation并用 source set；
 - Experience Pump同 tick复用 orb/player snapshot，谨慎处理 simulate/execute。
 
@@ -179,13 +179,13 @@ Java 17 / Windows
 
 建议周期：2–6 周，可随功能开发渐进进行。
 
-### 工作包 4A：Phantom 模块边界
+### 工作包 4A：Allay 模块边界
 
-- 定义 `PhantomModule.registerCommon/registerClient/registerEvents/registerPackets/reset`；
+- 定义 `AllayModule.registerCommon/registerClient/registerEvents/registerPackets/reset`；
 - `CB*` 成为唯一注册所有者；
 - `All*` 若保留则明确为 compatibility facade，主体不得反向依赖；
-- 把主体提供给 Phantom 的 package/network/registry能力收敛成接口；
-- Phantom hard-coded config迁入真实 ForgeConfigSpec。
+- 把主体提供给 Allay 的 package/network/registry能力收敛成接口；
+- Allay hard-coded config迁入真实 ForgeConfigSpec。
 
 ### 工作包 4B：大类提取
 

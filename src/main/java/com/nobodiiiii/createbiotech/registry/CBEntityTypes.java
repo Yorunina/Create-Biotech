@@ -5,10 +5,11 @@ import com.nobodiiiii.createbiotech.content.cardboardbox.CardboardBoxEntity;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloonEntity;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloonSeatEntity;
 import com.simibubi.create.content.logistics.box.PackageEntity;
-import com.yision.phantom.entity.courier.AirCourierEntity;
+import com.yision.allay.entity.courier.AllayCourierEntity;
 
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -53,14 +54,14 @@ public class CBEntityTypes {
 			return builder.build("ghast_hot_air_balloon_seat");
 		});
 
-	public static final RegistryObject<EntityType<AirCourierEntity>> AIR_COURIER =
-		ENTITY_TYPES.register("air_courier", () -> EntityType.Builder
-			.<AirCourierEntity>of(AirCourierEntity::createEmpty, MobCategory.MISC)
-			.sized(0.6F, 0.6F)
+	public static final RegistryObject<EntityType<AllayCourierEntity>> ALLAY_COURIER =
+		ENTITY_TYPES.register("allay_courier", () -> EntityType.Builder
+			.<AllayCourierEntity>of(AllayCourierEntity::createEmpty, MobCategory.MISC)
+			.sized(0.35F, 0.6F)
 			.setTrackingRange(96)
 			.setUpdateInterval(1)
 			.setShouldReceiveVelocityUpdates(true)
-			.build("air_courier"));
+			.build("allay_courier"));
 
 	private CBEntityTypes() {}
 
@@ -72,5 +73,6 @@ public class CBEntityTypes {
 	private static void registerEntityAttributes(EntityAttributeCreationEvent event) {
 		event.put(CARDBOARD_BOX.get(), PackageEntity.createPackageAttributes()
 			.build());
+		event.put(ALLAY_COURIER.get(), Allay.createAttributes().build());
 	}
 }

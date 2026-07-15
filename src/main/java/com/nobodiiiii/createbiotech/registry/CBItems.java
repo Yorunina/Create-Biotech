@@ -27,9 +27,9 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackageItem;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
-import com.yision.phantom.block.phantomport.PhantomPortItem;
-import com.yision.phantom.item.miniphantom.MiniPhantomItem;
-import com.yision.phantom.item.miniphantom.IncompleteMiniPhantomItem;
+import com.yision.allay.block.allayport.AllayPortItem;
+import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.item.miniallay.IncompleteMiniAllayItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -150,13 +150,13 @@ public class CBItems {
 	public static final RegistryObject<Item> SHULKER_TELEPORTER = ITEMS.register("shulker_teleporter",
 		() -> new BlockItem(CBBlocks.SHULKER_TELEPORTER.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> PHANTOMPORT = ITEMS.register("phantomport",
-		() -> new PhantomPortItem(CBBlocks.PHANTOMPORT.get(), new Item.Properties()));
+	public static final RegistryObject<Item> ALLAY_PORT = ITEMS.register("allay_port",
+		() -> new AllayPortItem(CBBlocks.ALLAY_PORT.get(), new Item.Properties()));
 
-	public static final RegistryObject<MiniPhantomItem> MINI_PHANTOM = ITEMS.register("mini_phantom",
-		() -> new MiniPhantomItem(new Item.Properties()));
-	public static final RegistryObject<IncompleteMiniPhantomItem> INCOMPLETE_MINI_PHANTOM =
-		ITEMS.register("incomplete_mini_phantom", () -> new IncompleteMiniPhantomItem(new Item.Properties()));
+	public static final RegistryObject<MiniAllayItem> MINI_ALLAY = ITEMS.register("mini_allay",
+		() -> new MiniAllayItem(new Item.Properties()));
+	public static final RegistryObject<IncompleteMiniAllayItem> INCOMPLETE_MINI_ALLAY =
+		ITEMS.register("incomplete_mini_allay", () -> new IncompleteMiniAllayItem(new Item.Properties()));
 
 	public static final RegistryObject<Item> INCOMPLETE_CREEPER_BLAST_CHAMBER =
 		ITEMS.register("incomplete_creeper_blast_chamber", () -> new Item(new Item.Properties()));

@@ -72,7 +72,7 @@ public abstract class BeltFunnelBlockMixin {
 		if (surface == null)
 			surface = BeltSurfaceResolver.resolveForPlacement(world, pos);
 		// Only claim authority over surfaces that have a real host (slime belt). For
-		// non-host belts (vanilla / magma / power), the resolver synthesises a phantom surface with
+		// non-host belts (vanilla / magma / power), the resolver synthesises a allay surface with
 		// canonical movementFacing=NORTH which would give wrong RETRACTED/PUSHING answers — fall
 		// through to vanilla / MagmaBeltFunnelBlockMixin which read the actual belt facing.
 		if (surface == null || surface.host() == null)
@@ -96,7 +96,7 @@ public abstract class BeltFunnelBlockMixin {
 	 * into {@link FunnelBlock#FACING} using {@code worldizeCanonical(HORIZONTAL_FACING, outward)}.
 	 * <p>
 	 * Do <em>not</em> route this through {@link BeltSurfaceResolver#resolve}: that resolver's BeltFunnel fast path
-	 * synthesises a phantom surface from the state alone (using canonical forward) and would always succeed even
+	 * synthesises a allay surface from the state alone (using canonical forward) and would always succeed even
 	 * after the belt is gone — defeating the revert.
 	 */
 	@Inject(method = "isOnValidBelt(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z",
@@ -137,7 +137,7 @@ public abstract class BeltFunnelBlockMixin {
 		Level world = context.getLevel();
 		BeltSurface surface = BeltSurfaceResolver.resolve(world, context.getClickedPos());
 		// Only claim wrench authority over surface-host belts (slime belt). For vanilla / magma /
-		// power belts the resolver returns a phantom surface with no host — defer to their own
+		// power belts the resolver returns a allay surface with no host — defer to their own
 		// wrench handlers (e.g. MagmaBeltFunnelBlockMixin) which read the actual belt slope/facing.
 		if (surface == null || surface.host() == null)
 			return;

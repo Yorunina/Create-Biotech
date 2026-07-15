@@ -4,8 +4,8 @@ import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterMenu;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableMenu;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestMenu;
-import com.yision.phantom.block.phantomport.PhantomPortMenu;
-import com.yision.phantom.item.miniphantom.MiniPhantomMenu;
+import com.yision.allay.block.allayport.AllayPortMenu;
+import com.yision.allay.item.miniallay.MiniAllayMenu;
 
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -29,11 +29,11 @@ public class CBMenuTypes {
 	public static final RegistryObject<MenuType<ShulkerTeleporterMenu>> SHULKER_TELEPORTER =
 		MENU_TYPES.register("shulker_teleporter", () -> IForgeMenuType.create(ShulkerTeleporterMenu::new));
 
-	public static final RegistryObject<MenuType<PhantomPortMenu>> PHANTOMPORT =
-		MENU_TYPES.register("phantomport", () -> IForgeMenuType.create(PhantomPortMenu::new));
+	public static final RegistryObject<MenuType<AllayPortMenu>> ALLAY_PORT =
+		MENU_TYPES.register("allay_port", () -> IForgeMenuType.create(AllayPortMenu::new));
 
-	public static final RegistryObject<MenuType<MiniPhantomMenu>> MINI_PHANTOM =
-		MENU_TYPES.register("mini_phantom", () -> IForgeMenuType.create(MiniPhantomMenu::new));
+	public static final RegistryObject<MenuType<MiniAllayMenu>> MINI_ALLAY =
+		MENU_TYPES.register("mini_allay", () -> IForgeMenuType.create(MiniAllayMenu::new));
 
 	private CBMenuTypes() {}
 

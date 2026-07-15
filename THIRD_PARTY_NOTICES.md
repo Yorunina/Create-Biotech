@@ -78,7 +78,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The upstream Create Phantom README also notes that some sections come from
 `timplay33/Create-Mobile-Packages`, which is licensed under the MIT License.
-That upstream notice is preserved here for the adapted Phantom code path.
+That upstream notice is preserved here for the adapted Allay logistics code path.
 
 MIT License
 

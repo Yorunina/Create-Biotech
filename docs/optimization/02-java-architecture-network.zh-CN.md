@@ -2,7 +2,7 @@
 
 ## 结论摘要
 
-主体功能按特性分包，注册、客户端入口和网络通道也有清晰的基本框架；问题主要出现在项目扩张后的边界退化：Phantom 子系统与主体双向依赖，多个来源模块使用不同注册风格，少数核心类同时承担服务端状态机、客户端表现、持久化、网络和 UI 职责，客户端到服务端的数据包校验又不一致。
+主体功能按特性分包，注册、客户端入口和网络通道也有清晰的基本框架；问题主要出现在项目扩张后的边界退化：Allay 子系统与主体双向依赖，多个来源模块使用不同注册风格，少数核心类同时承担服务端状态机、客户端表现、持久化、网络和 UI 职责，客户端到服务端的数据包校验又不一致。
 
 最先处理的应是网络信任边界和服务器生命周期泄漏，然后再拆模块与大类。大规模重构不应一次完成，建议先提取可测试的纯逻辑对象和 facade，保持注册名、NBT 格式与网络协议兼容。
 
@@ -10,8 +10,8 @@
 
 - Java：425 个文件，约 62,369 个物理行。
 - 主体包：`com.nobodiiiii.createbiotech.*`。
-- Phantom 包：`com.yision.phantom.*`，与主体共同打包、共同使用 `create_biotech` mod id 和同一个网络通道/refmap。
-- 两个包族之间存在 43 条显式跨包 import：26 条主体到 Phantom，17 条 Phantom 回到主体。
+- Allay 包：`com.yision.allay.*`，与主体共同打包、共同使用 `create_biotech` mod id 和同一个网络通道/refmap。
+- 两个包族之间存在 43 条显式跨包 import：26 条主体到 Allay，17 条 Allay 回到主体。
 - 客户端注册集中于约 402 行的 `CreateBiotechClient`，但大量客户端实现仍散布在各特性包中。
 - 105 个 Java 文件导入 Minecraft/Flywheel 渲染类，其中 72 个不在命名为 `client` 的目录中；特性共置本身不是错误，但使 dedicated server 边界更难静态审查。
 
@@ -36,8 +36,8 @@
 
 - `PowerBeltSurfaceMovementPacket` 校验发送者、旁观者/飞行状态、有限浮点、加载范围、4 格距离、方块类型、传送带斜率和玩家实际站位，并在服务端限幅。
 - `GhastBalloonMagnetTargetPacket` 校验控制权、实体类型、目标距离、目标方块实体和可接受状态。
-- `PhantomPortConfigurationPacket` 继承精确匹配的 `ref/Create/.../BlockEntityConfigurationPacket.java`，由 Create 基类统一检查旁观/冒险模式、区块加载和 20 格距离。
-- `MiniPhantomConfirmPacket` 要求发送者当前打开 `MiniPhantomMenu`，`confirm()` 再调用 `stillValid()`。
+- `AllayPortConfigurationPacket` 继承精确匹配的 `ref/Create/.../BlockEntityConfigurationPacket.java`，由 Create 基类统一检查旁观/冒险模式、区块加载和 20 格距离。
+- `MiniAllayConfirmPacket` 要求发送者当前打开 `MiniAllayMenu`，`confirm()` 再调用 `stillValid()`。
 
 这些模式应成为其他客户端到服务端数据包的统一基线。
 
@@ -76,8 +76,8 @@
 - `ShulkerTeleporterConfigPacket` 在读取候选地址时先信任 `size` 并执行 `new ArrayList<>(size)`，之后才通过 normalize 截断到 64 项。应在分配前验证 `0 <= size <= MAX_CANDIDATE_ADDRESSES`，并要求发送者当前菜单就是同一位置的 `ShulkerTeleporterMenu`。
 - `SmartSuperGlueRemovalPacket` 允许客户端删除 32 格内任意兼容胶实体，没有验证当前持有智能胶/扳手、交互权限或玩家是否真的选中了该实体；`soundSource` 也完全由客户端指定。
 - `SmartSuperGlueSelectionPacket` 消耗物品与生成胶实体前没有统一调用方块交互权限检查，对起点的独立距离限制也不直观。
-- `PhantomPortConfigurationPacket` 使用无显式上限的 `readUtf()` 读取过滤器；Create 基类解决了距离和模式校验，但没有替子类限制字符串业务长度。
-- `MiniPhantomConfirmPacket` 和菜单初始化使用无显式上限的 `readUtf()`，应与包裹地址规则共享单一最大长度。
+- `AllayPortConfigurationPacket` 使用无显式上限的 `readUtf()` 读取过滤器；Create 基类解决了距离和模式校验，但没有替子类限制字符串业务长度。
+- `MiniAllayConfirmPacket` 和菜单初始化使用无显式上限的 `readUtf()`，应与包裹地址规则共享单一最大长度。
 - 服务端到客户端的 Air Courier HUD 包先按远端提供的 count 分配列表；正常服务器可信，但连接不受信服务器时仍应设置条目和物品堆数量上限，避免客户端内存峰值或解码异常。
 
 建议建立共享的包解码工具：有界字符串、有界集合、有限数值、合法枚举；每个 C2S handler 使用统一的 sender/menu/distance/permission/rate-limit 检查模板。
@@ -94,20 +94,20 @@
 
 ## 3. 模块与初始化边界
 
-### ARCH-04：Phantom 与主体形成双向模块依赖
+### ARCH-04：Allay 与主体形成双向模块依赖
 
 - 优先级：P1
 
-主体入口直接注册 Phantom 的三个 server tick 监听器；主体注册表、网络和客户端入口直接导入 Phantom 类型。反方向上，Phantom 方块实体、屏幕、HUD、实体和渲染又导入主体注册表、网络、纸箱工具和 Mixin accessor。
+主体入口直接注册 Allay 的三个 server tick 监听器；主体注册表、网络和客户端入口直接导入 Allay 类型。反方向上，Allay 方块实体、屏幕、HUD、实体和渲染又导入主体注册表、网络、纸箱工具和 Mixin accessor。
 
-`com.yision.phantom.registry.AllBlockEntityTypes/AllEntityTypes/AllItems/AllMenuTypes` 不是独立注册表，只是对 `CB*` 注册对象的别名。这保留了上游类名，却制造了“看起来独立、实际上反向依赖”的循环。
+`com.yision.allay.registry.AllBlockEntityTypes/AllEntityTypes/AllItems/AllMenuTypes` 不是独立注册表，只是对 `CB*` 注册对象的别名。这保留了上游类名，却制造了“看起来独立、实际上反向依赖”的循环。
 
 建议：
 
-- 明确 Phantom 是“内置特性模块”而不是第二个模组入口。
+- 明确 Allay 是“内置特性模块”而不是第二个模组入口。
 - 选定 `CB*` 为唯一注册所有者，逐步删除 `All*` 反向别名；若为减少上游 diff 必须保留，则把它们标记为 compatibility facade，并禁止主体代码反向依赖 facade。
-- 为 Phantom 建立 `PhantomModule.registerCommon/registerClient/registerPackets/registerEvents`，根入口只调用模块 API，不导入具体任务管理器、HUD 或方块类。
-- 把主体提供给 Phantom 的能力收敛为少量接口，例如 package contents、network sender、registry access，而不是直接导入实现类和 Mixin accessor。
+- 为 Allay 建立 `AllayModule.registerCommon/registerClient/registerPackets/registerEvents`，根入口只调用模块 API，不导入具体任务管理器、HUD 或方块类。
+- 把主体提供给 Allay 的能力收敛为少量接口，例如 package contents、network sender、registry access，而不是直接导入实现类和 Mixin accessor。
 
 ### ARCH-05：注册风格混合且初始化所有权分散
 
@@ -119,7 +119,7 @@
 - Butter Cat 的独立 `CreateRegistrate`。
 - Butter Cat 内部的额外 DeferredRegister。
 - `@Mod.EventBusSubscriber` 静态订阅。
-- 根入口手工向 Forge event bus 添加 Phantom 监听器。
+- 根入口手工向 Forge event bus 添加 Allay 监听器。
 
 这几种方式单独都可用，但组合后很难快速回答“某功能在哪里初始化、是否只初始化一次、客户端/服务端何时加载”。
 
@@ -129,7 +129,7 @@
 
 - 优先级：P1
 
-`AirCourierTaskManager` 持有静态 `savedData` 和 `visualEntities`；`PhantomPortTargetRegistry` 持有按维度索引的静态 `TARGETS`；`AirCourierHudSync` 也持有静态 HUD 状态。根入口只注册 server starting 和 tick，没有 server stopping 清理。
+`AllayCourierTaskManager` 持有静态 `savedData` 和 `courierEntities`；`AllayPortTargetRegistry` 持有按维度索引的静态 `TARGETS`；`AllayCourierHudSync` 也持有静态 HUD 状态。根入口只注册 server starting 和 tick，没有 server stopping 清理。
 
 在同一 JVM 中关闭并重新打开集成服务器时，旧世界的实体引用、目标位置和 tick 时间可能进入新服务器。特别是新服务器 tick 从较小值重新开始时，旧 `lastSeenTick` 可能无法按预期立即过期。
 
@@ -215,13 +215,13 @@ Slime/Magma/Power Belt 三个包合计约 10,885 行。Slime 与 Magma 分别拥
 
 ## 6. 配置与生成代码
 
-### ARCH-13：Phantom 配置只是硬编码包装，不是实际配置
+### ARCH-13：Allay 配置只是硬编码包装，不是实际配置
 
 - 优先级：P2
 
-`com.yision.phantom.config.CPClient/CPServer` 使用简单 record 包装默认值，未接入 ForgeConfigSpec：HUD 固定右上角、缩放固定 0.65、跨维度配送固定开启。与此同时主体已有完整 `CBConfigs` 注册。
+`com.yision.allay.config.AllayClientConfig/AllayServerConfig` 使用简单 record 包装默认值，未接入 ForgeConfigSpec：HUD 固定右上角、缩放固定 0.65、跨维度配送固定开启。与此同时主体已有完整 `CBConfigs` 注册。
 
-建议把这些选项迁入 `CBConfigs` 的 client/server section，或为 PhantomModule 注册真实 spec。完成迁移后保留兼容访问 facade 一段时间，避免一次改动所有上游移植代码。
+建议把这些选项迁入 `CBConfigs` 的 client/server section，或为 AllayModule 注册真实 spec。完成迁移后保留兼容访问 facade 一段时间，避免一次改动所有上游移植代码。
 
 `CBConfigs` 自身约 617 行且 `COMMON` 为空；可把每个特性的 spec builder 拆到对应模块，根类只组合和注册 spec。若 COMMON 长期为空则移除空配置文件。
 
@@ -239,7 +239,7 @@ Slime/Magma/Power Belt 三个包合计约 10,885 行。Slime 与 Magma 分别拥
 2. P1：统一所有 C2S 包的有界解码、菜单/距离/权限检查和主线程执行模型。
 3. P1：补服务器停止清理，验证集成服务器跨世界生命周期。
 4. P1：把 Butter Cat PartialModel 与 Creeper Chamber 客户端状态移出通用服务端实现。
-5. P1/P2：建立 PhantomModule facade，消除双向注册别名。
+5. P1/P2：建立 AllayModule facade，消除双向注册别名。
 6. P1/P2：按纯逻辑边界渐进拆分 Creeper Chamber、Spider Table 与 belt 公共算法。
 7. P2：整合真实配置、拆客户端入口、隔离生成 Java。
 
@@ -248,4 +248,4 @@ Slime/Magma/Power Belt 三个包合计约 10,885 行。Slime 与 Magma 分别拥
 - 网络：正常客户端、伪造远距离包、超量集合、非法枚举、无菜单、旁观/冒险玩家、重复包。
 - 生命周期：专用服务器启动；集成服务器世界 A 退出后进入世界 B；维度切换；区块卸载/重载。
 - 兼容：NBT 旧存档迁移、网络协议版本、注册名和配方 id 保持不变。
-- 架构：依赖规则测试禁止主体实现反向依赖 Phantom facade，禁止 common module 新增 client-only 类型。
+- 架构：依赖规则测试禁止主体实现反向依赖 Allay facade，禁止 common module 新增 client-only 类型。

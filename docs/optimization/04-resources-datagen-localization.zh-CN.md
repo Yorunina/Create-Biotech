@@ -15,7 +15,7 @@
 | PNG 解码 | 154/154 成功 |
 | `en_us` / `zh_cn` key | 各 436 个，集合完全一致 |
 | `en_ud` | 10 个 Butter Cat key |
-| `zh_tw` | 35 个 Butter Cat/Phantom key |
+| `zh_tw` | 35 个 Butter Cat/Allay key |
 | 本地 advancement parent | 28 个 advancement，0 个缺失 parent |
 | 资源 ID 重复 | 84 个配方、48 个 loot table、28 个 advancement 均无重复 |
 | 精确模型/纹理引用 | 发现 1 个本模组缺失模型 parent |
@@ -148,7 +148,7 @@ Unable to load model: 'create_biotech:block/small_cardboard_box' ... FileNotFoun
 
 - 优先级：P2
 
-`zh_tw.json` 只有 35 个 Butter Cat/Phantom key，而 `en_us`/`zh_cn` 各有 436 个。Minecraft 不会自动把缺失的繁体中文 key 回退到 `zh_cn`；通常最终显示 `en_us`。如果这是有意的社区局部翻译，应在贡献文档中明确“允许部分覆盖”；如果目标是完整繁中支持，应建立 key parity 门禁并逐步补齐。
+`zh_tw.json` 只有 35 个 Butter Cat/Allay key，而 `en_us`/`zh_cn` 各有 436 个。Minecraft 不会自动把缺失的繁体中文 key 回退到 `zh_cn`；通常最终显示 `en_us`。如果这是有意的社区局部翻译，应在贡献文档中明确“允许部分覆盖”；如果目标是完整繁中支持，应建立 key parity 门禁并逐步补齐。
 
 `en_ud` 只有 10 个 Butter Cat key更接近趣味/测试语言包，允许部分覆盖是合理的，但也应在语言策略中声明，避免通用 parity 检查错误要求它与 `en_us` 完全一致。
 

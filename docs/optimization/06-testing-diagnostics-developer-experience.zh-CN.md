@@ -4,7 +4,7 @@
 
 当前 `build` 能成功，但验证能力接近空白：没有 `src/test`、JUnit/GameTest、CI workflow 或静态分析任务；Gradle 的 `test` 是 `NO-SOURCE`，`check` 实际只会运行这个空测试套件。因此“构建绿色”只能证明主源码编译、资源复制和 JAR 组装成功，不能证明网络权限、Mixin 注入、存档迁移、配方加载或客户端资源正确。
 
-诊断方面，多个数据加载和兼容 fallback 会静默吞异常，其中 `AirCourierTaskSavedData` 可直接丢弃无法读取的 courier task而不留日志。开发文档也存在与仓库现实不一致的问题：README 宣称 `ref/` 是 bundled、注册走 Registrate、资源是 datagen 混合产出且存在 `tools/`，但 `ref/` 实际完全被 gitignore、主要注册使用 DeferredRegister、没有 datagen provider，`tools/` 目录也不存在。关键 `AGENTS.md`/`CLAUDE.md` 同样未跟踪，新的 clone 无法获得当前项目约定。
+诊断方面，多个数据加载和兼容 fallback 会静默吞异常，其中 `AllayCourierTaskSavedData` 可直接丢弃无法读取的 courier task而不留日志。开发文档也存在与仓库现实不一致的问题：README 宣称 `ref/` 是 bundled、注册走 Registrate、资源是 datagen 混合产出且存在 `tools/`，但 `ref/` 实际完全被 gitignore、主要注册使用 DeferredRegister、没有 datagen provider，`tools/` 目录也不存在。关键 `AGENTS.md`/`CLAUDE.md` 同样未跟踪，新的 clone 无法获得当前项目约定。
 
 ## 1. 当前验证基线
 
@@ -38,10 +38,10 @@
 
 仓库已有不少不依赖完整 Minecraft world 的确定性逻辑，适合先用 JUnit 5建立快速测试：
 
-- `PhantomAddressRules` 的 canonical、blank、模糊/精确匹配；
-- `AirCourierFlightMath`、planner、estimate 和 target geometry；
+- `AllayAddressRules` 的 canonical、blank、模糊/精确匹配；
+- 悦灵货运的目标点几何、任务序列化、抵达判定与返航模式；
 - `ShulkerTeleporterBlockEntity.normalizeCandidateAddresses` 的长度、去重、顺序与最大 64 项；
-- Shulker/Phantom target comparator；
+- Shulker/Allay target comparator；
 - captured entity box 的纯 NBT helper、ingredient stacking id；
 - belt 几何、loop position、connector/track 映射；
 - recipe serializer 的边界数据；
@@ -62,7 +62,7 @@
 - 重放、重复包和乱序包；
 - 非法数据不得部分修改 world/BE。
 
-`AirCourierHudPacket` 是 S2C，但 decoder同样应限制 count到 `AirCourierHudPayload.MAX_VISIBLE_ENTRIES` 或协议上限，避免损坏/不兼容服务端导致客户端大分配。`MiniPhantomConfirmPacket` 的 `readUtf()` 也应使用与菜单规则一致的显式最大长度。
+`AllayCourierHudPacket` 是 S2C，但 decoder同样应限制 count到 `AllayCourierHudPayload.MAX_VISIBLE_ENTRIES` 或协议上限，避免损坏/不兼容服务端导致客户端大分配。`MiniAllayConfirmPacket` 的 `readUtf()` 也应使用与菜单规则一致的显式最大长度。
 
 ### TEST-03：引入 Forge GameTest 覆盖 world 行为和持久化
 
@@ -158,7 +158,7 @@ options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 ### DIAG-01：SavedData 损坏被静默丢弃
 
 - 优先级：P1
-- 文件：`AirCourierTaskSavedData.java`
+- 文件：`AllayCourierTaskSavedData.java`
 
 加载每个 task时捕获任意 `Exception` 后空处理。一个格式变化或真实代码 bug会让 courier task消失，玩家的包裹/载具状态可能丢失，而日志没有 task index、UUID、NBT摘要或异常栈。
 
@@ -182,7 +182,7 @@ options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 - `PonderSupportExt` entity NBT patch失败后忽略；
 - Shulker client event和 Fluid Tank renderer也有宽 catch，后者已在 Mixin专项说明。
 
-建议只捕获可预期的反射/链接/运行异常，并使用 once-per-session logger输出目标类、依赖版本和 fallback行为。`LinkageError` 是否降级需逐处决定，不能统一吞掉。主模组目前没有公共 `CreateBiotech.LOGGER`，而 Phantom、remap helper和渲染类各自创建 logger；可建立统一 logger/diagnostic helper实现 rate-limit与一次性告警。
+建议只捕获可预期的反射/链接/运行异常，并使用 once-per-session logger输出目标类、依赖版本和 fallback行为。`LinkageError` 是否降级需逐处决定，不能统一吞掉。主模组目前没有公共 `CreateBiotech.LOGGER`，而 Allay、remap helper和渲染类各自创建 logger；可建立统一 logger/diagnostic helper实现 rate-limit与一次性告警。
 
 ### DIAG-03：`test.py` 完全丢弃客户端输出
 
@@ -220,7 +220,7 @@ options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked']
 - `runData` 被描述为“regenerate datagen output”，但没有 provider，生成目录为空且未接入 source set。
 - `data/` 被描述为“hand-written + datagen”，当前没有可重建 datagen链。
 - 仓库布局列出 `tools/`，实际不存在。
-- Mixin 表只链接 `create_biotech.mixins.json`，没有提 `create_biotech_phantom.mixins.json`。
+- Mixin 表只链接 `create_biotech.mixins.json`，没有提 `create_biotech_allay.mixins.json`。
 - `ref/` 被描述为 bundled，实际 ignored。
 
 建议 README 只描述可从 clean clone执行的流程；实验/本地私有环境放到单独文档并标注 prerequisites。增加 `CONTRIBUTING.md`、`DEVELOPMENT.md`、`RELEASING.md` 和 `CHANGELOG.md`，避免 README继续承载所有约定。

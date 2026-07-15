@@ -6,9 +6,9 @@
 
 1. `LiquidLivingSlimeInteractionHandler` 对每个已加载 LivingEntity、客户端和服务端、每 tick 都读写两项 persistent NBT；这会把临时运动状态写入实体持久数据并扩大所有生物的热路径与存档负担。
 2. `CreeperBlastChamberBlockEntity` 在每 tick、每 20 tick 和客户端动画中反复重建机械压力机/打包机列表、扫描结构与查询实体；配置允许结构边长达到 32，使部分路径从默认规模的小开销放大到数十万甚至数百万次方块/方块实体访问。
-3. 多个 static 世界状态没有统一 server/level stop 清理。`BioPackagerContraptionTracker` 的弱引用失效分支甚至不会移除 entry；Phantom courier、目标注册表和液态活性史莱姆敲击计数也会跨集成服务器会话残留。
+3. 多个 static 世界状态没有统一 server/level stop 清理。`BioPackagerContraptionTracker` 的弱引用失效分支甚至不会移除 entry；Allay courier、目标注册表和液态活性史莱姆敲击计数也会跨集成服务器会话残留。
 
-其次是 Shulker Teleporter 的无条件实体扫描、Phantom 目标全量排序/HUD 二次遍历，以及 Slime/Magma Belt 的每 tick 容器分配。建议先修生命周期和算法级热点，再用 Spark/JFR 确认微优化收益。
+其次是 Shulker Teleporter 的无条件实体扫描、Allay 目标全量排序/HUD 二次遍历，以及 Slime/Magma Belt 的每 tick 容器分配。建议先修生命周期和算法级热点，再用 Spark/JFR 确认微优化收益。
 
 ## 1. Creeper Blast Chamber
 
@@ -132,12 +132,12 @@ level.getEntitiesOfClass(Entity.class, getTeleportArea(), this::canTeleportEntit
 
 若后续装配站/其他 block entity 数量增长，可在客户端维护 `GhastHotAirBalloonAssemblyStationBlockEntity` 的 level-scoped position set，由 load/remove 更新；查询时只比较候选坐标。当前不建议为了这一个有界扫描引入复杂全局索引，除非 profiler 证明它显著占用客户端 tick。
 
-## 4. Phantom courier 与目标注册表
+## 4. Allay courier 与目标注册表
 
-### PERF-10：Phantom target 查找全量 stream + sort
+### PERF-10：Allay target 查找全量 stream + sort
 
 - 优先级：P2
-- 文件：`PhantomPortTargetRegistry.java`
+- 文件：`AllayPortTargetRegistry.java`
 
 同维度和跨维度查找都会过滤后对全部匹配项排序，再取 `findFirst()`；跨维度路径还为每个候选创建 `TargetLocation`。这里只需要 comparator 最小值，可以使用单次遍历/`min(comparator)`，但更根本的优化是按 canonical address 建立二级索引：
 
@@ -147,12 +147,12 @@ canonical address -> dimension -> positions
 
 模糊地址匹配仍可能扫描 address bucket，但无需扫描所有 port。`getKnownNames()` 也可维护有引用计数的有序 name set，而不是每次跨全部维度排序。
 
-注册表 entry 由每个 PhantomPort 每 20 tick刷新，但全表超时清理每 server tick执行。建议把清理同样节流到 20 tick，或用 expiry bucket/优先队列；60 tick timeout 无需 20 次/秒全量检查。
+注册表 entry 由每个 AllayPort 每 20 tick刷新，但全表超时清理每 server tick执行。建议把清理同样节流到 20 tick，或用 expiry bucket/优先队列；60 tick timeout 无需 20 次/秒全量检查。
 
 ### PERF-11：Air Courier HUD 对 player、observation 和 entry 进行嵌套遍历
 
 - 优先级：P2
-- 文件：`AirCourierHudSync.java`
+- 文件：`AllayCourierHudSync.java`
 
 每 tick先为所有 task创建 snapshot/preview，然后对每个在线玩家遍历 `OBSERVED_THIS_CYCLE.values()` 并移除属于该玩家的条目；处理已有 entry 时又对 `playerObservations.stream().anyMatch(...)`。规模较小时无碍，但多玩家、多 courier 时近似 O(players × observations + entries × observations)，并产生多组临时 list/stream 结果。
 
@@ -223,15 +223,15 @@ contraption == null || contraption.level() != level
 - server stopped 时调用 `clearAll()`，并在 level unload/contraption dimension change时明确迁移或清理。
 - 该状态只在 server thread访问时，评估是否需要 `ConcurrentHashMap`；单线程 `HashMap` 更容易定义 iterator 和生命周期语义。
 
-### PERF-16：Phantom 与客户端 static map 缺少统一会话清理
+### PERF-16：Allay 与客户端 static map 缺少统一会话清理
 
 - 优先级：P1/P2
 
 以下状态没有完整的 server stopped/client level unload 清理入口：
 
-- `AirCourierTaskManager.savedData` 与 `visualEntities`；
-- `PhantomPortTargetRegistry.TARGETS`；
-- `AirCourierHudSync.HUD_STATES` / `OBSERVED_THIS_CYCLE`；
+- `AllayCourierTaskManager.savedData` 与 `courierEntities`；
+- `AllayPortTargetRegistry.TARGETS`；
+- `AllayCourierHudSync.HUD_STATES` / `OBSERVED_THIS_CYCLE`；
 - `LiquidLivingSlimeInteractionHandler.SOURCE_HIT_COUNTS`；
 - Creeper Blast Chamber 的客户端 `CLIENT_TRACKED_CREEPERS` / `CLIENT_PRESS_CONTROLLERS` 主要依赖各 BE `setRemoved`。
 
@@ -243,7 +243,7 @@ contraption == null || contraption.level() != level
 2. 修复 `BioPackagerContraptionTracker` weak-reference entry 泄漏，并接入 server stop。
 3. 缓存 Blast Chamber 结构拓扑和 entity 索引，取消 pending 状态下每 tick全结构扫描。
 4. 将 Shulker Teleporter 的速度/目标短路移到实体扫描前。
-5. 优化 Phantom target/HUD 的索引和遍历结构。
+5. 优化 Allay target/HUD 的索引和遍历结构。
 6. 在大型 belt、经验球农场和最大 Blast Chamber 场景运行 Spark/JFR，再决定集合复用与数据结构重写。
 
 建议至少建立以下性能场景：
@@ -253,7 +253,7 @@ contraption == null || contraption.level() != level
 | 100/500/1000 LivingEntity，无液态史莱姆 | handler 总耗时、实体 NBT大小、GC |
 | Blast Chamber 5/16/32，空闲/加工/错误末端方块 | 控制器 tick、block state/BE query次数 |
 | 64 个无转速/无目标 Shulker Teleporter | entity query次数、server tick |
-| 100 个 PhantomPort、100 个 courier、20 玩家 | target lookup、HUD tick、网络包数 |
+| 100 个 AllayPort、100 个 courier、20 玩家 | target lookup、HUD tick、网络包数 |
 | 64 条 Slime Belt，每条 1/16/64 item | sort次数、分配率、controller tick |
 
 ## 8. 验证清单
@@ -264,5 +264,5 @@ contraption == null || contraption.level() != level
 - [ ] Blast Chamber 的结构扫描次数由 dirty/节流驱动，pending 每 tick不做全量扫描。
 - [ ] Blast Chamber 客户端 master press/positions 每 tick只求值一次。
 - [ ] 无速度或无目标 Shulker Teleporter 不执行实体 AABB 查询。
-- [ ] Phantom target lookup 不为“取最优一个”排序全部候选。
+- [ ] Allay target lookup 不为“取最优一个”排序全部候选。
 - [ ] 性能改动有默认规模与上限规模的 profiler/基准对比，且玩法时序没有回归。

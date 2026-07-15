@@ -22,7 +22,7 @@ refmap 约 20 KiB，最终 JAR 根目录包含：
 
 - `create_biotech.refmap.json`
 - `create_biotech.mixins.json`
-- `create_biotech_phantom.mixins.json`
+- `create_biotech_allay.mixins.json`
 
 因此当前 annotation processor、重映射和 refmap 装包链路是有效的。后续调整 Mixin 时应保留这一链路，并继续以生成 refmap 为验证证据。
 
