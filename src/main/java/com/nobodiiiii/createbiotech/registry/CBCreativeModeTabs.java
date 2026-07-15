@@ -33,7 +33,6 @@ public class CBCreativeModeTabs {
 				output.accept(CBItems.SHULKER_TELEPORTER.get());
 				output.accept(CBItems.PHANTOMPORT.get());
 				output.accept(CBItems.MINI_PHANTOM.get());
-				output.accept(CBItems.STORAGE_CHANNEL_EXTENSION_CARD.get());
 				output.accept(CBItems.UNIVERSAL_JOINT.get());
 				output.accept(CBItems.SLIME_CLUTCH.get());
 				output.accept(CBItems.BONE_RATCHET.get());

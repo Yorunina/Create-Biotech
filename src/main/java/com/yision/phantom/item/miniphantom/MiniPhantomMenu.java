@@ -88,11 +88,11 @@ public class MiniPhantomMenu extends AbstractContainerMenu {
 		for (int row = 0; row < 3; ++row) {
 			for (int col = 0; col < 9; ++col) {
 				int slot = col + row * 9 + 9;
-				addSlot(createPlayerSlot(slot, 33 + col * 18, 142 + row * 18));
+				addSlot(createPlayerSlot(slot, 5 + col * 18, 142 + row * 18));
 			}
 		}
 		for (int hotbarSlot = 0; hotbarSlot < 9; ++hotbarSlot) {
-			addSlot(createPlayerSlot(hotbarSlot, 33 + hotbarSlot * 18, 200));
+			addSlot(createPlayerSlot(hotbarSlot, 5 + hotbarSlot * 18, 200));
 		}
 	}
 

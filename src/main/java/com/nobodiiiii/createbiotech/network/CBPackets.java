@@ -15,7 +15,6 @@ import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueRemovalPacke
 import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueSelectionPacket;
 import com.yision.phantom.block.phantomport.PhantomPortConfigurationPacket;
 import com.yision.phantom.block.phantomport.PhantomPortFlapPacket;
-import com.yision.phantom.network.courier.AirCourierHudPacket;
 import com.yision.phantom.network.phantom.MiniPhantomConfirmPacket;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +28,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 public class CBPackets {
 
-	private static final String NETWORK_VERSION = "8";
+	private static final String NETWORK_VERSION = "9";
 	private static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder.named(CreateBiotech.asResource("main"))
 		.serverAcceptedVersions(NETWORK_VERSION::equals)
 		.clientAcceptedVersions(NETWORK_VERSION::equals)
@@ -76,9 +75,6 @@ public class CBPackets {
 			NetworkDirection.PLAY_TO_SERVER);
 		register(PhantomPortFlapPacket.class, PhantomPortFlapPacket::new,
 			PhantomPortFlapPacket::write, PhantomPortFlapPacket::handle,
-			NetworkDirection.PLAY_TO_CLIENT);
-		register(AirCourierHudPacket.class, AirCourierHudPacket::new,
-			AirCourierHudPacket::write, AirCourierHudPacket::handle,
 			NetworkDirection.PLAY_TO_CLIENT);
 	}
 

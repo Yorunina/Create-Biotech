@@ -38,7 +38,6 @@ public class MiniPhantomItem extends Item {
 	private static final int EMPTY_CARRIER_MAX_STACK_SIZE = 64;
 	private static final String CARGO_KEY = "Cargo";
 	private static final String HEADING_KEY = "Heading";
-	private static final String HUD_ID_KEY = "HudEntryId";
 	private static final String RETURN_TARGET_KEY = "ReturnTarget";
 	private static final String PLAYER_RETURN_TARGET_KEY = "PlayerReturnTarget";
 	private static final String RETURN_MODE_KEY = "ReturnMode";
@@ -82,11 +81,6 @@ public class MiniPhantomItem extends Item {
 		facingDirection = facingDirection.normalize();
 		AirCourierEntity courier = AirCourierEntity.createWaiting(level, copyCargoPackage(stack), facingDirection);
 		courier.setPos(spawnPos);
-
-		UUID hudEntryId = getHudEntryId(stack);
-		if (hudEntryId != null) {
-			courier.setHudEntryId(hudEntryId);
-		}
 
 		if (!level.noCollision(courier, courier.getBoundingBox())) {
 			return InteractionResult.FAIL;
@@ -162,8 +156,7 @@ public class MiniPhantomItem extends Item {
 			&& !hasCargo(stack)
 			&& getReturnTarget(stack).isEmpty()
 			&& getPlayerReturnTarget(stack).isEmpty()
-			&& !hasReturnMode(stack)
-			&& !hasHudEntryId(stack);
+			&& !hasReturnMode(stack);
 	}
 
 	public static void clearCargo(ItemStack phantom) {
@@ -182,25 +175,6 @@ public class MiniPhantomItem extends Item {
 	public static int getHeadingAngle(ItemStack stack) {
 		CompoundTag tag = stack.getTag();
 		return tag == null ? 0 : Math.floorMod(tag.getInt(HEADING_KEY), 360);
-	}
-
-	public static void setHudEntryId(ItemStack stack, UUID hudEntryId) {
-		stack.getOrCreateTag().putUUID(HUD_ID_KEY, hudEntryId);
-	}
-
-	@Nullable
-	public static UUID getHudEntryId(ItemStack stack) {
-		CompoundTag tag = stack.getTag();
-		return tag != null && tag.hasUUID(HUD_ID_KEY) ? tag.getUUID(HUD_ID_KEY) : null;
-	}
-
-	public static boolean hasHudEntryId(ItemStack stack) {
-		CompoundTag tag = stack.getTag();
-		return tag != null && tag.hasUUID(HUD_ID_KEY);
-	}
-
-	public static void clearHudEntryId(ItemStack stack) {
-		remove(stack, HUD_ID_KEY);
 	}
 
 	public static ItemStack returningTo(ResourceKey<Level> dimension, BlockPos pos) {

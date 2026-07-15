@@ -10,7 +10,6 @@ import com.yision.phantom.logistics.courier.AirCourierHelper;
 import com.yision.phantom.logistics.courier.AirCourierLaunchRules;
 import com.yision.phantom.logistics.courier.AirCourierTask;
 import com.yision.phantom.logistics.courier.AirCourierTaskManager;
-import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 import com.yision.phantom.logistics.courier.AirCourierTarget;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 import net.minecraft.core.BlockPos;
@@ -81,20 +80,19 @@ public abstract class BeltInventoryMixin {
 		Vec3 spawnPos = outPos.add(launchMotion.normalize().scale(0.001)).add(0, 6 / 16f, 0);
 
 		UUID taskId = UUID.randomUUID();
-		UUID hudEntryId = MiniPhantomItem.getHudEntryId(stack.stack);
 
 		AirCourierTask task;
 		if (target instanceof AirCourierTarget.PhantomPortTarget phantomPort) {
 			task = AirCourierTask.forPackageToAirport(
 				taskId, box, serverLevel, phantomPort.dimension(), phantomPort.pos(),
 				spawnPos, launchDirection, launchMotion,
-				sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null, returnMode);
+				sourcePhantomPortDimension, sourcePhantomPortPos, null, returnMode);
 		} else if (target instanceof AirCourierTarget.PlayerTarget player) {
 			ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(player.playerId());
 			task = targetPlayer != null
 				? AirCourierTask.forPackageToPlayer(taskId, box, serverLevel, player.playerId(),
 					player.dimension(), spawnPos, launchDirection, launchMotion,
-					sourcePhantomPortDimension, sourcePhantomPortPos, null, hudEntryId, null, returnMode)
+					sourcePhantomPortDimension, sourcePhantomPortPos, null, returnMode)
 				: null;
 		} else {
 			task = null;
@@ -104,7 +102,6 @@ public abstract class BeltInventoryMixin {
 		}
 
 		AirCourierTaskManager.addTask(serverLevel.getServer(), task);
-		AirCourierHudSync.onCourierTaskStarted(serverLevel.getServer(), task);
 
 		ci.cancel();
 	}

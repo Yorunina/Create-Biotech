@@ -2,7 +2,6 @@ package com.yision.phantom.logistics.courier;
 
 import com.yision.phantom.block.phantomport.PhantomPortBlockEntity;
 import com.yision.phantom.entity.courier.AirCourierEntity;
-import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 import com.yision.phantom.registry.AllItems;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -41,15 +40,10 @@ public final class AirCourierDeliveryService {
 		MinecraftServer server,
 		ItemStack box,
 		AirCourierEntity.Mission mission,
-		@Nullable ResourceKey<Level> sourceDimension,
-		@Nullable BlockPos sourcePhantomPortPos,
-		@Nullable UUID sourcePlayerId,
 		AirCourierReturnMode returnMode,
 		@Nullable ResourceKey<Level> targetDimension,
 		@Nullable BlockPos targetPhantomPortPos,
 		@Nullable UUID targetPlayerId,
-		@Nullable UUID hudPlayerId,
-		@Nullable UUID hudEntryId,
 		@Nullable ServerLevel currentLevel,
 		Vec3 currentPosition,
 		Vec3 landingTarget
@@ -58,24 +52,20 @@ public final class AirCourierDeliveryService {
 		PhantomPortBlockEntity targetPhantomPort = resolveTargetPhantomPort(targetLevel, targetPhantomPortPos);
 		ServerPlayer targetPlayer = targetPhantomPort == null ? resolveTargetPlayer(server, targetPlayerId, targetPhantomPort) : null;
 
-		ServerPlayer hudPlayer = resolvePlayer(server, hudPlayerId);
-
 		switch (mission) {
 			case PACKAGE_TO_PLAYER -> {
 				if (targetPlayer == null) {
-					failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-						targetPlayerId, hudPlayerId, hudEntryId);
+					failAndDrop(box, mission, currentLevel, landingTarget);
 					return DeliveryResult.done();
 				}
-				return finishPlayerDelivery(box, targetPlayer, hudPlayer, hudEntryId, returnMode);
+				return finishPlayerDelivery(box, targetPlayer, returnMode);
 			}
 			case PACKAGE_TO_AIRPORT -> {
 				if (targetPhantomPort == null) {
-					failAndDrop(server, box, mission, sourceDimension, sourcePhantomPortPos, currentLevel, landingTarget,
-						targetPlayerId, hudPlayerId, hudEntryId);
+					failAndDrop(box, mission, currentLevel, landingTarget);
 					return DeliveryResult.done();
 				}
-				return finishPhantomPortDelivery(box, targetPhantomPort, hudPlayer, hudEntryId, returnMode, landingTarget);
+				return finishPhantomPortDelivery(box, targetPhantomPort, returnMode, landingTarget);
 			}
 			case CARRIER_RETURN -> {
 				if (targetPhantomPort != null) {
@@ -90,7 +80,6 @@ public final class AirCourierDeliveryService {
 			case CARRIER_RETURN_TO_PLAYER -> {
 				if (targetPlayer != null) {
 					AirCourierHelper.deliverCarrier(targetPlayer);
-					AirCourierHudSync.onCourierDelivered(targetPlayer, box, hudEntryId);
 				} else {
 					dropCarrierOnly(currentLevel, currentPosition);
 				}
@@ -101,17 +90,12 @@ public final class AirCourierDeliveryService {
 	}
 
 	private static DeliveryResult finishPhantomPortDelivery(ItemStack box, PhantomPortBlockEntity targetPhantomPort,
-		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode, Vec3 landingTarget) {
+		AirCourierReturnMode returnMode, Vec3 landingTarget) {
 		boolean packageAccepted = targetPhantomPort.receivePackage(box);
 		ServerLevel targetLevel = targetPhantomPort.getLevel() instanceof ServerLevel serverLevel ? serverLevel : null;
 
 		if (!packageAccepted) {
 			AirCourierHelper.dropPackageOnly(targetLevel, landingTarget, box);
-			if (hudPlayer != null) {
-				AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
-			}
-		} else if (hudPlayer != null) {
-			AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
 		}
 
 		return switch (returnMode) {
@@ -129,19 +113,8 @@ public final class AirCourierDeliveryService {
 	}
 
 	private static DeliveryResult finishPlayerDelivery(ItemStack box, ServerPlayer targetPlayer,
-		@Nullable ServerPlayer hudPlayer, @Nullable UUID hudEntryId, AirCourierReturnMode returnMode) {
+		AirCourierReturnMode returnMode) {
 		boolean packageDelivered = AirCourierHelper.deliverPackage(targetPlayer, box);
-		if (!packageDelivered) {
-			AirCourierHudSync.onCourierFailed(targetPlayer, box, hudEntryId);
-			if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
-				AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
-			}
-		} else {
-			AirCourierHudSync.onCourierDelivered(targetPlayer, box, hudEntryId);
-			if (hudPlayer != null && !hudPlayer.getUUID().equals(targetPlayer.getUUID())) {
-				AirCourierHudSync.onCourierDelivered(hudPlayer, box, hudEntryId);
-			}
-		}
 
 		return switch (returnMode) {
 			case ALWAYS_RETURN -> DeliveryResult.returning();
@@ -160,27 +133,11 @@ public final class AirCourierDeliveryService {
 	}
 
 	public static void failAndDrop(
-		MinecraftServer server,
 		ItemStack box,
 		AirCourierEntity.Mission mission,
-		@Nullable ResourceKey<Level> sourceDimension,
-		@Nullable BlockPos sourcePhantomPortPos,
 		@Nullable ServerLevel currentLevel,
-		Vec3 dropPos,
-		@Nullable UUID targetPlayerId,
-		@Nullable UUID hudPlayerId,
-		@Nullable UUID hudEntryId
+		Vec3 dropPos
 	) {
-		ServerPlayer targetPlayer = resolvePlayer(server, targetPlayerId);
-		ServerPlayer hudPlayer = resolvePlayer(server, hudPlayerId);
-
-		if (targetPlayer != null) {
-			AirCourierHudSync.onCourierFailed(targetPlayer, box, hudEntryId);
-		}
-		if (hudPlayer != null && (targetPlayer == null || !hudPlayer.getUUID().equals(targetPlayer.getUUID()))) {
-			AirCourierHudSync.onCourierFailed(hudPlayer, box, hudEntryId);
-		}
-
 		if (currentLevel != null) {
 			if (mission == AirCourierEntity.Mission.CARRIER_RETURN
 				|| mission == AirCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER) {

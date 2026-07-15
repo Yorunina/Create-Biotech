@@ -26,7 +26,6 @@ import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.behaviour.interaction.MovingInteractionBehaviour;
 import com.yision.phantom.block.phantomport.PhantomPortTargetRegistry;
 import com.yision.phantom.logistics.courier.AirCourierTaskManager;
-import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.DyeColor;
@@ -63,7 +62,6 @@ public class CreateBiotech {
 	}
 
 	private static void registerPhantomEvents() {
-		MinecraftForge.EVENT_BUS.addListener(AirCourierHudSync::onServerTick);
 		MinecraftForge.EVENT_BUS.addListener(AirCourierTaskManager::onServerTick);
 		MinecraftForge.EVENT_BUS.addListener(PhantomPortTargetRegistry::onServerTick);
 		MinecraftForge.EVENT_BUS.addListener((ServerStartingEvent event) ->

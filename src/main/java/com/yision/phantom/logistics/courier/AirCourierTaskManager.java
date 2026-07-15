@@ -76,16 +76,6 @@ public final class AirCourierTaskManager {
 		}
 	}
 
-	public static List<AirCourierTask.AirCourierTaskSnapshot> getSnapshots(MinecraftServer server) {
-		if (savedData == null) return List.of();
-		List<AirCourierTask.AirCourierTaskSnapshot> snapshots = new ArrayList<>();
-		for (AirCourierTask task : savedData.getTasks()) {
-			if (task.isRemoved()) continue;
-			snapshots.add(task.snapshot(server));
-		}
-		return snapshots;
-	}
-
 	private static boolean canShowEntity(ServerLevel level, net.minecraft.world.phys.Vec3 pos) {
 		return level.isPositionEntityTicking(BlockPos.containing(pos));
 	}

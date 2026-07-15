@@ -60,9 +60,9 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 	private ItemStack icon;
 	private List<Rect2i> extraAreas = Collections.emptyList();
 	private final List<Component> returnModeOptions = List.of(
-		Component.translatable("gui.createphantom.phantomport.return_mode.always_dock"),
-		Component.translatable("gui.createphantom.phantomport.return_mode.always_return"),
-		Component.translatable("gui.createphantom.phantomport.return_mode.return_when_unable"));
+		Component.translatable("gui.create_biotech.phantomport.return_mode.always_dock"),
+		Component.translatable("gui.create_biotech.phantomport.return_mode.always_return"),
+		Component.translatable("gui.create_biotech.phantomport.return_mode.return_when_unable"));
 
 	public PhantomPortScreen(PhantomPortMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
@@ -141,7 +141,7 @@ public class PhantomPortScreen extends AbstractSimiContainerScreen<PhantomPortMe
 	private IconButton createReturnModeButton(int x, int y, AirCourierReturnMode mode, AllIcons icon) {
 		IconButton button = new IconButton(x, y, icon);
 		button.withCallback(() -> selectReturnMode(mode));
-		button.setToolTip(Component.translatable("gui.createphantom.phantomport.return_mode")
+		button.setToolTip(Component.translatable("gui.create_biotech.phantomport.return_mode")
 			.append(": ")
 			.append(returnModeOptions.get(mode.id())));
 		return button;

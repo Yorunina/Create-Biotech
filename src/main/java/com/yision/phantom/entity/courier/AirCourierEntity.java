@@ -9,7 +9,6 @@ import com.yision.phantom.logistics.courier.flight.AirCourierFlightMath;
 import com.yision.phantom.logistics.courier.flight.AirCourierFlightProfile;
 import com.yision.phantom.logistics.courier.AirCourierTask;
 import com.yision.phantom.logistics.courier.AirCourierTaskManager;
-import com.yision.phantom.logistics.courier.hud.AirCourierHudSync;
 import com.yision.phantom.item.miniphantom.MiniPhantomItem;
 import com.yision.phantom.registry.AllEntityTypes;
 import java.util.UUID;
@@ -64,8 +63,6 @@ public class AirCourierEntity extends Entity implements Container {
 	private static final float ROLL_SMOOTHING = 0.25f;
 	private static final float VISUAL_ROLL_MULTIPLIER = 4.0f;
 
-	@Nullable
-	private UUID hudEntryId;
 	private Vec3 launchDirection = new Vec3(0, 0, 1);
 	@Nullable
 	private Vec3 clientSyncedPos;
@@ -110,7 +107,6 @@ public class AirCourierEntity extends Entity implements Container {
 		courier.setDeltaMovement(task.motion());
 		courier.setLaunchDirection(task.launchDirection());
 
-		courier.hudEntryId = task.hudEntryId();
 		courier.hasImpulse = true;
 		courier.hurtMarked = true;
 		courier.snapRotationToMotion();
@@ -338,15 +334,6 @@ public class AirCourierEntity extends Entity implements Container {
 		return new Vec3(direction.x(), direction.y(), direction.z());
 	}
 
-	@Nullable
-	public UUID getHudEntryId() {
-		return hudEntryId;
-	}
-
-	public void setHudEntryId(UUID hudEntryId) {
-		this.hudEntryId = hudEntryId;
-	}
-
 	public float getVisualYaw(float partialTick) {
 		return Mth.rotLerp(partialTick, yRotO, getYRot());
 	}
@@ -447,9 +434,6 @@ public class AirCourierEntity extends Entity implements Container {
 		}
 		ItemStack picked = MiniPhantomItem.createLoaded(getPackage());
 		MiniPhantomItem.setHeadingAngle(picked, Math.round(getYRot()));
-		if (hudEntryId != null) {
-			MiniPhantomItem.setHudEntryId(picked, hudEntryId);
-		}
 		return picked;
 	}
 
@@ -467,9 +451,6 @@ public class AirCourierEntity extends Entity implements Container {
 
 		ItemStack droppedStack = MiniPhantomItem.createLoaded(getPackage());
 		MiniPhantomItem.setHeadingAngle(droppedStack, Math.round(getYRot()));
-		if (hudEntryId != null) {
-			MiniPhantomItem.setHudEntryId(droppedStack, hudEntryId);
-		}
 		ItemEntity itemEntity = new ItemEntity(level(), getX(), getY(), getZ(), droppedStack);
 		Vec3 popMotion = player.getLookAngle().multiply(1, 0, 1);
 		if (popMotion.lengthSqr() > 1.0E-6) {
@@ -513,7 +494,7 @@ public class AirCourierEntity extends Entity implements Container {
 				null, null);
 			if (target == null) {
 				player.displayClientMessage(
-					Component.translatable("gui.createphantom.mini_phantom.invalid_target_phantomport")
+					Component.translatable("gui.create_biotech.mini_phantom.invalid_target")
 						.withStyle(ChatFormatting.RED),
 					true);
 				return InteractionResult.CONSUME;
@@ -532,15 +513,13 @@ public class AirCourierEntity extends Entity implements Container {
 					phantomPortTarget.dimension(), phantomPortTarget.pos(),
 					spawnPos, launchDir, launchMotion,
 					null, null,
-					player instanceof ServerPlayer sp ? sp.getUUID() : null,
-					hudEntryId,
 					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null,
 					AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
 			} else if (target instanceof AirCourierTarget.PlayerTarget playerTarget) {
 				ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(playerTarget.playerId());
 				if (targetPlayer == null) {
 					player.displayClientMessage(
-						Component.translatable("gui.createphantom.mini_phantom.invalid_target_phantomport")
+						Component.translatable("gui.create_biotech.mini_phantom.invalid_target")
 							.withStyle(ChatFormatting.RED),
 						true);
 					return InteractionResult.CONSUME;
@@ -549,8 +528,6 @@ public class AirCourierEntity extends Entity implements Container {
 					playerTarget.playerId(), playerTarget.dimension(),
 					spawnPos, launchDir, launchMotion,
 					null, null,
-					player instanceof ServerPlayer sp ? sp.getUUID() : null,
-					hudEntryId,
 					player instanceof ServerPlayer sp2 ? sp2.getUUID() : null,
 					AirCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
 			} else {
@@ -558,7 +535,6 @@ public class AirCourierEntity extends Entity implements Container {
 			}
 
 			AirCourierTaskManager.addTask(serverLevel.getServer(), task);
-			AirCourierHudSync.onCourierTaskStarted(serverLevel.getServer(), task);
 
 			level().playSound(null, blockPosition(), SoundEvents.FIREWORK_ROCKET_LAUNCH, SoundSource.PLAYERS, 0.8f, 1.0f);
 			if (!player.getAbilities().instabuild) {
@@ -600,9 +576,6 @@ public class AirCourierEntity extends Entity implements Container {
 	@Override
 	protected void readAdditionalSaveData(@NotNull CompoundTag tag) {
 		setPackage(ItemStack.of(tag.getCompound("Package")));
-		if (tag.hasUUID("HudEntryId")) {
-			hudEntryId = tag.getUUID("HudEntryId");
-		}
 		if (tag.contains("LaunchDirection")) {
 			CompoundTag dirTag = tag.getCompound("LaunchDirection");
 			setLaunchDirection(new Vec3(dirTag.getDouble("X"), dirTag.getDouble("Y"), dirTag.getDouble("Z")));
@@ -616,9 +589,6 @@ public class AirCourierEntity extends Entity implements Container {
 	@Override
 	protected void addAdditionalSaveData(@NotNull CompoundTag tag) {
 		tag.put("Package", getPackage().save(new CompoundTag()));
-		if (hudEntryId != null) {
-			tag.putUUID("HudEntryId", hudEntryId);
-		}
 		CompoundTag dirTag = new CompoundTag();
 		dirTag.putDouble("X", launchDirection.x);
 		dirTag.putDouble("Y", launchDirection.y);

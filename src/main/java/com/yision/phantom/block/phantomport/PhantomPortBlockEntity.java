@@ -132,7 +132,6 @@ public class PhantomPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	void markPortContentsChanged() {
-		dispatchAccess.clearPendingHudEntries();
 		setChanged();
 		if (level != null) {
 			level.blockEntityChanged(worldPosition);
