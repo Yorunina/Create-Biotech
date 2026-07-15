@@ -3,7 +3,9 @@ package com.yision.phantom.item.miniphantom;
 import com.simibubi.create.content.logistics.AddressEditBox;
 import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
 import com.simibubi.create.foundation.gui.AllGuiTextures;
+import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
+import com.simibubi.create.foundation.gui.widget.IconButton;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.nobodiiiii.createbiotech.network.CBPackets;
 import com.yision.phantom.network.phantom.MiniPhantomConfirmPacket;
@@ -19,8 +21,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class MiniPhantomScreen extends AbstractSimiContainerScreen<MiniPhantomMenu> {
 	private AddressEditBox addressBox;
+	private IconButton confirmButton;
 	private List<Rect2i> extraAreas = List.of();
-	private boolean submitted;
 
 	public MiniPhantomScreen(MiniPhantomMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
@@ -43,15 +45,10 @@ public class MiniPhantomScreen extends AbstractSimiContainerScreen<MiniPhantomMe
 		addressBox.setValue(previousAddress);
 		addressBox.setTextColor(0x3D3C48);
 		addRenderableWidget(addressBox);
-	}
 
-	@Override
-	public void onClose() {
-		if (!submitted) {
-			submitted = true;
-			CBPackets.sendToServer(new MiniPhantomConfirmPacket(addressBox == null ? "" : addressBox.getValue()));
-		}
-		super.onClose();
+		confirmButton = new IconButton(x + guiWidth - 30, y + guiHeight - 25, AllIcons.I_CONFIRM);
+		confirmButton.withCallback(() -> CBPackets.sendToServer(new MiniPhantomConfirmPacket(addressBox.getValue())));
+		addRenderableWidget(confirmButton);
 	}
 
 	@Override

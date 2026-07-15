@@ -1,9 +1,5 @@
 {
 	"parent": "item/generated",
-	"textures": {
-		"layer0": "create_biotech:item/mini_phantom",
-		"particle": "create_biotech:item/mini_phantom"
-	},
 	"display": {
 		"thirdperson_righthand": {
 			"rotation": [10, -155, 0],
