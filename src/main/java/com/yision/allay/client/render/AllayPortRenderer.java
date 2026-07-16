@@ -33,7 +33,7 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 	public static final Vec3 FLAP_PIVOT = VecHelper.voxelSpace(0, 1, 1.5f);
 	private static final ResourceLocation ALLAY_TEXTURE =
 		CreateBiotech.asResource("textures/entity/allay_port/allay.png");
-	private static final double ALLAY_POSITION_Y = 1.0d;
+	private static final double ALLAY_POSITION_Y = 1.0d - 2.0d / 16.0d;
 	private static final float LIVING_ENTITY_MODEL_Y_OFFSET = -1.501f;
 	private static final float ALLAY_SCALE = 1.0f;
 
@@ -96,14 +96,14 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 		ModelPart rightWing = body.getChild("right_wing");
 		ModelPart leftWing = body.getChild("left_wing");
 
-		root.zRot = degrees(-15.0f);
-		body.zRot = degrees(-5.0f);
-		head.zRot = degrees(12.0f);
+		root.zRot = degrees(18.0f);
+		body.zRot = degrees(5.0f);
+		head.zRot = degrees(-6.0f);
 		head.yRot = degrees(-5.0f);
 
 		rightArm.xRot = degrees(-20.0f);
 		rightArm.yRot = degrees(-15.0f);
-		rightArm.zRot = degrees(140.0f);
+		rightArm.zRot = degrees(130.0f);
 		leftArm.xRot = degrees(-5.0f);
 		leftArm.zRot = degrees(-25.0f);
 
