@@ -45,7 +45,8 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	private final AllayPortAutomation automation;
 	private final AllayPortReturnQueue returnQueue;
 	private final LerpedFloat flap;
-	private final Set<UUID> landingCouriers = new HashSet<>();
+	private final Set<UUID> wavingCouriers = new HashSet<>();
+	private boolean courierWaving;
 	private AllayCourierReturnMode returnMode = AllayCourierReturnMode.DEFAULT_FOR_PORT;
 
 	public AllayPortBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -72,7 +73,6 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		if (!(level instanceof ServerLevel serverLevel)) {
 			return;
 		}
-		updateLandingOpenState();
 		returnQueue.tick();
 		dispatchAccess.tryDispatch();
 		if (serverLevel.getGameTime() % 20 == 0) {
@@ -262,22 +262,20 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 			.chase(0, .05f, Chaser.EXP);
 	}
 
-	public void setCourierLandingOpen(UUID courierId, boolean open) {
-		boolean changed = open ? landingCouriers.add(courierId) : landingCouriers.remove(courierId);
-		if (changed) {
-			updateLandingOpenState();
+	public void setCourierWaving(UUID courierId, boolean waving) {
+		boolean wasWaving = courierWaving;
+		boolean changed = waving ? wavingCouriers.add(courierId) : wavingCouriers.remove(courierId);
+		if (!changed) {
+			return;
+		}
+		courierWaving = !wavingCouriers.isEmpty();
+		if (courierWaving != wasWaving) {
+			sendData();
 		}
 	}
 
-	private void updateLandingOpenState() {
-		if (level == null) {
-			return;
-		}
-		boolean open = !landingCouriers.isEmpty();
-		BlockState state = getBlockState();
-		if (state.getValue(AllayPortBlock.OPEN) != open) {
-			level.setBlockAndUpdate(worldPosition, state.setValue(AllayPortBlock.OPEN, open));
-		}
+	public boolean isCourierWaving() {
+		return courierWaving;
 	}
 
 	@Override
@@ -293,6 +291,9 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	protected void write(CompoundTag tag, boolean clientPacket) {
 		super.write(tag, clientPacket);
+		if (clientPacket) {
+			tag.putBoolean("CourierWaving", courierWaving);
+		}
 		tag.putString("ReturnMode", returnMode.serializedName());
 		portInventory.write(tag);
 		returnQueue.write(tag);
@@ -301,6 +302,9 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	@Override
 	protected void read(CompoundTag tag, boolean clientPacket) {
 		super.read(tag, clientPacket);
+		if (clientPacket) {
+			courierWaving = tag.getBoolean("CourierWaving");
+		}
 		returnMode = tag.contains("ReturnMode")
 			? AllayCourierReturnMode.byName(tag.getString("ReturnMode"))
 			: AllayCourierReturnMode.DEFAULT_FOR_PORT;

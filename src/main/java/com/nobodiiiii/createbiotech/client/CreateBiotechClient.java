@@ -50,6 +50,7 @@ import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeper
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import com.yision.allay.block.allayport.AllayPortMenu;
 import com.yision.allay.block.allayport.AllayPortScreen;
+import com.yision.allay.client.gui.hud.AllayCourierHudOverlay;
 import com.yision.allay.client.render.AllayCourierEntityRenderer;
 import com.yision.allay.client.render.AllayPortRenderer;
 import com.yision.allay.client.render.AllayPortVisual;
@@ -196,6 +197,8 @@ public class CreateBiotechClient {
 	public static void registerGuiOverlays(RegisterGuiOverlaysEvent event) {
 		event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "ghast_balloon_magnet_prompt",
 			GhastBalloonMagnetSnapOverlay.INSTANCE);
+		event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "allay_courier_eta",
+			AllayCourierHudOverlay.INSTANCE);
 	}
 
 	@SubscribeEvent

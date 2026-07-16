@@ -420,6 +420,7 @@
   "item.create_biotech.mini_allay": "运输悦灵",
   "item.create_biotech.incomplete_mini_allay": "未完成的运输悦灵",
   "gui.create_biotech.mini_allay.invalid_target": "当前没有可用的投递目标",
+  "gui.create_biotech.allay_port.arrival_eta": "预计到达时间：%s",
   "gui.create_biotech.allay_port.return_mode": "运输悦灵返航方式",
   "gui.create_biotech.allay_port.return_mode.always_dock": "停靠在目的地",
   "gui.create_biotech.allay_port.return_mode.always_return": "返回出发地",

@@ -14,7 +14,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.BlockGetter;
@@ -27,7 +26,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenchable, IBE<AllayPortBlockEntity> {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-	public static final BooleanProperty OPEN = BooleanProperty.create("open");
 	private static final VoxelShape SHAPE_NORTH = box(0, 0, 0, 16, 15, 14);
 	private static final VoxelShape SHAPE_EAST = rotateY(SHAPE_NORTH);
 	private static final VoxelShape SHAPE_SOUTH = rotateY(SHAPE_EAST);
@@ -35,20 +33,18 @@ public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenc
 
 	public AllayPortBlock(Properties properties) {
 		super(properties);
-		registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH)
-			.setValue(OPEN, false));
+		registerDefaultState(defaultBlockState().setValue(FACING, Direction.NORTH));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
 		super.createBlockStateDefinition(builder);
-		builder.add(FACING, OPEN);
+		builder.add(FACING);
 	}
 
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext context) {
-		return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite())
-			.setValue(OPEN, false);
+		return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
 	}
 
 	@Override

@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class AllayCourierTaskSavedData extends SavedData {
 
@@ -51,6 +52,10 @@ public class AllayCourierTaskSavedData extends SavedData {
 	public void addTask(AllayCourierTask task) {
 		tasks.add(task);
 		setDirty();
+	}
+
+	public boolean hasTask(UUID id) {
+		return tasks.stream().anyMatch(task -> !task.isRemoved() && task.id().equals(id));
 	}
 
 	public void removeCompleted() {

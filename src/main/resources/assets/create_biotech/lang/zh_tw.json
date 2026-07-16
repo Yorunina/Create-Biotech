@@ -35,6 +35,7 @@
   "item.create_biotech.mini_allay": "運輸悅靈",
   "item.create_biotech.incomplete_mini_allay": "未完成的運輸悅靈",
   "gui.create_biotech.mini_allay.invalid_target": "目前沒有可用的投遞目標",
+  "gui.create_biotech.allay_port.arrival_eta": "預計抵達時間：%s",
   "gui.create_biotech.allay_port.return_mode": "運輸悅靈返航方式",
   "gui.create_biotech.allay_port.return_mode.always_dock": "停靠在目的地",
   "gui.create_biotech.allay_port.return_mode.always_return": "返回出發地",

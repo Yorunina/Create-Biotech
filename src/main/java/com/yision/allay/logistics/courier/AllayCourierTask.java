@@ -39,6 +39,10 @@ public final class AllayCourierTask {
 	private static final double PLAYER_COMPLETION_DISTANCE = 1.5;
 	private static final double PLAYER_TARGET_HEIGHT = 1.2;
 	private static final double PLAYER_FORWARD_OFFSET = 0.15;
+	private static final double ESTIMATED_CRUISE_BLOCKS_PER_TICK = 0.55;
+	private static final double ESTIMATED_APPROACH_BLOCKS_PER_TICK = 0.24;
+	private static final int ESTIMATED_ACCELERATION_TICKS = 4;
+	private static final int GREETING_ETA_TICKS = 20;
 
 	private final UUID id;
 	private ItemStack box;
@@ -59,6 +63,7 @@ public final class AllayCourierTask {
 	private int allayPortEntryTicks = -1;
 	private int deliveryElapsedTicks;
 	private boolean teleportedNearTarget;
+	private boolean forceArrivalPending;
 	private boolean relocatedThisTick;
 	private boolean removed;
 
@@ -159,9 +164,17 @@ public final class AllayCourierTask {
 		if (hasActiveEntity) {
 			position = entity.position();
 		}
+		if (forceArrivalPending) {
+			forceArrivalPending = false;
+			doFinishDeliveryAt(server, currentLevel);
+			return;
+		}
 
 		deliveryElapsedTicks++;
 		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS && !isEnteringAllayPort()) {
+			if (hasActiveEntity && teleportToForcedArrivalTarget(server)) {
+				return;
+			}
 			forceArrive(server, currentLevel);
 			return;
 		}
@@ -176,6 +189,7 @@ public final class AllayCourierTask {
 			doFail(server, currentLevel);
 			return;
 		}
+		startTargetWavingIfArriving(server, target.allayPort);
 		if (tickInitialWaypoint(entity, hasActiveEntity)) {
 			return;
 		}
@@ -233,7 +247,7 @@ public final class AllayCourierTask {
 				return;
 			}
 			if (crossedLandingTarget && !isEnteringAllayPort()) {
-				beginAllayPortEntry(target.allayPort);
+				beginAllayPortEntry();
 			}
 			if (isEnteringAllayPort()) {
 				tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
@@ -243,7 +257,7 @@ public final class AllayCourierTask {
 
 		if (hasReached(target.allayPort, target.player, landingTarget)) {
 			if (target.allayPort != null) {
-				beginAllayPortEntry(target.allayPort);
+				beginAllayPortEntry();
 				tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
 			} else {
 				doFinishDeliveryAt(server, currentLevel);
@@ -257,7 +271,6 @@ public final class AllayCourierTask {
 				phaseTicks = 0;
 			}
 			phase = AllayCourierEntity.Phase.LANDING;
-			setLandingOpen(target.allayPort, true);
 		} else if (phase == AllayCourierEntity.Phase.TAKEOFF && phaseTicks >= TAKEOFF_PHASE_TICKS) {
 			phase = AllayCourierEntity.Phase.CRUISE;
 			phaseTicks = 0;
@@ -273,18 +286,16 @@ public final class AllayCourierTask {
 		}
 	}
 
-	private void beginAllayPortEntry(AllayPortBlockEntity allayPort) {
+	private void beginAllayPortEntry() {
 		allayPortEntryTicks = 0;
 		teleportedNearTarget = true;
 		phase = AllayCourierEntity.Phase.LANDING;
 		phaseTicks = 0;
-		setLandingOpen(allayPort, true);
 	}
 
 	private void tickAllayPortEntry(MinecraftServer server, ServerLevel currentLevel,
 		AllayPortBlockEntity allayPort, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
 		phase = AllayCourierEntity.Phase.LANDING;
-		setLandingOpen(allayPort, true);
 		if (allayPortEntryTicks >= ALLAY_PORT_ENTRY_TICKS) {
 			doFinishDeliveryAt(server, currentLevel);
 			return;
@@ -317,6 +328,29 @@ public final class AllayCourierTask {
 		initialWaypoint = null;
 		teleportedNearTarget = true;
 		relocatedThisTick = true;
+	}
+
+	private boolean teleportToForcedArrivalTarget(MinecraftServer server) {
+		ResolvedTarget target = resolveTarget(server);
+		if (target == null) {
+			return false;
+		}
+		if (targetAllayPortPos != null) {
+			target.level.getChunkAt(targetAllayPortPos);
+		}
+
+		position = landingTarget(target.allayPort, target.player);
+		currentDimension = target.level.dimension();
+		if (target.player != null) {
+			targetDimension = target.player.serverLevel().dimension();
+		}
+		phase = AllayCourierEntity.Phase.LANDING;
+		phaseTicks = 0;
+		initialWaypoint = null;
+		teleportedNearTarget = true;
+		forceArrivalPending = true;
+		relocatedThisTick = true;
+		return true;
 	}
 
 	private Vec3 computeNearTargetSpawn(Vec3 landingTarget, Vec3 waypoint, boolean playerTarget) {
@@ -363,11 +397,6 @@ public final class AllayCourierTask {
 		}
 		position = landingTarget(target.allayPort, target.player);
 		currentDimension = target.level.dimension();
-		if (target.allayPort != null) {
-			beginAllayPortEntry(target.allayPort);
-			relocatedThisTick = true;
-			return;
-		}
 		doFinishDeliveryAt(server, target.level);
 	}
 
@@ -379,7 +408,7 @@ public final class AllayCourierTask {
 
 		ResolvedTarget target = resolveTarget(server);
 		Vec3 landingTarget = target != null ? landingTarget(target.allayPort, target.player) : position;
-		setLandingOpen(target != null ? target.allayPort : null, false);
+		setTargetWaving(target != null ? target.allayPort : null, false);
 
 		AllayCourierDeliveryService.DeliveryResult result = AllayCourierDeliveryService.finishDelivery(
 			server, box, mission, returnMode,
@@ -404,7 +433,7 @@ public final class AllayCourierTask {
 		ResolvedTarget target = resolveTarget(server);
 		Vec3 dropTarget = target != null ? landingTarget(target.allayPort, null) : position;
 		Vec3 dropPos = target != null && target.allayPort != null ? dropTarget : position;
-		setLandingOpen(target != null ? target.allayPort : null, false);
+		setTargetWaving(target != null ? target.allayPort : null, false);
 		AllayCourierDeliveryService.failAndDrop(box, mission, currentLevel, dropPos);
 		markRemoved();
 	}
@@ -444,6 +473,7 @@ public final class AllayCourierTask {
 		allayPortEntryTicks = -1;
 		deliveryElapsedTicks = 0;
 		teleportedNearTarget = false;
+		forceArrivalPending = false;
 		initialWaypoint = null;
 	}
 
@@ -563,9 +593,20 @@ public final class AllayCourierTask {
 		return allayPortEntryTicks >= 0;
 	}
 
-	private void setLandingOpen(@Nullable AllayPortBlockEntity allayPort, boolean open) {
+	private void startTargetWavingIfArriving(MinecraftServer server,
+		@Nullable AllayPortBlockEntity allayPort) {
+		if (allayPort == null) {
+			return;
+		}
+		int remainingTicks = estimateRemainingTicks(server);
+		if (remainingTicks >= 0 && remainingTicks < GREETING_ETA_TICKS) {
+			setTargetWaving(allayPort, true);
+		}
+	}
+
+	private void setTargetWaving(@Nullable AllayPortBlockEntity allayPort, boolean waving) {
 		if (allayPort != null) {
-			allayPort.setCourierLandingOpen(id, open);
+			allayPort.setCourierWaving(id, waving);
 		}
 	}
 
@@ -577,6 +618,83 @@ public final class AllayCourierTask {
 		AllayPortBlockEntity allayPort = resolveTargetAllayPort(level);
 		ServerPlayer player = allayPort == null ? resolveTargetPlayer(server) : null;
 		return allayPort == null && player == null ? null : new ResolvedTarget(level, allayPort, player);
+	}
+
+	/**
+	 * Estimates the sooner of physical arrival, the near-target relocation, and the hard arrival
+	 * deadline. The speed constants match the steady movement of the vanilla Allay flight control
+	 * used by this task.
+	 */
+	public int estimateRemainingTicks(MinecraftServer server) {
+		ResolvedTarget target = resolveTarget(server);
+		if (target == null) {
+			return -1;
+		}
+		if (forceArrivalPending) {
+			return 0;
+		}
+
+		int forceRemaining = Math.max(0, FORCE_ARRIVAL_TICKS - deliveryElapsedTicks);
+		Vec3 previewPosition = previewNearTargetPosition(target.allayPort, target.player);
+		int afterRelocation = estimateTravelTicksFrom(previewPosition, target.allayPort, target.player, false);
+		int untilRelocation = Math.max(0, TELEPORT_AFTER_TICKS - deliveryElapsedTicks);
+
+		if (!teleportedNearTarget && !target.level.dimension().equals(currentDimension)) {
+			return Math.min(forceRemaining, untilRelocation + afterRelocation);
+		}
+
+		int physicalEstimate;
+		if (isEnteringAllayPort()) {
+			physicalEstimate = Math.max(0, ALLAY_PORT_ENTRY_TICKS - allayPortEntryTicks);
+		} else if (initialWaypoint != null) {
+			physicalEstimate = estimateLinearTicks(position, initialWaypoint,
+				INITIAL_WAYPOINT_COMPLETION_DISTANCE, ESTIMATED_APPROACH_BLOCKS_PER_TICK)
+				+ estimateTravelTicksFrom(initialWaypoint, target.allayPort, target.player, false);
+		} else {
+			physicalEstimate = estimateTravelTicksFrom(position, target.allayPort, target.player,
+				phase == AllayCourierEntity.Phase.LANDING);
+		}
+
+		if (!teleportedNearTarget) {
+			physicalEstimate = Math.min(physicalEstimate, untilRelocation + afterRelocation);
+		}
+		return Math.min(forceRemaining, physicalEstimate);
+	}
+
+	private int estimateTravelTicksFrom(Vec3 from, @Nullable AllayPortBlockEntity allayPort,
+		@Nullable ServerPlayer player, boolean landingOnly) {
+		Vec3 target = landingTarget(allayPort, player);
+		double completionDistance = allayPort != null
+			? ALLAY_PORT_COMPLETION_DISTANCE : PLAYER_COMPLETION_DISTANCE;
+		double distance = from.distanceTo(target);
+		double remainingDistance = Math.max(0, distance - completionDistance);
+
+		int travelTicks = 0;
+		if (remainingDistance > 0) {
+			if (landingOnly || distance <= PRECISE_APPROACH_DISTANCE) {
+				travelTicks = Mth.ceil(remainingDistance / ESTIMATED_APPROACH_BLOCKS_PER_TICK);
+			} else {
+				double cruiseDistance = distance - PRECISE_APPROACH_DISTANCE;
+				double approachDistance = PRECISE_APPROACH_DISTANCE - completionDistance;
+				travelTicks = Mth.ceil(cruiseDistance / ESTIMATED_CRUISE_BLOCKS_PER_TICK)
+					+ Mth.ceil(Math.max(0, approachDistance) / ESTIMATED_APPROACH_BLOCKS_PER_TICK);
+			}
+			travelTicks += ESTIMATED_ACCELERATION_TICKS;
+		}
+
+		return travelTicks + (allayPort != null ? ALLAY_PORT_ENTRY_TICKS : 0);
+	}
+
+	private int estimateLinearTicks(Vec3 from, Vec3 target, double completionDistance, double speed) {
+		double distance = Math.max(0, from.distanceTo(target) - completionDistance);
+		return distance <= 0 ? 0 : Mth.ceil(distance / speed) + ESTIMATED_ACCELERATION_TICKS;
+	}
+
+	private Vec3 previewNearTargetPosition(@Nullable AllayPortBlockEntity allayPort,
+		@Nullable ServerPlayer player) {
+		Vec3 target = landingTarget(allayPort, player);
+		Vec3 waypoint = nearTargetWaypoint(allayPort, player);
+		return computeNearTargetSpawn(target, waypoint, player != null);
 	}
 
 	private static Vec3 horizontalDirection(Vec3 direction) {
@@ -608,6 +726,16 @@ public final class AllayCourierTask {
 	public boolean isRemoved() { return removed; }
 	public void markRemoved() { removed = true; }
 
+	public @Nullable UUID hudTrackingPlayerId() {
+		if (mission == AllayCourierEntity.Mission.CARRIER_RETURN) {
+			return null;
+		}
+		if (mission == AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER) {
+			return targetPlayerId;
+		}
+		return sourcePlayerId != null ? sourcePlayerId : targetPlayerId;
+	}
+
 	public CompoundTag save(CompoundTag tag) {
 		tag.putUUID("Id", id);
 		tag.put("Box", box.save(new CompoundTag()));
@@ -628,6 +756,7 @@ public final class AllayCourierTask {
 		tag.putInt("AllayPortEntryTicks", allayPortEntryTicks);
 		tag.putInt("DeliveryElapsedTicks", deliveryElapsedTicks);
 		tag.putBoolean("TeleportedNearTarget", teleportedNearTarget);
+		tag.putBoolean("ForceArrivalPending", forceArrivalPending);
 		return tag;
 	}
 
@@ -660,6 +789,7 @@ public final class AllayCourierTask {
 			? tag.getInt("AllayPortEntryTicks") : -1;
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");
 		task.teleportedNearTarget = tag.getBoolean("TeleportedNearTarget");
+		task.forceArrivalPending = tag.getBoolean("ForceArrivalPending");
 		task.initialWaypoint = tag.contains("InitialWaypoint")
 			? vecFromTag(tag, "InitialWaypoint") : null;
 		return task;

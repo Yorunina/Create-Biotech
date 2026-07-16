@@ -1,33 +1,18 @@
 {
   "variants": {
-    "facing=east,open=false": {
+    "facing=east": {
       "model": "create_biotech:block/allay_port/block",
       "y": 90
     },
-    "facing=east,open=true": {
-      "model": "create_biotech:block/allay_port/block_on",
-      "y": 90
-    },
-    "facing=north,open=false": {
+    "facing=north": {
       "model": "create_biotech:block/allay_port/block"
     },
-    "facing=north,open=true": {
-      "model": "create_biotech:block/allay_port/block_on"
-    },
-    "facing=south,open=false": {
+    "facing=south": {
       "model": "create_biotech:block/allay_port/block",
       "y": 180
     },
-    "facing=south,open=true": {
-      "model": "create_biotech:block/allay_port/block_on",
-      "y": 180
-    },
-    "facing=west,open=false": {
+    "facing=west": {
       "model": "create_biotech:block/allay_port/block",
-      "y": 270
-    },
-    "facing=west,open=true": {
-      "model": "create_biotech:block/allay_port/block_on",
       "y": 270
     }
   }

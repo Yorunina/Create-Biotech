@@ -420,6 +420,7 @@
   "item.create_biotech.mini_allay": "Cargo Allay",
   "item.create_biotech.incomplete_mini_allay": "Incomplete Cargo Allay",
   "gui.create_biotech.mini_allay.invalid_target": "No delivery destination is available",
+  "gui.create_biotech.allay_port.arrival_eta": "Estimated arrival: %s",
   "gui.create_biotech.allay_port.return_mode": "Cargo Allay Return Behavior",
   "gui.create_biotech.allay_port.return_mode.always_dock": "Dock at Destination",
   "gui.create_biotech.allay_port.return_mode.always_return": "Return to Sender",

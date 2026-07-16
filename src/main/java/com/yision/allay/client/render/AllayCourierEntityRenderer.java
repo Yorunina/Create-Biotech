@@ -1,7 +1,6 @@
 package com.yision.allay.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import com.nobodiiiii.createbiotech.mixin.client.ModelPartAccessor;
 import com.simibubi.create.foundation.item.render.PartialItemModelRenderer;
 import com.yision.allay.CreateAllay;
@@ -21,7 +20,6 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Blocks;
@@ -102,10 +100,16 @@ public class AllayCourierEntityRenderer extends AllayRenderer {
 			}
 
 			poseStack.pushPose();
-			getParentModel().translateToHand(HumanoidArm.RIGHT, poseStack);
-			poseStack.mulPose(Axis.XP.rotationDegrees(-90.0f));
-			poseStack.mulPose(Axis.YP.rotationDegrees(180.0f));
-			poseStack.translate(1.0f / 16.0f, 0.125f, -0.625f);
+			ModelPart root = getParentModel().root();
+			ModelPart body = root.getChild("body");
+			if (body.isEmpty()) {
+				poseStack.popPose();
+				return;
+			}
+
+			root.translateAndRotate(poseStack);
+			body.translateAndRotate(poseStack);
+			poseStack.scale(1.0f, -1.0f, -1.0f);
 			poseStack.translate(0.5f, 0.5f, 0.5f);
 			PartialItemModelRenderer.of(courier.getPackage(), ItemDisplayContext.NONE, poseStack, buffer,
 				OverlayTexture.NO_OVERLAY).render(cargoModel, packedLight);

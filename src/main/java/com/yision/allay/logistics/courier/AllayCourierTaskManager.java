@@ -1,6 +1,7 @@
 package com.yision.allay.logistics.courier;
 
 import com.yision.allay.entity.courier.AllayCourierEntity;
+import com.yision.allay.logistics.courier.hud.AllayCourierHudSync;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -21,6 +22,7 @@ public final class AllayCourierTaskManager {
 	private AllayCourierTaskManager() {}
 
 	public static void onServerStarting(MinecraftServer server) {
+		AllayCourierHudSync.clear();
 		courierEntities.values().forEach(entity -> {
 			if (entity.isAlive()) {
 				entity.discard();
@@ -85,6 +87,7 @@ public final class AllayCourierTaskManager {
 		} else if (!tasks.isEmpty()) {
 			savedData.markDirty();
 		}
+		AllayCourierHudSync.sync(server, tasks);
 	}
 
 	public static void addTask(MinecraftServer server, AllayCourierTask task) {
@@ -96,6 +99,16 @@ public final class AllayCourierTaskManager {
 		if (level != null && canShowEntity(level, task.position())) {
 			spawnCourier(level, task);
 		}
+	}
+
+	public static boolean isCourierValidationReady() {
+		return savedData != null;
+	}
+
+	public static boolean isCurrentCourier(UUID taskId, AllayCourierEntity entity) {
+		return savedData != null
+			&& savedData.hasTask(taskId)
+			&& courierEntities.get(taskId) == entity;
 	}
 
 	private static boolean canShowEntity(ServerLevel level, net.minecraft.world.phys.Vec3 pos) {

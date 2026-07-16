@@ -40,11 +40,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.util.UUID;
+
 /**
  * A cargo-carrying Allay. Movement, steering and animation come from vanilla {@link Allay}; this
  * class adds direct courier targeting, task metadata and placed-item interactions.
  */
 public class AllayCourierEntity extends Allay implements Container {
+	private static final int TASK_VALIDATION_INTERVAL = 20;
+	private static final int INVALID_TASK_GRACE_CHECKS = 2;
 
 	private static final EntityDataAccessor<ItemStack> DATA_PACKAGE =
 		SynchedEntityData.defineId(AllayCourierEntity.class, EntityDataSerializers.ITEM_STACK);
@@ -59,6 +63,8 @@ public class AllayCourierEntity extends Allay implements Container {
 	private @Nullable Vec3 preciseFlightTarget;
 	private double preciseFlightSpeed = 1.0;
 	private boolean renderLogisticsHat = true;
+	private @Nullable UUID taskId;
+	private int invalidTaskChecks;
 
 	public AllayCourierEntity(EntityType<? extends AllayCourierEntity> type, Level level) {
 		super(type, level);
@@ -83,6 +89,7 @@ public class AllayCourierEntity extends Allay implements Container {
 		courier.setPackage(task.box());
 		courier.setMission(task.mission());
 		courier.setPhase(task.phase());
+		courier.taskId = task.id();
 		courier.setPos(task.position());
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.noPhysics = true;
@@ -97,7 +104,27 @@ public class AllayCourierEntity extends Allay implements Container {
 		noPhysics = getPhase() != Phase.WAITING;
 		super.tick();
 		noPhysics = getPhase() != Phase.WAITING;
+		validateTaskBinding();
+		if (isRemoved()) {
+			return;
+		}
 		spawnFlightTrail();
+	}
+
+	private void validateTaskBinding() {
+		if (level().isClientSide || getPhase() == Phase.WAITING
+			|| tickCount % TASK_VALIDATION_INTERVAL != 0
+			|| !AllayCourierTaskManager.isCourierValidationReady()) {
+			return;
+		}
+
+		if (taskId != null && AllayCourierTaskManager.isCurrentCourier(taskId, this)) {
+			invalidTaskChecks = 0;
+			return;
+		}
+		if (++invalidTaskChecks >= INVALID_TASK_GRACE_CHECKS) {
+			discard();
+		}
 	}
 
 	private void spawnFlightTrail() {
@@ -441,6 +468,7 @@ public class AllayCourierEntity extends Allay implements Container {
 		if (tag.contains("Mission")) {
 			setMission(Mission.byId(tag.getByte("Mission")));
 		}
+		taskId = tag.hasUUID("CourierTaskId") ? tag.getUUID("CourierTaskId") : null;
 	}
 
 	@Override
@@ -453,6 +481,9 @@ public class AllayCourierEntity extends Allay implements Container {
 		tag.put("LaunchDirection", direction);
 		tag.putByte("Phase", (byte) getPhase().id);
 		tag.putByte("Mission", (byte) getMission().id);
+		if (taskId != null) {
+			tag.putUUID("CourierTaskId", taskId);
+		}
 	}
 
 	public enum Phase {
