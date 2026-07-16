@@ -179,7 +179,7 @@ public final class AllayCourierTask {
 		}
 		if (hasActiveEntity) {
 			Vec3 exitTarget = position.add(launchDirection.scale(24.0)).add(0, 6.0, 0);
-			entity.navigateAsVanillaAllay(exitTarget, VANILLA_ALLAY_CRUISE_SPEED);
+			entity.flyDirectlyAsVanillaAllay(exitTarget, VANILLA_ALLAY_CRUISE_SPEED);
 		}
 	}
 
@@ -212,7 +212,7 @@ public final class AllayCourierTask {
 		if (preciseApproach) {
 			entity.approachPreciselyAsVanillaAllay(landingTarget, VANILLA_ALLAY_APPROACH_SPEED);
 		} else {
-			entity.navigateAsVanillaAllay(landingTarget, VANILLA_ALLAY_CRUISE_SPEED);
+			entity.flyDirectlyAsVanillaAllay(landingTarget, VANILLA_ALLAY_CRUISE_SPEED);
 		}
 	}
 

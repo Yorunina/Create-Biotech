@@ -25,9 +25,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -56,14 +54,10 @@ public class AllayCourierEntity extends Allay implements Container {
 	private static final EntityDataAccessor<Byte> DATA_MISSION =
 		SynchedEntityData.defineId(AllayCourierEntity.class, EntityDataSerializers.BYTE);
 
-	private static final int NAVIGATION_REFRESH_TICKS = 20;
-	private static final double NAVIGATION_TARGET_REFRESH_DISTANCE_SQR = 4.0;
-
 	private Vec3 launchDirection = new Vec3(0, 0, 1);
-	private @Nullable Vec3 lastNavigationTarget;
-	private int lastNavigationCommandTick = Integer.MIN_VALUE;
 	private @Nullable Vec3 preciseFlightTarget;
 	private double preciseFlightSpeed = 1.0;
+	private boolean renderLogisticsHat = true;
 
 	public AllayCourierEntity(EntityType<? extends AllayCourierEntity> type, Level level) {
 		super(type, level);
@@ -90,46 +84,42 @@ public class AllayCourierEntity extends Allay implements Container {
 		courier.setPhase(task.phase());
 		courier.setPos(task.position());
 		courier.setDeltaMovement(Vec3.ZERO);
+		courier.noPhysics = true;
 		courier.setLaunchDirection(task.launchDirection());
 		courier.hasImpulse = true;
 		courier.hurtMarked = true;
 		return courier;
 	}
 
-	/**
-	 * Feeds a destination into the vanilla Allay brain. The vanilla MoveToTargetSink creates and
-	 * follows a FlyingPathNavigation path from this memory.
-	 */
-	public void navigateAsVanillaAllay(Vec3 target, float speedModifier) {
-		preciseFlightTarget = null;
-		boolean targetMoved = lastNavigationTarget == null
-			|| lastNavigationTarget.distanceToSqr(target) > NAVIGATION_TARGET_REFRESH_DISTANCE_SQR;
-		boolean refreshDue = tickCount - lastNavigationCommandTick >= NAVIGATION_REFRESH_TICKS;
-		boolean missingTarget = !getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET);
-		if (!targetMoved && !refreshDue && !missingTarget && !getNavigation().isDone()) {
-			return;
-		}
+	@Override
+	public void tick() {
+		noPhysics = getPhase() != Phase.WAITING;
+		super.tick();
+		noPhysics = getPhase() != Phase.WAITING;
+	}
 
-		BlockPosTracker tracker = new BlockPosTracker(target);
-		getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(tracker, speedModifier, 0));
-		getBrain().setMemory(MemoryModuleType.LOOK_TARGET, tracker);
-		lastNavigationTarget = target;
-		lastNavigationCommandTick = tickCount;
+	/**
+	 * Flies straight to the destination with the vanilla Allay {@code FlyingMoveControl}.
+	 * Courier flight has no physics, so blocks never interrupt or redirect the route.
+	 */
+	public void flyDirectlyAsVanillaAllay(Vec3 target, double speedModifier) {
+		setPreciseFlightTarget(target, speedModifier);
 	}
 
 	/**
 	 * Uses the same vanilla FlyingMoveControl as an ordinary Allay for the final sub-block approach.
 	 */
 	public void approachPreciselyAsVanillaAllay(Vec3 target, double speedModifier) {
+		setPreciseFlightTarget(target, speedModifier);
+	}
+
+	private void setPreciseFlightTarget(Vec3 target, double speedModifier) {
 		preciseFlightTarget = target;
 		preciseFlightSpeed = speedModifier;
-		lastNavigationTarget = target;
-		lastNavigationCommandTick = tickCount;
 	}
 
 	public void clearCourierDestination() {
 		preciseFlightTarget = null;
-		lastNavigationTarget = null;
 		getNavigation().stop();
 		getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
 		getBrain().eraseMemory(MemoryModuleType.PATH);
@@ -193,6 +183,15 @@ public class AllayCourierEntity extends Allay implements Container {
 
 	public void setPhase(Phase phase) {
 		getEntityData().set(DATA_PHASE, (byte) phase.id);
+		noPhysics = phase != Phase.WAITING;
+	}
+
+	public boolean shouldRenderLogisticsHat() {
+		return renderLogisticsHat;
+	}
+
+	public void setRenderLogisticsHat(boolean renderLogisticsHat) {
+		this.renderLogisticsHat = renderLogisticsHat;
 	}
 
 	public Mission getMission() {

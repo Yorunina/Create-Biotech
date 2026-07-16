@@ -50,9 +50,9 @@ import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeper
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import com.yision.allay.block.allayport.AllayPortMenu;
 import com.yision.allay.block.allayport.AllayPortScreen;
+import com.yision.allay.client.render.AllayCourierEntityRenderer;
 import com.yision.allay.client.render.AllayPortRenderer;
 import com.yision.allay.client.render.AllayPortVisual;
-import com.yision.allay.entity.courier.AllayCourierEntity;
 import com.yision.allay.item.miniallay.MiniAllayMenu;
 import com.yision.allay.item.miniallay.MiniAllayScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
@@ -89,9 +89,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.AllayRenderer;
-import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -149,7 +146,8 @@ public class CreateBiotechClient {
 		event.registerEntityRenderer(CBEntityTypes.GHAST_HOT_AIR_BALLOON_SEAT.get(),
 			GhastHotAirBalloonSeatEntity.Render::new);
 		event.registerEntityRenderer(CBEntityTypes.CARDBOARD_BOX.get(), CardboardBoxEntityRenderer::new);
-		event.registerEntityRenderer(CBEntityTypes.ALLAY_COURIER.get(), vanillaAllayRenderer());
+		event.registerEntityRenderer(CBEntityTypes.ALLAY_COURIER.get(),
+			context -> new AllayCourierEntityRenderer(context));
 		event.registerEntityRenderer(CBEntityTypes.CARDBOARD_BOX.get(), CardboardBoxEntityRenderer::new);
 	}
 
@@ -190,11 +188,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("item/large_cardboard_box"));
 		event.register(CreateBiotech.asResource("item/large_cardboard_box_captured"));
 		event.register(CardboardBoxPartials.LARGE_BOX_LOGISTICS_LOCATION);
-	}
-
-	@SuppressWarnings({"unchecked", "rawtypes"})
-	private static EntityRendererProvider<AllayCourierEntity> vanillaAllayRenderer() {
-		return context -> (EntityRenderer) new AllayRenderer(context);
+		event.register(CreateBiotech.asResource("item/mini_allay_package"));
 	}
 
 	@SubscribeEvent

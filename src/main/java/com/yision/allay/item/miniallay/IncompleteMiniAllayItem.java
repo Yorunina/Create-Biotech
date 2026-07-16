@@ -19,6 +19,6 @@ public class IncompleteMiniAllayItem extends Item {
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		consumer.accept(SimpleCustomRenderer.create(this, new MiniAllayItemRenderer()));
+		consumer.accept(SimpleCustomRenderer.create(this, new MiniAllayItemRenderer(false)));
 	}
 }

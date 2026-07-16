@@ -35,6 +35,16 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 	private AllayCourierEntity cachedCourier;
 	@Nullable
 	private ClientLevel cachedLevel;
+	private final boolean renderLogisticsHat;
+
+	public MiniAllayItemRenderer() {
+		this(true);
+	}
+
+	public MiniAllayItemRenderer(boolean renderLogisticsHat) {
+		this.renderLogisticsHat = renderLogisticsHat;
+	}
+
 	@Override
 	protected void render(ItemStack stack, CustomRenderedItemModel model, PartialItemModelRenderer renderer,
 		ItemDisplayContext transformType, PoseStack ms, MultiBufferSource buffer, int light, int overlay) {
@@ -76,6 +86,7 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 	private void configureCourier(AllayCourierEntity courier, ItemStack stack, ItemDisplayContext transformType) {
 		courier.setPackage(MiniAllayItem.copyCargoPackage(stack));
 		courier.setPhase(AllayCourierEntity.Phase.WAITING);
+		courier.setRenderLogisticsHat(renderLogisticsHat);
 		courier.setNoGravity(true);
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.setPos(0, 0, 0);
