@@ -180,7 +180,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_open"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/hatch_closed"));
 		event.register(CreateBiotech.asResource("block/shulker_packager/tray"));
-		event.register(AllayPortRenderer.FLAP_MODEL_LOCATION);
+		AllayPortRenderer.CURTAIN_MODEL_LOCATIONS.forEach(event::register);
 		event.register(CreateBiotech.asResource("item/shulker_package"));
 		event.register(CreateBiotech.asResource("item/cardboard_box"));
 		event.register(CreateBiotech.asResource("item/small_cardboard_box"));

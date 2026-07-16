@@ -1,9 +1,12 @@
 package com.yision.allay.client.render;
 
+import java.util.List;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.foundation.render.BlockEntityModelElement;
+import com.nobodiiiii.createbiotech.mixin.client.ModelPartAccessor;
 import com.simibubi.create.content.logistics.FlapStuffs;
 import com.simibubi.create.foundation.blockEntity.renderer.SmartBlockEntityRenderer;
 import com.yision.allay.block.allayport.AllayPortBlock;
@@ -11,6 +14,8 @@ import com.yision.allay.block.allayport.AllayPortBlockEntity;
 
 import dev.engine_room.flywheel.api.visualization.VisualizationManager;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
+import dev.engine_room.flywheel.lib.transform.TransformStack;
+import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.createmod.catnip.render.CachedBuffers;
 import net.createmod.catnip.render.SuperByteBuffer;
@@ -20,19 +25,35 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEntity> {
-	public static final ResourceLocation FLAP_MODEL_LOCATION = CreateBiotech.asResource("block/allay_port/flap");
-	public static final PartialModel FLAP = PartialModel.of(FLAP_MODEL_LOCATION);
-	public static final Vec3 FLAP_PIVOT = VecHelper.voxelSpace(0, 1, 1.5f);
+	public static final int CURTAIN_SEGMENT_COUNT = 4;
+	public static final List<ResourceLocation> CURTAIN_MODEL_LOCATIONS = List.of(
+		CreateBiotech.asResource("block/allay_port/curtain_0"),
+		CreateBiotech.asResource("block/allay_port/curtain_1"),
+		CreateBiotech.asResource("block/allay_port/curtain_2"),
+		CreateBiotech.asResource("block/allay_port/curtain_3")
+	);
+	public static final List<PartialModel> CURTAIN_SEGMENTS = CURTAIN_MODEL_LOCATIONS.stream()
+		.map(PartialModel::of)
+		.toList();
+	public static final Vec3 CURTAIN_PIVOT = VecHelper.voxelSpace(0, 12, 3);
 	private static final ResourceLocation ALLAY_TEXTURE =
 		CreateBiotech.asResource("textures/entity/allay_port/allay.png");
+	private static final PartialModel LOGISTICS_HAT =
+		PartialModel.of(new ResourceLocation("create", "entity/logistics_hat"));
+	private static final float LOGISTICS_HAT_OFFSET_X = 0.0f;
+	private static final float LOGISTICS_HAT_OFFSET_Y = 0.0f;
+	private static final float LOGISTICS_HAT_OFFSET_Z = -0.5f;
+	private static final float LOGISTICS_HAT_MODEL_Y_OFFSET = -2.25f;
 	private static final double ALLAY_POSITION_Y = 1.0d - 2.0d / 16.0d;
 	private static final float LIVING_ENTITY_MODEL_Y_OFFSET = -1.501f;
 	private static final float ALLAY_SCALE = 1.0f;
@@ -57,9 +78,31 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 			return;
 		}
 
-		VertexConsumer vb = buffer.getBuffer(RenderType.solid());
-		SuperByteBuffer flapBuffer = CachedBuffers.partial(FLAP, blockState);
-		FlapStuffs.renderFlaps(ms, vb, flapBuffer, FLAP_PIVOT, facing, be.getFlap(partialTicks), 0, light);
+		renderCurtain(ms, buffer, blockState, facing, be.getFlap(partialTicks), light, overlay);
+	}
+
+	private void renderCurtain(PoseStack ms, MultiBufferSource buffer, BlockState blockState, Direction facing,
+		float flapness, int light, int overlay) {
+		float horizontalAngle = AngleHelper.horizontalAngle(facing.getOpposite());
+		VertexConsumer vertexConsumer = buffer.getBuffer(RenderType.cutoutMipped());
+		var transform = TransformStack.of(ms);
+
+		ms.pushPose();
+		transform.center()
+			.rotateYDegrees(horizontalAngle)
+			.uncenter();
+		for (int segment = 0; segment < CURTAIN_SEGMENT_COUNT; segment++) {
+			ms.pushPose();
+			transform.translate(CURTAIN_PIVOT)
+				.rotateXDegrees(FlapStuffs.flapAngle(flapness, segment))
+				.translateBack(CURTAIN_PIVOT);
+			SuperByteBuffer curtainBuffer = CachedBuffers.partial(CURTAIN_SEGMENTS.get(segment), blockState);
+			curtainBuffer.light(light)
+				.overlay(overlay)
+				.renderInto(ms, vertexConsumer);
+			ms.popPose();
+		}
+		ms.popPose();
 	}
 
 	private void renderGreetingAllay(PoseStack ms, MultiBufferSource buffer, int light, Direction facing) {
@@ -82,7 +125,33 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 					1.0f,
 					1.0f,
 					1.0f);
+				renderLogisticsHat(poseStack, buf, packedLight);
 			});
+	}
+
+	private void renderLogisticsHat(PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+		ModelPart root = allayModel.root();
+		ModelPart head = root.getChild("head");
+		if (head.isEmpty()) {
+			return;
+		}
+
+		poseStack.pushPose();
+		root.translateAndRotate(poseStack);
+		head.translateAndRotate(poseStack);
+		ModelPart.Cube headCube = ((ModelPartAccessor) (Object) head).createBiotech$getCubes().get(0);
+		poseStack.translate(LOGISTICS_HAT_OFFSET_X / 16.0f,
+			(headCube.minY - headCube.maxY + LOGISTICS_HAT_OFFSET_Y) / 16.0f,
+			LOGISTICS_HAT_OFFSET_Z / 16.0f);
+		float hatScale = Math.max(headCube.maxX - headCube.minX, headCube.maxZ - headCube.minZ) / 8.0f;
+		poseStack.scale(hatScale, hatScale, hatScale);
+		poseStack.scale(1.0f, -1.0f, -1.0f);
+		poseStack.translate(0.0f, LOGISTICS_HAT_MODEL_Y_OFFSET / 16.0f, 0.0f);
+		CachedBuffers.partial(LOGISTICS_HAT, Blocks.AIR.defaultBlockState())
+			.disableDiffuse()
+			.light(packedLight)
+			.renderInto(poseStack, buffer.getBuffer(Sheets.cutoutBlockSheet()));
+		poseStack.popPose();
 	}
 
 	private void prepareGreetingPose() {

@@ -69,62 +69,6 @@
 				"up": {"uv": [6, 0, 12, 6], "rotation": 90, "texture": "#3"},
 				"down": {"uv": [6, 0, 12, 6], "rotation": 90, "texture": "#3"}
 			}
-		},
-		{
-			"name": "F4",
-			"from": [10, 4, 2.5],
-			"to": [12, 12, 3.5],
-			"rotation": {"angle": 0, "axis": "y", "origin": [-25.5, -5.5, 3]},
-			"faces": {
-				"north": {"uv": [0, 12, 1, 16], "texture": "#3"},
-				"east": {"uv": [0, 12, 0.5, 16], "texture": "#3"},
-				"south": {"uv": [1, 12, 0, 16], "texture": "#3"},
-				"west": {"uv": [0.5, 12, 1, 16], "texture": "#3"},
-				"up": {"uv": [0, 12, 1, 12.5], "rotation": 180, "texture": "#3"},
-				"down": {"uv": [0, 12, 1, 12.5], "rotation": 180, "texture": "#3"}
-			}
-		},
-		{
-			"name": "F5",
-			"from": [8, 4, 2.5],
-			"to": [10, 12, 3.5],
-			"rotation": {"angle": 0, "axis": "y", "origin": [-27.5, -5.5, 3]},
-			"faces": {
-				"north": {"uv": [1, 12, 2, 16], "texture": "#3"},
-				"east": {"uv": [1, 12, 1.5, 16], "texture": "#3"},
-				"south": {"uv": [2, 12, 1, 16], "texture": "#3"},
-				"west": {"uv": [1.5, 12, 2, 16], "texture": "#3"},
-				"up": {"uv": [1, 12, 2, 12.5], "rotation": 180, "texture": "#3"},
-				"down": {"uv": [1, 12, 2, 12.5], "rotation": 180, "texture": "#3"}
-			}
-		},
-		{
-			"name": "F6",
-			"from": [6, 4, 2.5],
-			"to": [8, 12, 3.5],
-			"rotation": {"angle": 0, "axis": "y", "origin": [-29.5, -5.5, 3]},
-			"faces": {
-				"north": {"uv": [2, 12, 3, 16], "texture": "#3"},
-				"east": {"uv": [2, 12, 2.5, 16], "texture": "#3"},
-				"south": {"uv": [3, 12, 2, 16], "texture": "#3"},
-				"west": {"uv": [2.5, 12, 3, 16], "texture": "#3"},
-				"up": {"uv": [2, 12, 3, 12.5], "rotation": 180, "texture": "#3"},
-				"down": {"uv": [2, 12, 3, 12.5], "rotation": 180, "texture": "#3"}
-			}
-		},
-		{
-			"name": "F7",
-			"from": [4, 4, 2.5],
-			"to": [6, 12, 3.5],
-			"rotation": {"angle": 0, "axis": "y", "origin": [-31.5, -5.5, 3]},
-			"faces": {
-				"north": {"uv": [3, 12, 4, 16], "texture": "#3"},
-				"east": {"uv": [3, 12, 3.5, 16], "texture": "#3"},
-				"south": {"uv": [4, 12, 3, 16], "texture": "#3"},
-				"west": {"uv": [3.5, 12, 4, 16], "texture": "#3"},
-				"up": {"uv": [3, 12, 4, 12.5], "rotation": 180, "texture": "#3"},
-				"down": {"uv": [3, 12, 4, 12.5], "rotation": 180, "texture": "#3"}
-			}
 		}
 	],
 	"groups": [
@@ -141,13 +85,6 @@
 			"scope": 0,
 			"color": 0,
 			"children": [1, 2, 3, 4, 5]
-		},
-		{
-			"name": "flap",
-			"origin": [8, 8, 8],
-			"scope": 0,
-			"color": 0,
-			"children": [6, 7, 8, 9]
 		}
 	]
 }

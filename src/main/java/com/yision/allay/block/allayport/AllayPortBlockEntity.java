@@ -158,7 +158,11 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receiveCourier(ItemStack box) {
-		return portInventory.receiveCourier(box);
+		boolean received = portInventory.receiveCourier(box);
+		if (received) {
+			flap(true);
+		}
+		return received;
 	}
 
 	public boolean canReceivePackage(ItemStack box) {

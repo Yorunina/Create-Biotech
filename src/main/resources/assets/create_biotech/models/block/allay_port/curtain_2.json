@@ -1,0 +1,21 @@
+{
+  "textures": {
+    "curtain": "create_biotech:block/allay_port/allay_port",
+    "particle": "create:block/andesite_block"
+  },
+  "elements": [
+    {
+      "name": "curtain_2",
+      "from": [6, 4, 2.5],
+      "to": [8, 12, 3.5],
+      "faces": {
+        "north": {"uv": [2, 12, 3, 16], "texture": "#curtain"},
+        "east": {"uv": [2, 12, 2.5, 16], "texture": "#curtain"},
+        "south": {"uv": [3, 12, 2, 16], "texture": "#curtain"},
+        "west": {"uv": [2.5, 12, 3, 16], "texture": "#curtain"},
+        "up": {"uv": [2, 12, 3, 12.5], "rotation": 180, "texture": "#curtain"},
+        "down": {"uv": [2, 12, 3, 12.5], "rotation": 180, "texture": "#curtain"}
+      }
+    }
+  ]
+}
