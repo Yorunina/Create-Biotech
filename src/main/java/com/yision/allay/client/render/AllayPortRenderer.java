@@ -74,7 +74,8 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 		BlockState blockState = be.getBlockState();
 		Direction facing = blockState.getValue(AllayPortBlock.FACING);
 		float flapness = be.getFlap(partialTicks);
-		float waveStrength = be.isCourierWaving() ? 1.0f : 0.0f;
+		float flapWaveStrength = Mth.clamp((Math.abs(flapness) - 0.25f) * 4.0f, 0.0f, 1.0f);
+		float waveStrength = be.isCourierWaving() ? 1.0f : flapWaveStrength;
 		float animationTime = be.getLevel() == null
 			? partialTicks
 			: be.getLevel().getGameTime() % 24_000L + partialTicks;

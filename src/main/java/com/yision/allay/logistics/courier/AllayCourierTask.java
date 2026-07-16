@@ -42,7 +42,7 @@ public final class AllayCourierTask {
 	private static final double ESTIMATED_CRUISE_BLOCKS_PER_TICK = 0.55;
 	private static final double ESTIMATED_APPROACH_BLOCKS_PER_TICK = 0.24;
 	private static final int ESTIMATED_ACCELERATION_TICKS = 4;
-	private static final int GREETING_ETA_TICKS = 20;
+	private static final int GREETING_ETA_TICKS = 60;
 
 	private final UUID id;
 	private ItemStack box;
