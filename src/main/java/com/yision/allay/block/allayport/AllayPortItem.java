@@ -1,38 +1,11 @@
 package com.yision.allay.block.allayport;
 
-import com.simibubi.create.content.kinetics.belt.BeltBlock;
-import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
-import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
-import com.simibubi.create.content.kinetics.belt.BeltHelper;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class AllayPortItem extends BlockItem {
 
 	public AllayPortItem(Block block, Properties properties) {
 		super(block, properties);
-	}
-
-	@Override
-	protected boolean updateCustomBlockEntityTag(BlockPos pos, Level world, Player player, ItemStack stack,
-		BlockState state) {
-		boolean updated = super.updateCustomBlockEntityTag(pos, world, player, stack, state);
-		if (!world.isClientSide) {
-			BlockPos beltPos = pos.below();
-			BeltBlockEntity belt = BeltHelper.getSegmentBE(world, beltPos);
-			if (belt != null && belt.casing == CasingType.NONE) {
-				belt.setCasingType(CasingType.ANDESITE);
-			}
-			BlockState beltState = world.getBlockState(beltPos);
-			if (beltState.getBlock() instanceof BeltBlock beltBlock) {
-				beltBlock.updateCoverProperty(world, beltPos, beltState);
-			}
-		}
-		return updated;
 	}
 }

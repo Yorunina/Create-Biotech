@@ -27,7 +27,6 @@ import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
 public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
-	private static final float FIXED_CONTEXT_LAY_FLAT_DEGREES = 90.0f;
 	private static final Vector3f GUI_TOP_LIGHT_0 = new Vector3f(0.15f, 1.0f, -0.35f).normalize();
 	private static final Vector3f GUI_TOP_LIGHT_1 = new Vector3f(-0.2f, 0.8f, 0.35f).normalize();
 
@@ -60,7 +59,6 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 		configureCourier(courier, stack, transformType);
 
 		ms.pushPose();
-		applyDisplayCorrection(transformType, ms);
 		applyHeadingRotation(stack, transformType, ms);
 		boolean guiLighting = transformType == ItemDisplayContext.GUI;
 		if (guiLighting) {
@@ -117,15 +115,6 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 			return;
 		}
 		ms.mulPose(Axis.YP.rotationDegrees(MiniAllayItem.getHeadingAngle(stack)));
-	}
-
-	private static void applyDisplayCorrection(ItemDisplayContext transformType, PoseStack ms) {
-		if (transformType != ItemDisplayContext.FIXED) {
-			return;
-		}
-		// Create lays non-block belt items down before applying the FIXED item transform. Correct that in
-		// display space first, so the following heading rotation turns this into the appropriate cardinal axis.
-		ms.mulPose(Axis.XP.rotationDegrees(FIXED_CONTEXT_LAY_FLAT_DEGREES));
 	}
 
 	private static void setupGuiTopLighting() {

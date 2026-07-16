@@ -1,6 +1,7 @@
 package com.yision.allay.block.allayport;
 
-import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.logistics.courier.AllayCourierTask;
+import com.yision.allay.logistics.courier.AllayCourierTaskManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -27,15 +28,11 @@ final class AllayPortReturnQueue {
 
 	private final AllayPortBlockEntity port;
 	private final AllayPortInventory inventory;
-	private final AllayPortBeltAccess beltAccess;
 	private final Deque<PendingReturnCarrier> pendingReturnCarriers = new ArrayDeque<>();
 
-	AllayPortReturnQueue(AllayPortBlockEntity port,
-						   AllayPortInventory inventory,
-						   AllayPortBeltAccess beltAccess) {
+	AllayPortReturnQueue(AllayPortBlockEntity port, AllayPortInventory inventory) {
 		this.port = port;
 		this.inventory = inventory;
-		this.beltAccess = beltAccess;
 	}
 
 	void tick() {
@@ -86,14 +83,13 @@ final class AllayPortReturnQueue {
 
 	boolean tryQueueReturnCarrier(@Nullable ResourceKey<Level> returnDimension,
 								  @Nullable BlockPos returnPos) {
-		if (!(port.getLevel() instanceof ServerLevel) || returnDimension == null || returnPos == null) {
+		if (!(port.getLevel() instanceof ServerLevel serverLevel) || returnDimension == null || returnPos == null) {
 			return false;
 		}
-		boolean queued = beltAccess.tryInsertToLaunchBelt(MiniAllayItem.returningTo(returnDimension, returnPos));
-		if (queued) {
-			port.flap(false);
-		}
-		return queued;
+		launchTask(serverLevel, AllayCourierTask.forCarrierReturn(
+			UUID.randomUUID(), serverLevel, returnDimension, returnPos,
+			port.getCourierSpawnPosition(), port.getCourierLaunchDirection()));
+		return true;
 	}
 
 	boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId, int delayTicks) {
@@ -154,27 +150,21 @@ final class AllayPortReturnQueue {
 	}
 
 	private boolean tryQueueStoredReturnCarrier(@Nullable ResourceKey<Level> returnDimension, @Nullable BlockPos returnPos) {
-		if (!(port.getLevel() instanceof ServerLevel) || returnDimension == null || returnPos == null) {
+		if (!(port.getLevel() instanceof ServerLevel serverLevel) || returnDimension == null || returnPos == null) {
 			return false;
 		}
 		if (!inventory.hasStoredCarrier()) {
-			return false;
-		}
-		ItemStack returningCarrier = MiniAllayItem.returningTo(returnDimension, returnPos);
-		if (!beltAccess.canAcceptLaunchStack(returningCarrier)) {
 			return false;
 		}
 		ItemStack storedCarrier = inventory.extractOneCarrier(false);
 		if (storedCarrier.isEmpty()) {
 			return false;
 		}
-		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
-			port.flap(false);
-			port.markPortContentsChanged();
-			return true;
-		}
-		inventory.returnCarrier(storedCarrier);
-		return false;
+		launchTask(serverLevel, AllayCourierTask.forCarrierReturn(
+			UUID.randomUUID(), serverLevel, returnDimension, returnPos,
+			port.getCourierSpawnPosition(), port.getCourierLaunchDirection()));
+		port.markPortContentsChanged();
+		return true;
 	}
 
 	private boolean tryQueueStoredReturnCarrierToPlayer(UUID playerId) {
@@ -188,22 +178,20 @@ final class AllayPortReturnQueue {
 		if (!inventory.hasStoredCarrier()) {
 			return false;
 		}
-		ItemStack returningCarrier = MiniAllayItem.returningToPlayer(playerId);
-		if (!beltAccess.canAcceptLaunchStack(returningCarrier)) {
-			return false;
-		}
-
 		ItemStack storedCarrier = inventory.extractOneCarrier(false);
 		if (storedCarrier.isEmpty()) {
 			return false;
 		}
-		if (beltAccess.insertToLaunchBelt(returningCarrier)) {
-			port.flap(false);
-			port.markPortContentsChanged();
-			return true;
-		}
-		inventory.returnCarrier(storedCarrier);
-		return false;
+		launchTask(serverLevel, AllayCourierTask.forCarrierReturnToPlayer(
+			UUID.randomUUID(), serverLevel, player.getUUID(), player.serverLevel().dimension(),
+			port.getCourierSpawnPosition(), port.getCourierLaunchDirection()));
+		port.markPortContentsChanged();
+		return true;
+	}
+
+	private void launchTask(ServerLevel serverLevel, AllayCourierTask task) {
+		AllayCourierTaskManager.addTask(serverLevel.getServer(), port.prepareCourierDeparture(task));
+		port.flap(false);
 	}
 
 	void write(CompoundTag tag) {

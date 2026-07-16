@@ -6,6 +6,7 @@ import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.logistics.packagePort.PackagePortBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.yision.allay.logistics.courier.AllayCourierReturnMode;
+import com.yision.allay.logistics.courier.AllayCourierTask;
 import net.createmod.catnip.animation.LerpedFloat;
 import net.createmod.catnip.animation.LerpedFloat.Chaser;
 import net.minecraft.core.BlockPos;
@@ -23,6 +24,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -36,9 +38,9 @@ import java.util.Set;
 import java.util.UUID;
 
 public class AllayPortBlockEntity extends PackagePortBlockEntity {
+	private static final double DEPARTURE_OFFSET = 0.5;
 
 	private final AllayPortInventory portInventory;
-	private final AllayPortBeltAccess beltAccess;
 	private final AllayPortDispatchAccess dispatchAccess;
 	private final AllayPortAutomation automation;
 	private final AllayPortReturnQueue returnQueue;
@@ -50,10 +52,9 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		super(type, pos, state);
 		itemHandler = LazyOptional.of(() -> new AllayPortAutomationInventoryWrapper(inventory, this));
 		portInventory = new AllayPortInventory(this);
-		beltAccess = new AllayPortBeltAccess(this);
-		dispatchAccess = new AllayPortDispatchAccess(this, portInventory, beltAccess);
-		automation = new AllayPortAutomation(this, portInventory, beltAccess);
-		returnQueue = new AllayPortReturnQueue(this, portInventory, beltAccess);
+		dispatchAccess = new AllayPortDispatchAccess(this, portInventory);
+		automation = new AllayPortAutomation(this, portInventory);
+		returnQueue = new AllayPortReturnQueue(this, portInventory);
 		flap = createChasingFlap();
 	}
 
@@ -73,7 +74,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		}
 		updateLandingOpenState();
 		returnQueue.tick();
-		dispatchAccess.tryDispatchToLaunchBelt();
+		dispatchAccess.tryDispatch();
 		if (serverLevel.getGameTime() % 20 == 0) {
 			AllayPortTargetRegistry.update(serverLevel, worldPosition, addressFilter);
 		}
@@ -86,7 +87,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 			return;
 		}
 		automation.tick();
-		dispatchAccess.tryDispatchToLaunchBelt();
+		dispatchAccess.tryDispatch();
 	}
 
 	@Override
@@ -103,11 +104,24 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public Direction getLaunchSide() {
-		return beltAccess.specialSide();
+		return getBlockState().getValue(AllayPortBlock.FACING);
 	}
 
 	public Direction getPackagerSide() {
-		return beltAccess.packagerSide();
+		return getLaunchSide().getOpposite();
+	}
+
+	Vec3 getCourierSpawnPosition() {
+		return Vec3.atCenterOf(worldPosition);
+	}
+
+	Vec3 getCourierLaunchDirection() {
+		return Vec3.atLowerCornerOf(getLaunchSide().getNormal());
+	}
+
+	AllayCourierTask prepareCourierDeparture(AllayCourierTask task) {
+		return task.withInitialWaypoint(
+			getCourierSpawnPosition().add(getCourierLaunchDirection().scale(DEPARTURE_OFFSET)));
 	}
 
 	public boolean tryPullFromPackagerSide() {
@@ -116,16 +130,16 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		}
 		boolean pulled = automation.tryPullingFromSide(getPackagerSide());
 		if (pulled) {
-			dispatchAccess.tryDispatchToLaunchBelt();
+			dispatchAccess.tryDispatch();
 		}
 		return pulled;
 	}
 
-	public boolean tryDispatchToLaunchBelt() {
+	public boolean tryDispatch() {
 		if (level == null || level.isClientSide()) {
 			return false;
 		}
-		return dispatchAccess.tryDispatchToLaunchBelt();
+		return dispatchAccess.tryDispatch();
 	}
 
 	public ItemStackHandler getCarrierInventory() {

@@ -1,9 +1,6 @@
 package com.yision.allay.block.allayport;
 
-import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
-import com.simibubi.create.content.kinetics.belt.BeltBlock;
-import com.simibubi.create.content.kinetics.belt.BeltSlope;
 import com.simibubi.create.foundation.block.IBE;
 import com.yision.allay.registry.AllBlockEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -22,7 +19,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -32,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenchable, IBE<AllayPortBlockEntity> {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final BooleanProperty OPEN = BooleanProperty.create("open");
-	private static final VoxelShape SHAPE_NORTH = box(0, -5, 0, 16, 15, 14);
+	private static final VoxelShape SHAPE_NORTH = box(0, 0, 0, 16, 15, 14);
 	private static final VoxelShape SHAPE_EAST = rotateY(SHAPE_NORTH);
 	private static final VoxelShape SHAPE_SOUTH = rotateY(SHAPE_EAST);
 	private static final VoxelShape SHAPE_WEST = rotateY(SHAPE_SOUTH);
@@ -51,36 +47,8 @@ public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenc
 
 	@Override
 	public BlockState getStateForPlacement(BlockPlaceContext context) {
-		if (!isValidPositionForPlacement(context.getLevel(), context.getClickedPos())) {
-			return null;
-		}
-
-		BlockState beltState = context.getLevel().getBlockState(context.getClickedPos().below());
-		Direction beltFacing = beltState.getValue(BeltBlock.HORIZONTAL_FACING);
-		Direction facing = context.getHorizontalDirection().getOpposite();
-		if (facing.getAxis() != beltFacing.getAxis()) {
-			facing = beltFacing;
-		}
-		Player player = context.getPlayer();
-		if (player != null && player.isShiftKeyDown()) {
-			facing = facing.getOpposite();
-		}
-		return defaultBlockState().setValue(FACING, facing)
+		return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite())
 			.setValue(OPEN, false);
-	}
-
-	@Override
-	public boolean canSurvive(BlockState state, LevelReader level, BlockPos pos) {
-		if (!isValidPositionForPlacement(level, pos)) {
-			return false;
-		}
-		BlockState beltState = level.getBlockState(pos.below());
-		return state.getValue(FACING).getAxis() == beltState.getValue(BeltBlock.HORIZONTAL_FACING).getAxis();
-	}
-
-	private boolean isValidPositionForPlacement(LevelReader level, BlockPos pos) {
-		BlockState beltState = level.getBlockState(pos.below());
-		return AllBlocks.BELT.has(beltState) && beltState.getValue(BeltBlock.SLOPE) == BeltSlope.HORIZONTAL;
 	}
 
 	@Override
@@ -132,16 +100,6 @@ public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenc
 		level.setBlock(pos, rotated, 3);
 		IWrenchable.playRotateSound(level, pos);
 		return InteractionResult.SUCCESS;
-	}
-
-	@Override
-	public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos,
-		boolean isMoving) {
-		if (!level.isClientSide && fromPos.equals(pos.below()) && !state.canSurvive(level, pos)) {
-			level.destroyBlock(pos, true);
-			return;
-		}
-		super.neighborChanged(state, level, pos, block, fromPos, isMoving);
 	}
 
 	@Override

@@ -15,18 +15,14 @@ final class AllayPortAutomation {
 
 	private final AllayPortBlockEntity port;
 	private final AllayPortInventory inventory;
-	private final AllayPortBeltAccess beltAccess;
 
-	AllayPortAutomation(AllayPortBlockEntity port,
-						  AllayPortInventory inventory,
-						  AllayPortBeltAccess beltAccess) {
+	AllayPortAutomation(AllayPortBlockEntity port, AllayPortInventory inventory) {
 		this.port = port;
 		this.inventory = inventory;
-		this.beltAccess = beltAccess;
 	}
 
 	void tick() {
-		tryPullingFromSide(beltAccess.packagerSide());
+		tryPullingFromSide(port.getPackagerSide());
 	}
 
 	boolean tryPullingFromSide(Direction side) {
@@ -69,7 +65,7 @@ final class AllayPortAutomation {
 	}
 
 	private boolean isAutomatedInputSide(Direction side) {
-		return side.getAxis().isHorizontal() && side == beltAccess.packagerSide();
+		return side.getAxis().isHorizontal() && side == port.getPackagerSide();
 	}
 
 	private @Nullable IItemHandler getAdjacentInventory(Direction side) {

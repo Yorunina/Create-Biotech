@@ -27,6 +27,7 @@ public final class AllayCourierTask {
 	public static final int FORCE_ARRIVAL_TICKS = 600;
 
 	private static final int TAKEOFF_PHASE_TICKS = 20;
+	private static final double INITIAL_WAYPOINT_COMPLETION_DISTANCE = 0.08;
 	private static final double PRECISE_APPROACH_DISTANCE = 4.0;
 	private static final float VANILLA_ALLAY_CRUISE_SPEED = 2.25f;
 	private static final double VANILLA_ALLAY_APPROACH_SPEED = 1.5;
@@ -51,6 +52,7 @@ public final class AllayCourierTask {
 	private AllayCourierEntity.Phase phase;
 	private Vec3 position;
 	private Vec3 launchDirection;
+	private @Nullable Vec3 initialWaypoint;
 	private int phaseTicks;
 	private int allayPortEntryTicks = -1;
 	private int deliveryElapsedTicks;
@@ -133,6 +135,11 @@ public final class AllayCourierTask {
 			AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER, spawnPos, launchDirection);
 	}
 
+	public AllayCourierTask withInitialWaypoint(Vec3 waypoint) {
+		initialWaypoint = waypoint;
+		return this;
+	}
+
 	public void tick(MinecraftServer server, @Nullable AllayCourierEntity entity) {
 		if (removed) {
 			return;
@@ -166,6 +173,9 @@ public final class AllayCourierTask {
 			doFail(server, currentLevel);
 			return;
 		}
+		if (tickInitialWaypoint(entity, hasActiveEntity)) {
+			return;
+		}
 
 		if (!target.level.dimension().equals(currentDimension)) {
 			tickCrossDimensionExit(entity, hasActiveEntity);
@@ -173,6 +183,25 @@ public final class AllayCourierTask {
 		}
 
 		tickTowardTarget(server, currentLevel, target, entity, hasActiveEntity);
+	}
+
+	private boolean tickInitialWaypoint(@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (initialWaypoint == null) {
+			return false;
+		}
+		phase = AllayCourierEntity.Phase.TAKEOFF;
+		if (position.distanceTo(initialWaypoint) <= INITIAL_WAYPOINT_COMPLETION_DISTANCE) {
+			initialWaypoint = null;
+			phaseTicks = 0;
+			if (hasActiveEntity) {
+				entity.clearCourierDestination();
+			}
+			return false;
+		}
+		if (hasActiveEntity) {
+			entity.approachPreciselyAsVanillaAllay(initialWaypoint, VANILLA_ALLAY_APPROACH_SPEED);
+		}
+		return true;
 	}
 
 	private void tickCrossDimensionExit(@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
@@ -269,6 +298,7 @@ public final class AllayCourierTask {
 		}
 		phase = AllayCourierEntity.Phase.CRUISE;
 		phaseTicks = 0;
+		initialWaypoint = null;
 		teleportedNearTarget = true;
 		relocatedThisTick = true;
 	}
@@ -364,11 +394,14 @@ public final class AllayCourierTask {
 	}
 
 	private void startCarrierReturn(MinecraftServer server) {
+		AllayPortBlockEntity departurePort = resolveTargetAllayPort(server.getLevel(currentDimension));
+		Vec3 departureWaypoint = departurePort == null ? null : landingTarget(departurePort, null);
 		if (sourceAllayPortPos != null && sourceDimension != null) {
 			targetAllayPortPos = sourceAllayPortPos;
 			targetDimension = sourceDimension;
 			targetPlayerId = null;
 			resetForReturn(AllayCourierEntity.Mission.CARRIER_RETURN);
+			initialWaypoint = departureWaypoint;
 		} else if (sourcePlayerId != null) {
 			ServerPlayer sourcePlayer = server.getPlayerList().getPlayer(sourcePlayerId);
 			if (sourcePlayer != null && sourcePlayer.isAlive()) {
@@ -376,6 +409,7 @@ public final class AllayCourierTask {
 				targetPlayerId = sourcePlayerId;
 				targetDimension = sourcePlayer.serverLevel().dimension();
 				resetForReturn(AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER);
+				initialWaypoint = departureWaypoint;
 			} else {
 				AllayCourierDeliveryService.dropCarrierOnly(server.getLevel(currentDimension), position);
 				markRemoved();
@@ -394,6 +428,7 @@ public final class AllayCourierTask {
 		allayPortEntryTicks = -1;
 		deliveryElapsedTicks = 0;
 		teleportedNearTarget = false;
+		initialWaypoint = null;
 	}
 
 	private @Nullable ServerLevel resolveTargetLevel(MinecraftServer server) {
@@ -517,6 +552,7 @@ public final class AllayCourierTask {
 		tag.putByte("Phase", (byte) phase.ordinal());
 		tag.put("Position", vecToTag(position));
 		tag.put("LaunchDirection", vecToTag(launchDirection));
+		if (initialWaypoint != null) tag.put("InitialWaypoint", vecToTag(initialWaypoint));
 		tag.putInt("PhaseTicks", phaseTicks);
 		tag.putInt("AllayPortEntryTicks", allayPortEntryTicks);
 		tag.putInt("DeliveryElapsedTicks", deliveryElapsedTicks);
@@ -553,6 +589,8 @@ public final class AllayCourierTask {
 			? tag.getInt("AllayPortEntryTicks") : -1;
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");
 		task.teleportedNearTarget = tag.getBoolean("TeleportedNearTarget");
+		task.initialWaypoint = tag.contains("InitialWaypoint")
+			? vecFromTag(tag, "InitialWaypoint") : null;
 		return task;
 	}
 
