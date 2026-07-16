@@ -16,6 +16,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -225,9 +226,9 @@ public final class AllayCourierTask {
 		if (target.allayPort != null) {
 			boolean crossedLandingTarget = crossedAllayPortEntryArea(
 				target.allayPort, previousPosition, position, landingTarget);
-			boolean crossedPortCenter = crossedAllayPortPoint(
+			boolean reachedPortCenter = reachedAllayPortTarget(
 				target.allayPort, previousPosition, position, allayPortCenter(target.allayPort));
-			if (crossedPortCenter && (isEnteringAllayPort() || crossedLandingTarget)) {
+			if (reachedPortCenter && (isEnteringAllayPort() || crossedLandingTarget)) {
 				doFinishDeliveryAt(server, currentLevel);
 				return;
 			}
@@ -472,7 +473,7 @@ public final class AllayCourierTask {
 	}
 
 	private Vec3 allayPortCenter(AllayPortBlockEntity allayPort) {
-		return Vec3.atCenterOf(allayPort.getBlockPos());
+		return Vec3.atCenterOf(allayPort.getBlockPos()).add(0, -0.25, 0);
 	}
 
 	private boolean crossedAllayPortEntryArea(AllayPortBlockEntity allayPort, Vec3 previousPosition,
@@ -489,11 +490,29 @@ public final class AllayCourierTask {
 			&& Math.abs(crossingPoint.y - point.y) <= ALLAY_PORT_ENTRY_HALF_SIZE;
 	}
 
-	private boolean crossedAllayPortPoint(AllayPortBlockEntity allayPort, Vec3 previousPosition,
+	private boolean reachedAllayPortTarget(AllayPortBlockEntity allayPort, Vec3 previousPosition,
 		Vec3 currentPosition, Vec3 point) {
-		Vec3 crossingPoint = inwardCrossingPoint(allayPort, previousPosition, currentPosition, point);
-		return crossingPoint != null && crossingPoint.distanceToSqr(point)
-			<= ALLAY_PORT_COMPLETION_DISTANCE * ALLAY_PORT_COMPLETION_DISTANCE;
+		AABB targetBounds = allayPortTargetBounds(point);
+		if (targetBounds.contains(currentPosition)) {
+			return true;
+		}
+		Direction facing = allayPort.getBlockState().getValue(AllayPortBlock.FACING);
+		Vec3 outward = Vec3.atLowerCornerOf(facing.getNormal());
+		if (currentPosition.subtract(previousPosition).dot(outward) >= 0) {
+			return false;
+		}
+		return targetBounds.contains(previousPosition)
+			|| targetBounds.clip(previousPosition, currentPosition).isPresent();
+	}
+
+	private AABB allayPortTargetBounds(Vec3 point) {
+		return new AABB(
+			point.x - ALLAY_PORT_COMPLETION_DISTANCE,
+			point.y - ALLAY_PORT_COMPLETION_DISTANCE,
+			point.z - ALLAY_PORT_COMPLETION_DISTANCE,
+			point.x + ALLAY_PORT_COMPLETION_DISTANCE,
+			point.y + ALLAY_PORT_COMPLETION_DISTANCE,
+			point.z + ALLAY_PORT_COMPLETION_DISTANCE);
 	}
 
 	private @Nullable Vec3 inwardCrossingPoint(AllayPortBlockEntity allayPort, Vec3 previousPosition,
@@ -534,7 +553,7 @@ public final class AllayCourierTask {
 	private boolean hasReached(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player,
 		Vec3 landingTarget) {
 		if (allayPort != null) {
-			return position.distanceTo(landingTarget) <= ALLAY_PORT_COMPLETION_DISTANCE;
+			return allayPortTargetBounds(landingTarget).contains(position);
 		}
 		return player != null && (player.getBoundingBox().inflate(0.45, 0.6, 0.45).contains(position)
 			|| position.distanceTo(landingTarget) <= PLAYER_COMPLETION_DISTANCE);

@@ -30,6 +30,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -72,13 +73,20 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 
 		BlockState blockState = be.getBlockState();
 		Direction facing = blockState.getValue(AllayPortBlock.FACING);
-		renderGreetingAllay(ms, buffer, light, facing);
+		float flapness = be.getFlap(partialTicks);
+		float waveStrength = blockState.getValue(AllayPortBlock.OPEN)
+			? 1.0f
+			: Mth.clamp((Math.abs(flapness) - 0.25f) * 4.0f, 0.0f, 1.0f);
+		float animationTime = be.getLevel() == null
+			? partialTicks
+			: be.getLevel().getGameTime() % 24_000L + partialTicks;
+		renderGreetingAllay(ms, buffer, light, facing, animationTime, waveStrength);
 
 		if (VisualizationManager.supportsVisualization(be.getLevel())) {
 			return;
 		}
 
-		renderCurtain(ms, buffer, blockState, facing, be.getFlap(partialTicks), light, overlay);
+		renderCurtain(ms, buffer, blockState, facing, flapness, light, overlay);
 	}
 
 	private void renderCurtain(PoseStack ms, MultiBufferSource buffer, BlockState blockState, Direction facing,
@@ -105,8 +113,9 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 		ms.popPose();
 	}
 
-	private void renderGreetingAllay(PoseStack ms, MultiBufferSource buffer, int light, Direction facing) {
-		prepareGreetingPose();
+	private void renderGreetingAllay(PoseStack ms, MultiBufferSource buffer, int light, Direction facing,
+		float animationTime, float waveStrength) {
+		prepareGreetingPose(animationTime, waveStrength);
 		int allayLight = LightTexture.pack(15, LightTexture.sky(light));
 
 		BlockEntityModelElement.builder()
@@ -154,7 +163,7 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 		poseStack.popPose();
 	}
 
-	private void prepareGreetingPose() {
+	private void prepareGreetingPose(float animationTime, float waveStrength) {
 		ModelPart root = allayModel.root();
 		root.getAllParts().forEach(ModelPart::resetPose);
 
@@ -170,9 +179,11 @@ public class AllayPortRenderer extends SmartBlockEntityRenderer<AllayPortBlockEn
 		head.zRot = degrees(-6.0f);
 		head.yRot = degrees(-5.0f);
 
-		rightArm.xRot = degrees(-20.0f);
-		rightArm.yRot = degrees(-15.0f);
-		rightArm.zRot = degrees(130.0f);
+		float wave = Mth.sin(animationTime * 0.65f) * waveStrength;
+		rightArm.xRot = degrees(-20.0f + wave * 8.0f);
+		rightArm.yRot = degrees(-15.0f - wave * 6.0f);
+		rightArm.zRot = degrees(130.0f + wave * 24.0f);
+		head.zRot += degrees(-wave * 3.0f);
 		leftArm.xRot = degrees(-5.0f);
 		leftArm.zRot = degrees(-25.0f);
 

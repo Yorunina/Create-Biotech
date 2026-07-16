@@ -112,7 +112,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	Vec3 getCourierSpawnPosition() {
-		return Vec3.atCenterOf(worldPosition);
+		return Vec3.atCenterOf(worldPosition).add(0, -0.25, 0);
 	}
 
 	Vec3 getCourierLaunchDirection() {
