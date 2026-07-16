@@ -1,6 +1,7 @@
 package com.yision.allay.entity.courier;
 
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
+import com.nobodiiiii.createbiotech.registry.CBParticleTypes;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.item.miniallay.MiniAllayItem;
 import com.yision.allay.logistics.courier.AllayCourierDispatchService;
@@ -40,8 +41,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 /**
- * A cargo-carrying Allay. Movement, path finding, steering and animation all come from vanilla
- * {@link Allay}; this class only adds the courier task metadata and placed-item interactions.
+ * A cargo-carrying Allay. Movement, steering and animation come from vanilla {@link Allay}; this
+ * class adds direct courier targeting, task metadata and placed-item interactions.
  */
 public class AllayCourierEntity extends Allay implements Container {
 
@@ -96,6 +97,23 @@ public class AllayCourierEntity extends Allay implements Container {
 		noPhysics = getPhase() != Phase.WAITING;
 		super.tick();
 		noPhysics = getPhase() != Phase.WAITING;
+		spawnFlightTrail();
+	}
+
+	private void spawnFlightTrail() {
+		if (!level().isClientSide || getPhase() == Phase.WAITING || tickCount % 3 != 0) {
+			return;
+		}
+		Vec3 motion = getDeltaMovement();
+		if (motion.lengthSqr() < 1.0E-6) {
+			return;
+		}
+		Vec3 trailPosition = position()
+			.add(0.0, getBbHeight() * 0.5, 0.0)
+			.subtract(motion.normalize().scale(getBbWidth() * 0.75));
+		double noteColor = (tickCount % 24) / 24.0;
+		level().addParticle(CBParticleTypes.ALLAY_COURIER_NOTE.get(),
+			trailPosition.x, trailPosition.y, trailPosition.z, noteColor, 0.0, 0.0);
 	}
 
 	/**

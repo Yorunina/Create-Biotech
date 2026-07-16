@@ -15,6 +15,8 @@ public class CBParticleTypes {
 
 	public static final RegistryObject<SimpleParticleType> STRAIGHT_ENCHANT =
 		PARTICLE_TYPES.register("straight_enchant", () -> new SimpleParticleType(false));
+	public static final RegistryObject<SimpleParticleType> ALLAY_COURIER_NOTE =
+		PARTICLE_TYPES.register("allay_courier_note", () -> new SimpleParticleType(false));
 
 	private CBParticleTypes() {
 	}

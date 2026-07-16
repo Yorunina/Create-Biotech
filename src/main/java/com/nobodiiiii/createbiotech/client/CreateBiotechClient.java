@@ -56,6 +56,7 @@ import com.yision.allay.client.render.AllayPortVisual;
 import com.yision.allay.item.miniallay.MiniAllayMenu;
 import com.yision.allay.item.miniallay.MiniAllayScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
+import com.nobodiiiii.createbiotech.client.particle.HalfScaleNoteParticle;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
 import com.nobodiiiii.createbiotech.client.render.SlimeMimicRenderLayer;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -216,6 +217,7 @@ public class CreateBiotechClient {
 	@SubscribeEvent
 	public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
 		event.registerSpriteSet(CBParticleTypes.STRAIGHT_ENCHANT.get(), StraightEnchantParticle.Provider::new);
+		event.registerSpriteSet(CBParticleTypes.ALLAY_COURIER_NOTE.get(), HalfScaleNoteParticle.Provider::new);
 	}
 
 	@SubscribeEvent
@@ -240,6 +242,7 @@ public class CreateBiotechClient {
 				.apply();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.ALLAY_PORT.get())
 				.factory(AllayPortVisual::new)
+				.neverSkipVanillaRender()
 				.apply();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.BONE_RATCHET.get())
 				.factory((context, blockEntity, partialTick) -> new EncasedCogVisual(context, blockEntity, false,

@@ -31,6 +31,8 @@ public final class AllayCourierTask {
 	private static final float VANILLA_ALLAY_CRUISE_SPEED = 2.25f;
 	private static final double VANILLA_ALLAY_APPROACH_SPEED = 1.5;
 	private static final double ALLAY_PORT_COMPLETION_DISTANCE = 0.2;
+	private static final double ALLAY_PORT_ENTRY_OFFSET = 0.5;
+	private static final int ALLAY_PORT_ENTRY_TICKS = 5;
 	private static final double PLAYER_COMPLETION_DISTANCE = 1.5;
 	private static final double PLAYER_TARGET_HEIGHT = 1.2;
 	private static final double PLAYER_FORWARD_OFFSET = 0.15;
@@ -50,6 +52,7 @@ public final class AllayCourierTask {
 	private Vec3 position;
 	private Vec3 launchDirection;
 	private int phaseTicks;
+	private int allayPortEntryTicks = -1;
 	private int deliveryElapsedTicks;
 	private boolean teleportedNearTarget;
 	private boolean relocatedThisTick;
@@ -148,7 +151,7 @@ public final class AllayCourierTask {
 		}
 
 		deliveryElapsedTicks++;
-		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS) {
+		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS && !isEnteringAllayPort()) {
 			forceArrive(server, currentLevel);
 			return;
 		}
@@ -188,9 +191,18 @@ public final class AllayCourierTask {
 		phaseTicks++;
 		Vec3 landingTarget = landingTarget(target.allayPort, target.player);
 		double distance = position.distanceTo(landingTarget);
+		if (target.allayPort != null && isEnteringAllayPort()) {
+			tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
+			return;
+		}
 
 		if (hasReached(target.allayPort, target.player, landingTarget)) {
-			doFinishDeliveryAt(server, currentLevel);
+			if (target.allayPort != null) {
+				beginAllayPortEntry(target.allayPort);
+				tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
+			} else {
+				doFinishDeliveryAt(server, currentLevel);
+			}
 			return;
 		}
 
@@ -214,6 +226,28 @@ public final class AllayCourierTask {
 		} else {
 			entity.flyDirectlyAsVanillaAllay(landingTarget, VANILLA_ALLAY_CRUISE_SPEED);
 		}
+	}
+
+	private void beginAllayPortEntry(AllayPortBlockEntity allayPort) {
+		allayPortEntryTicks = 0;
+		teleportedNearTarget = true;
+		phase = AllayCourierEntity.Phase.LANDING;
+		phaseTicks = 0;
+		setLandingOpen(allayPort, true);
+	}
+
+	private void tickAllayPortEntry(MinecraftServer server, ServerLevel currentLevel,
+		AllayPortBlockEntity allayPort, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		phase = AllayCourierEntity.Phase.LANDING;
+		setLandingOpen(allayPort, true);
+		if (allayPortEntryTicks >= ALLAY_PORT_ENTRY_TICKS) {
+			doFinishDeliveryAt(server, currentLevel);
+			return;
+		}
+		if (hasActiveEntity) {
+			entity.approachPreciselyAsVanillaAllay(allayPortCenter(allayPort), VANILLA_ALLAY_APPROACH_SPEED);
+		}
+		allayPortEntryTicks++;
 	}
 
 	private void teleportNearTarget(MinecraftServer server) {
@@ -283,6 +317,11 @@ public final class AllayCourierTask {
 		}
 		position = landingTarget(target.allayPort, target.player);
 		currentDimension = target.level.dimension();
+		if (target.allayPort != null) {
+			beginAllayPortEntry(target.allayPort);
+			relocatedThisTick = true;
+			return;
+		}
 		doFinishDeliveryAt(server, target.level);
 	}
 
@@ -352,6 +391,7 @@ public final class AllayCourierTask {
 		mission = nextMission;
 		phase = AllayCourierEntity.Phase.TAKEOFF;
 		phaseTicks = 0;
+		allayPortEntryTicks = -1;
 		deliveryElapsedTicks = 0;
 		teleportedNearTarget = false;
 	}
@@ -375,10 +415,14 @@ public final class AllayCourierTask {
 	private Vec3 landingTarget(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player) {
 		if (allayPort != null) {
 			Direction facing = allayPort.getBlockState().getValue(AllayPortBlock.FACING);
-			return Vec3.atCenterOf(allayPort.getBlockPos())
-				.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(0.5));
+			return allayPortCenter(allayPort)
+				.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(ALLAY_PORT_ENTRY_OFFSET));
 		}
 		return player != null ? playerDeliveryTarget(player) : position;
+	}
+
+	private Vec3 allayPortCenter(AllayPortBlockEntity allayPort) {
+		return Vec3.atCenterOf(allayPort.getBlockPos());
 	}
 
 	private Vec3 nearTargetWaypoint(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player) {
@@ -407,6 +451,10 @@ public final class AllayCourierTask {
 		}
 		return player != null && (player.getBoundingBox().inflate(0.45, 0.6, 0.45).contains(position)
 			|| position.distanceTo(landingTarget) <= PLAYER_COMPLETION_DISTANCE);
+	}
+
+	private boolean isEnteringAllayPort() {
+		return allayPortEntryTicks >= 0;
 	}
 
 	private void setLandingOpen(@Nullable AllayPortBlockEntity allayPort, boolean open) {
@@ -470,6 +518,7 @@ public final class AllayCourierTask {
 		tag.put("Position", vecToTag(position));
 		tag.put("LaunchDirection", vecToTag(launchDirection));
 		tag.putInt("PhaseTicks", phaseTicks);
+		tag.putInt("AllayPortEntryTicks", allayPortEntryTicks);
 		tag.putInt("DeliveryElapsedTicks", deliveryElapsedTicks);
 		tag.putBoolean("TeleportedNearTarget", teleportedNearTarget);
 		return tag;
@@ -500,6 +549,8 @@ public final class AllayCourierTask {
 			vecFromTag(tag, "Position"), vecFromTag(tag, "LaunchDirection"));
 		task.phase = phase;
 		task.phaseTicks = tag.getInt("PhaseTicks");
+		task.allayPortEntryTicks = tag.contains("AllayPortEntryTicks")
+			? tag.getInt("AllayPortEntryTicks") : -1;
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");
 		task.teleportedNearTarget = tag.getBoolean("TeleportedNearTarget");
 		return task;
