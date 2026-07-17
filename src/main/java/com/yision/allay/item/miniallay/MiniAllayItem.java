@@ -33,6 +33,7 @@ public class MiniAllayItem extends Item {
 	private static final int EMPTY_CARRIER_MAX_STACK_SIZE = 64;
 	private static final String CARGO_KEY = "Cargo";
 	private static final String HEADING_KEY = "Heading";
+	private static final double PLACED_COURIER_Y_OFFSET = 0.01d + 2.0d / 16.0d;
 
 	public MiniAllayItem(Properties properties) {
 		super(properties);
@@ -65,7 +66,8 @@ public class MiniAllayItem extends Item {
 			return InteractionResult.PASS;
 		}
 
-		Vec3 spawnPos = Vec3.atBottomCenterOf(context.getClickedPos().above()).add(0, 0.01, 0);
+		Vec3 spawnPos = Vec3.atBottomCenterOf(context.getClickedPos().above())
+			.add(0, PLACED_COURIER_Y_OFFSET, 0);
 		Vec3 facingDirection = player.getLookAngle().multiply(1, 0, 1);
 		if (facingDirection.lengthSqr() < 1.0E-6) {
 			facingDirection = Vec3.directionFromRotation(0, player.getYRot()).multiply(-1, 0, -1);
