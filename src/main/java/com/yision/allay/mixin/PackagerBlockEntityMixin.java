@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(PackagerBlockEntity.class)
 public abstract class PackagerBlockEntityMixin {
 	@Inject(method = "wakeTheFrogs", at = @At("TAIL"), remap = false)
-	private void createallay$wakeAdjacentAllayPorts(CallbackInfo ci) {
-		AllayPortWakeupHandler.tryWakeAdjacentPorts((PackagerBlockEntity) (Object) this);
+	private void createallay$wakeAllayPortAbove(CallbackInfo ci) {
+		AllayPortWakeupHandler.tryWakePortAbove((PackagerBlockEntity) (Object) this);
 	}
 }

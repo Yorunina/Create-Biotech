@@ -22,14 +22,11 @@ final class AllayPortAutomation {
 	}
 
 	void tick() {
-		tryPullingFromSide(port.getPackagerSide());
+		tryPullingFromBelow();
 	}
 
-	boolean tryPullingFromSide(Direction side) {
-		if (!isAutomatedInputSide(side)) {
-			return false;
-		}
-		IItemHandler handler = getAdjacentInventory(side);
+	boolean tryPullingFromBelow() {
+		IItemHandler handler = getAdjacentInventory(Direction.DOWN);
 		return handler != null && tryPullingFrom(handler);
 	}
 
@@ -62,10 +59,6 @@ final class AllayPortAutomation {
 			port.flap(true);
 		}
 		return inserted;
-	}
-
-	private boolean isAutomatedInputSide(Direction side) {
-		return side.getAxis().isHorizontal() && side == port.getPackagerSide();
 	}
 
 	private @Nullable IItemHandler getAdjacentInventory(Direction side) {

@@ -98,7 +98,7 @@ public class AllayCourierEntity extends Allay implements Container {
 		courier.setPos(task.position());
 		courier.setDeltaMovement(Vec3.ZERO);
 		courier.noPhysics = true;
-		courier.setLaunchDirection(task.launchDirection());
+		courier.alignToDirection(task.launchDirection());
 		courier.hasImpulse = true;
 		courier.hurtMarked = true;
 		return courier;
@@ -310,6 +310,11 @@ public class AllayCourierEntity extends Allay implements Container {
 		setItemInHand(InteractionHand.MAIN_HAND, cargo.copy());
 	}
 
+	@Override
+	public float getHoldingItemAnimationProgress(float partialTick) {
+		return getPackage().isEmpty() ? super.getHoldingItemAnimationProgress(partialTick) : 1.0f;
+	}
+
 	public Phase getPhase() {
 		return Phase.byId(getEntityData().get(DATA_PHASE));
 	}
@@ -346,6 +351,10 @@ public class AllayCourierEntity extends Allay implements Container {
 		float yRot = yawForDirection(launchDirection);
 		setYRot(yRot);
 		yRotO = yRot;
+		yBodyRot = yRot;
+		yBodyRotO = yRot;
+		yHeadRot = yRot;
+		yHeadRotO = yRot;
 		setXRot(0);
 		xRotO = 0;
 	}

@@ -105,10 +105,6 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		return getBlockState().getValue(AllayPortBlock.FACING);
 	}
 
-	public Direction getPackagerSide() {
-		return getLaunchSide().getOpposite();
-	}
-
 	Vec3 getCourierSpawnPosition() {
 		return Vec3.atCenterOf(worldPosition).add(0, -0.25, 0);
 	}
@@ -121,11 +117,11 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 		return task.departFromAllayPort(getCourierSpawnPosition());
 	}
 
-	public boolean tryPullFromPackagerSide() {
+	public boolean tryPullFromBelow() {
 		if (level == null || level.isClientSide()) {
 			return false;
 		}
-		boolean pulled = automation.tryPullingFromSide(getPackagerSide());
+		boolean pulled = automation.tryPullingFromBelow();
 		if (pulled) {
 			dispatchAccess.tryDispatch();
 		}
