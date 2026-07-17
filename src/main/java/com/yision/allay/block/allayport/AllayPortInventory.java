@@ -104,9 +104,6 @@ final class AllayPortInventory {
 			}
 			remainder = port.inventory.insertItem(slot, stack, simulate);
 		}
-		if (!simulate && remainder.getCount() != stack.getCount()) {
-			port.flap(true);
-		}
 		return remainder;
 	}
 

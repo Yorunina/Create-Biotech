@@ -5,8 +5,7 @@ import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxItem;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.registry.AllItems;
 import com.yision.allay.registry.AllMenuTypes;
-import java.util.ArrayList;
-import java.util.List;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -28,18 +27,25 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 	private static final int SLOT_X = 27;
 	private static final int SLOT_Y = 28;
 
-	private final ItemStackHandler packageInventory = new ItemStackHandler(PackageItem.SLOTS);
+	private boolean loadingContents;
+	private final ItemStackHandler packageInventory = new ItemStackHandler(PackageItem.SLOTS) {
+		@Override
+		protected void onContentsChanged(int slot) {
+			super.onContentsChanged(slot);
+			if (!loadingContents) {
+				persistCurrentState();
+			}
+		}
+	};
 	private final int ownerHotbarSlot;
 	private final int ownerMenuSlot;
-	private final List<ItemStack> initialPackageContents;
+	private ItemStack packageTemplate = ItemStack.EMPTY;
 
 	public final Player player;
 	public final Inventory playerInventory;
 	public final ItemStack openedStack;
 	public final InteractionHand hand;
 	public final String initialAddress;
-
-	private boolean confirmed;
 
 	public MiniAllayMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
 		this(AllMenuTypes.MINI_ALLAY.get(), id, playerInventory, extraData);
@@ -52,7 +58,6 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		this.openedStack = extraData.readItem();
 		this.hand = extraData.readEnum(InteractionHand.class);
 		this.initialAddress = readInitialContents(openedStack);
-		this.initialPackageContents = snapshotPackageInventory();
 		this.ownerHotbarSlot = hand == InteractionHand.MAIN_HAND ? playerInventory.selected : -1;
 		this.ownerMenuSlot = ownerHotbarSlot >= 0 ? PLAYER_SLOT_START + 27 + ownerHotbarSlot : -1;
 		addSlots();
@@ -65,7 +70,6 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		this.openedStack = openedStack.copy();
 		this.hand = hand;
 		this.initialAddress = readInitialContents(this.openedStack);
-		this.initialPackageContents = snapshotPackageInventory();
 		this.ownerHotbarSlot = hand == InteractionHand.MAIN_HAND ? playerInventory.selected : -1;
 		this.ownerMenuSlot = ownerHotbarSlot >= 0 ? PLAYER_SLOT_START + 27 + ownerHotbarSlot : -1;
 		addSlots();
@@ -81,6 +85,17 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 				@Override
 				public boolean mayPlace(@NotNull ItemStack stack) {
 					return !PackageItem.isPackage(stack) && !stack.is(AllItems.MINI_ALLAY.get());
+				}
+
+				@Override
+				public int getMaxStackSize(@NotNull ItemStack stack) {
+					return Math.min(stack.getMaxStackSize(), getMaxStackSize());
+				}
+
+				@Override
+				public void setChanged() {
+					super.setChanged();
+					persistCurrentState();
 				}
 			});
 		}
@@ -119,180 +134,69 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		if (!PackageItem.isPackage(box)) {
 			return "";
 		}
+		packageTemplate = box.copy();
 
 		ItemStackHandler contents = CapturedEntityBoxHelper.getVisiblePackageContents(box);
-		for (int slot = 0; slot < Math.min(packageInventory.getSlots(), contents.getSlots()); slot++) {
-			packageInventory.setStackInSlot(slot, contents.getStackInSlot(slot).copy());
+		loadingContents = true;
+		try {
+			for (int slot = 0; slot < Math.min(packageInventory.getSlots(), contents.getSlots()); slot++) {
+				packageInventory.setStackInSlot(slot, contents.getStackInSlot(slot).copy());
+			}
+		} finally {
+			loadingContents = false;
 		}
 		return PackageItem.getAddress(box);
 	}
 
-	public boolean confirm(String address) {
-		if (player.level().isClientSide || confirmed || !stillValid(player)) {
+	private boolean persistCurrentState() {
+		if (player.level().isClientSide) {
 			return false;
 		}
 
-		String normalizedAddress = address == null ? "" : address.trim();
-		ItemStack packageBox = createPackageBox();
+		ItemStack heldStack = player.getItemInHand(hand);
+		if (!heldStack.is(AllItems.MINI_ALLAY.get()) || heldStack.isEmpty()) {
+			return false;
+		}
+
+		ItemStack packageBox = createCurrentPackage(MiniAllayItem.copyCargoPackage(heldStack));
 		if (packageBox.isEmpty()) {
-			if (MiniAllayItem.hasCargo(openedStack)) {
-				player.setItemInHand(hand, AllItems.MINI_ALLAY.asStack());
-			}
-			clearPackageInventory();
-			confirmed = true;
-			broadcastChanges();
-			return true;
-		}
-
-		if (!normalizedAddress.isEmpty()) {
-			PackageItem.clearAddress(packageBox);
-			PackageItem.addAddress(packageBox, normalizedAddress);
+			MiniAllayItem.clearCargo(heldStack);
 		} else {
-			PackageItem.clearAddress(packageBox);
+			packageTemplate = packageBox.copy();
+			MiniAllayItem.loadCargo(heldStack, packageBox);
 		}
-
-		ItemStack loadedAllay = MiniAllayItem.createLoaded(packageBox);
-		if (MiniAllayItem.hasCargo(openedStack)) {
-			player.setItemInHand(hand, loadedAllay);
-		} else {
-			ItemStack heldStack = player.getItemInHand(hand);
-			if (!heldStack.is(AllItems.MINI_ALLAY.get()) || heldStack.isEmpty()) {
-				return false;
-			}
-			if (heldStack.getCount() == 1) {
-				player.setItemInHand(hand, loadedAllay);
-			} else {
-				heldStack.shrink(1);
-				player.getInventory().placeItemBackInInventory(loadedAllay);
-			}
-		}
-		clearPackageInventory();
-		confirmed = true;
-		broadcastChanges();
+		playerInventory.setChanged();
 		return true;
 	}
 
-	private ItemStack createPackageBox() {
-		ItemStackHandler handler = new ItemStackHandler(PackageItem.SLOTS);
+	private ItemStack createCurrentPackage(ItemStack existingPackage) {
+		ItemStack packageBox = PackageItem.isPackage(existingPackage)
+			? existingPackage
+			: packageTemplate.copy();
 		boolean hasAnyContents = false;
 		for (int slot = 0; slot < PACKAGE_SLOT_COUNT; slot++) {
-			ItemStack stack = slots.get(slot).getItem();
-			if (stack.isEmpty()) {
-				continue;
+			if (!packageInventory.getStackInSlot(slot).isEmpty()) {
+				hasAnyContents = true;
+				break;
 			}
-			handler.setStackInSlot(slot, stack.copy());
-			hasAnyContents = true;
-		}
-		if (hasAnyContents) {
-			return PackageItem.containing(handler);
 		}
 
-		ItemStack originalBox = MiniAllayItem.copyCargoPackage(openedStack);
-		if (CapturedEntityBoxItem.isBox(originalBox)) {
-			return originalBox;
+		if (!hasAnyContents && !CapturedEntityBoxItem.isBox(packageBox)) {
+			return ItemStack.EMPTY;
 		}
-		return ItemStack.EMPTY;
-	}
 
-	private void clearPackageInventory() {
-		for (int slot = 0; slot < packageInventory.getSlots(); slot++) {
-			packageInventory.setStackInSlot(slot, ItemStack.EMPTY);
+		if (PackageItem.isPackage(packageBox)) {
+			CompoundTag tag = packageBox.getOrCreateTag();
+			tag.put("Items", packageInventory.serializeNBT());
+			return packageBox;
 		}
+
+		return PackageItem.containing(packageInventory);
 	}
 
 	@Override
 	public void removed(Player player) {
 		super.removed(player);
-		if (player.level().isClientSide || confirmed) {
-			return;
-		}
-		if (MiniAllayItem.hasCargo(openedStack)) {
-			cancelPackagedAllayChanges(player);
-			return;
-		}
-		for (int slot = 0; slot < packageInventory.getSlots(); slot++) {
-			player.getInventory().placeItemBackInInventory(packageInventory.getStackInSlot(slot));
-			packageInventory.setStackInSlot(slot, ItemStack.EMPTY);
-		}
-	}
-
-	private void cancelPackagedAllayChanges(Player player) {
-		List<ItemStack> currentContents = snapshotPackageInventory();
-		List<ItemStack> insertedContents = subtractStacks(currentContents, initialPackageContents);
-		List<ItemStack> removedContents = subtractStacks(initialPackageContents, currentContents);
-		if (insertedContents.isEmpty() && removedContents.isEmpty()) {
-			clearPackageInventory();
-			return;
-		}
-
-		for (ItemStack stack : insertedContents) {
-			player.getInventory().placeItemBackInInventory(stack);
-		}
-		for (ItemStack stack : removedContents) {
-			consumeFromPlayerInventory(player, stack);
-		}
-		clearPackageInventory();
-	}
-
-	private List<ItemStack> snapshotPackageInventory() {
-		List<ItemStack> snapshot = new ArrayList<>();
-		for (int slot = 0; slot < packageInventory.getSlots(); slot++) {
-			ItemStack stack = packageInventory.getStackInSlot(slot);
-			if (!stack.isEmpty()) {
-				snapshot.add(stack.copy());
-			}
-		}
-		return snapshot;
-	}
-
-	private static List<ItemStack> subtractStacks(List<ItemStack> source, List<ItemStack> toSubtract) {
-		List<ItemStack> remainder = new ArrayList<>(source.size());
-		for (ItemStack stack : source) {
-			if (!stack.isEmpty()) {
-				remainder.add(stack.copy());
-			}
-		}
-		for (ItemStack subtract : toSubtract) {
-			if (subtract.isEmpty()) {
-				continue;
-			}
-			int remainingCount = subtract.getCount();
-			for (ItemStack candidate : remainder) {
-				if (remainingCount <= 0) {
-					break;
-				}
-				if (!ItemStack.isSameItemSameTags(candidate, subtract)) {
-					continue;
-				}
-				int consumed = Math.min(remainingCount, candidate.getCount());
-				candidate.shrink(consumed);
-				remainingCount -= consumed;
-			}
-		}
-
-		List<ItemStack> difference = new ArrayList<>();
-		for (ItemStack stack : remainder) {
-			if (!stack.isEmpty()) {
-				difference.add(stack);
-			}
-		}
-		return difference;
-	}
-
-	private static void consumeFromPlayerInventory(Player player, ItemStack targetStack) {
-		int remainingCount = targetStack.getCount();
-		for (int slot = 0; slot < player.getInventory().getContainerSize(); slot++) {
-			if (remainingCount <= 0) {
-				return;
-			}
-			ItemStack inventoryStack = player.getInventory().getItem(slot);
-			if (!ItemStack.isSameItemSameTags(inventoryStack, targetStack)) {
-				continue;
-			}
-			int consumed = Math.min(remainingCount, inventoryStack.getCount());
-			inventoryStack.shrink(consumed);
-			remainingCount -= consumed;
-		}
 	}
 
 	@Override

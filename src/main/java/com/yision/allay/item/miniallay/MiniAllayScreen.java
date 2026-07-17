@@ -48,7 +48,7 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 		addRenderableWidget(addressBox);
 
 		confirmButton = new IconButton(x + guiWidth - 30, y + guiHeight - 25, AllIcons.I_CONFIRM);
-		confirmButton.withCallback(() -> CBPackets.sendToServer(new MiniAllayConfirmPacket(addressBox.getValue())));
+		confirmButton.withCallback(() -> minecraft.player.closeContainer());
 		addRenderableWidget(confirmButton);
 	}
 
@@ -116,5 +116,12 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 	@Override
 	public List<Rect2i> getExtraAreas() {
 		return extraAreas;
+	}
+
+	@Override
+	public void removed() {
+		String address = addressBox == null ? menu.initialAddress : addressBox.getValue();
+		CBPackets.sendToServer(new MiniAllayConfirmPacket(menu.hand, address));
+		super.removed();
 	}
 }

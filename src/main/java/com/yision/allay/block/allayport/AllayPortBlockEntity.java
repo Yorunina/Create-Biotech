@@ -151,11 +151,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receiveCourier(ItemStack box) {
-		boolean received = portInventory.receiveCourier(box);
-		if (received) {
-			flap(true);
-		}
-		return received;
+		return portInventory.receiveCourier(box);
 	}
 
 	public boolean canReceivePackage(ItemStack box) {
@@ -163,11 +159,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receivePackage(ItemStack box) {
-		boolean received = portInventory.receivePackage(box);
-		if (received) {
-			flap(true);
-		}
-		return received;
+		return portInventory.receivePackage(box);
 	}
 
 	public boolean canReceiveCarrier() {
@@ -175,19 +167,11 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	public boolean receiveCarrier() {
-		boolean received = portInventory.receiveCarrier();
-		if (received) {
-			flap(true);
-		}
-		return received;
+		return portInventory.receiveCarrier();
 	}
 
 	public boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId, int delayTicks) {
-		boolean received = returnQueue.receivePackageAndScheduleCarrierReturnToPlayer(box, playerId, delayTicks);
-		if (received) {
-			flap(true);
-		}
-		return received;
+		return returnQueue.receivePackageAndScheduleCarrierReturnToPlayer(box, playerId, delayTicks);
 	}
 
 	public boolean receivePackageAndScheduleCarrierReturnToPlayer(ItemStack box, UUID playerId) {
@@ -217,11 +201,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 
 	public CourierReceiveResult receivePackageAndHandleCarrier(ItemStack box,
 		@Nullable ResourceKey<net.minecraft.world.level.Level> returnDimension, @Nullable BlockPos returnPos) {
-		CourierReceiveResult result = returnQueue.receivePackageAndHandleCarrier(box, returnDimension, returnPos);
-		if (result != CourierReceiveResult.REJECTED) {
-			flap(true);
-		}
-		return result;
+		return returnQueue.receivePackageAndHandleCarrier(box, returnDimension, returnPos);
 	}
 
 	@Override

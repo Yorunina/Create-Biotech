@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 public class AllayPortItemRenderer extends CustomRenderedItemModelRenderer {
 
 	private static final float ITEM_SCALE = 0.9f;
-	private static final float GUI_Y_OFFSET = -1.0f / 32.0f;
+	private static final float GUI_Y_OFFSET = -1.0f / 16.0f;
 
 	@Nullable
 	private GreetingAllayRenderer greetingAllayRenderer;

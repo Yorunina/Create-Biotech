@@ -54,11 +54,7 @@ final class AllayPortAutomation {
 		if (extracted.isEmpty()) {
 			return false;
 		}
-		boolean inserted = inventory.addPackage(extracted, false);
-		if (inserted) {
-			port.flap(true);
-		}
-		return inserted;
+		return inventory.addPackage(extracted, false);
 	}
 
 	private @Nullable IItemHandler getAdjacentInventory(Direction side) {

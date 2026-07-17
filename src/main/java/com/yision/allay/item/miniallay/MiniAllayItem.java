@@ -18,6 +18,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -120,13 +121,61 @@ public class MiniAllayItem extends Item {
 
 	protected static void openMenu(ServerPlayer serverPlayer, ItemStack stack, InteractionHand usedHand) {
 		LegacyMiniAllayClipboardData.recoverClipboard(serverPlayer);
+		stack = isolateCarrierForEditing(serverPlayer, stack, usedHand);
+		ItemStack openedStack = stack;
 		NetworkHooks.openScreen(serverPlayer,
-			new SimpleMenuProvider((id, inv, p) -> MiniAllayMenu.create(id, inv, stack, usedHand),
+			new SimpleMenuProvider((id, inv, p) -> MiniAllayMenu.create(id, inv, openedStack, usedHand),
 				Component.translatable("item.create_biotech.mini_allay")),
 			buffer -> {
-				buffer.writeItem(stack);
+				buffer.writeItem(openedStack);
 				buffer.writeEnum(usedHand);
 			});
+	}
+
+	private static ItemStack isolateCarrierForEditing(ServerPlayer player, ItemStack stack, InteractionHand hand) {
+		if (stack.getCount() <= 1) {
+			return stack;
+		}
+
+		ItemStack remainder = stack.copyWithCount(stack.getCount() - 1);
+		stack.setCount(1);
+		storeOutsideEditedHand(player, remainder, hand);
+		return stack;
+	}
+
+	private static void storeOutsideEditedHand(ServerPlayer player, ItemStack remainder, InteractionHand hand) {
+		Inventory inventory = player.getInventory();
+		int excludedSlot = hand == InteractionHand.MAIN_HAND ? inventory.selected : -1;
+
+		for (int slot = 0; slot < Inventory.INVENTORY_SIZE && !remainder.isEmpty(); slot++) {
+			if (slot == excludedSlot) {
+				continue;
+			}
+			ItemStack existing = inventory.getItem(slot);
+			if (existing.isEmpty() || !ItemStack.isSameItemSameTags(existing, remainder)) {
+				continue;
+			}
+			int limit = Math.min(existing.getMaxStackSize(), inventory.getMaxStackSize());
+			int moved = Math.min(remainder.getCount(), limit - existing.getCount());
+			if (moved > 0) {
+				existing.grow(moved);
+				remainder.shrink(moved);
+			}
+		}
+
+		for (int slot = 0; slot < Inventory.INVENTORY_SIZE && !remainder.isEmpty(); slot++) {
+			if (slot == excludedSlot || !inventory.getItem(slot).isEmpty()) {
+				continue;
+			}
+			int moved = Math.min(remainder.getCount(), remainder.getMaxStackSize());
+			inventory.setItem(slot, remainder.copyWithCount(moved));
+			remainder.shrink(moved);
+		}
+
+		if (!remainder.isEmpty()) {
+			player.drop(remainder.copy(), false);
+		}
+		inventory.setChanged();
 	}
 
 	public static ItemStack createLoaded(ItemStack packageStack) {
@@ -144,6 +193,23 @@ public class MiniAllayItem extends Item {
 
 		allay.getOrCreateTag().put(CARGO_KEY, cargo.packageCopy().save(new CompoundTag()));
 		return true;
+	}
+
+	public static boolean updateCargoAddress(ItemStack allay, String address) {
+		if (!allay.is(AllItems.MINI_ALLAY.get())) {
+			return false;
+		}
+		ItemStack packageStack = copyCargoPackage(allay);
+		if (packageStack.isEmpty()) {
+			return false;
+		}
+
+		PackageItem.clearAddress(packageStack);
+		String normalizedAddress = address == null ? "" : address.trim();
+		if (!normalizedAddress.isEmpty()) {
+			PackageItem.addAddress(packageStack, normalizedAddress);
+		}
+		return loadCargo(allay, packageStack);
 	}
 
 	public static ItemStack copyCargoPackage(ItemStack allay) {

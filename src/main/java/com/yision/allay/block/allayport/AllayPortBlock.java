@@ -26,10 +26,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenchable, IBE<AllayPortBlockEntity> {
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-	private static final VoxelShape SHAPE_NORTH = box(0, 0, 0, 16, 15, 14);
-	private static final VoxelShape SHAPE_EAST = rotateY(SHAPE_NORTH);
-	private static final VoxelShape SHAPE_SOUTH = rotateY(SHAPE_EAST);
-	private static final VoxelShape SHAPE_WEST = rotateY(SHAPE_SOUTH);
+	private static final VoxelShape SHAPE = Shapes.or(
+		box(0, 0, 0, 16, 4, 16),
+		box(2, 4, 2, 14, 16, 14)
+	).optimize();
 
 	public AllayPortBlock(Properties properties) {
 		super(properties);
@@ -57,29 +57,13 @@ public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenc
 	@Override
 	public @NotNull VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
 		@NotNull CollisionContext context) {
-		return getShapeForFacing(state.getValue(FACING));
+		return SHAPE;
 	}
 
 	@Override
 	public @NotNull VoxelShape getCollisionShape(@NotNull BlockState state, @NotNull BlockGetter level,
 		@NotNull BlockPos pos, @NotNull CollisionContext context) {
-		return getShapeForFacing(state.getValue(FACING));
-	}
-
-	private static VoxelShape getShapeForFacing(Direction facing) {
-		return switch (facing) {
-			case EAST -> SHAPE_EAST;
-			case SOUTH -> SHAPE_SOUTH;
-			case WEST -> SHAPE_WEST;
-			default -> SHAPE_NORTH;
-		};
-	}
-
-	private static VoxelShape rotateY(VoxelShape shape) {
-		VoxelShape[] rotated = new VoxelShape[] { Shapes.empty() };
-		shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> rotated[0] = Shapes.or(rotated[0],
-			box(16 - maxZ * 16, minY * 16, minX * 16, 16 - minZ * 16, maxY * 16, maxX * 16)));
-		return rotated[0];
+		return SHAPE;
 	}
 
 	@Override
