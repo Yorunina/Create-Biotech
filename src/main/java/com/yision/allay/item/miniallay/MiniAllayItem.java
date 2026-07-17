@@ -3,15 +3,17 @@ package com.yision.allay.item.miniallay;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
 import com.yision.allay.client.render.MiniAllayItemRenderer;
-import com.yision.allay.entity.courier.AllayCourierEntity;
+import com.yision.allay.logistics.courier.AllayCourierDispatchService;
 import com.yision.allay.registry.AllItems;
 import java.util.List;
 import java.util.function.Consumer;
-import net.minecraft.core.Direction;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -33,7 +35,8 @@ public class MiniAllayItem extends Item {
 	private static final int EMPTY_CARRIER_MAX_STACK_SIZE = 64;
 	private static final String CARGO_KEY = "Cargo";
 	private static final String HEADING_KEY = "Heading";
-	private static final double PLACED_COURIER_Y_OFFSET = 0.01d + 2.0d / 16.0d;
+	private static final double PLAYER_LAUNCH_FORWARD_OFFSET = 0.75;
+	private static final double PLAYER_LAUNCH_EYE_OFFSET = -0.35;
 
 	public MiniAllayItem(Properties properties) {
 		super(properties);
@@ -47,7 +50,11 @@ public class MiniAllayItem extends Item {
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand usedHand) {
 		ItemStack stack = player.getItemInHand(usedHand);
-		if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+		if (player.isShiftKeyDown()) {
+			if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+				tryLaunch(serverPlayer, stack);
+			}
+		} else if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
 			openMenu(serverPlayer, stack, usedHand);
 		}
 		return InteractionResultHolder.success(stack);
@@ -55,38 +62,51 @@ public class MiniAllayItem extends Item {
 
 	@Override
 	public InteractionResult useOn(UseOnContext context) {
-		ItemStack stack = context.getItemInHand();
-		if (!hasCargo(stack) || context.getClickedFace() != Direction.UP) {
-			return InteractionResult.PASS;
-		}
-
 		Level level = context.getLevel();
 		Player player = context.getPlayer();
 		if (player == null) {
 			return InteractionResult.PASS;
 		}
 
-		Vec3 spawnPos = Vec3.atBottomCenterOf(context.getClickedPos().above())
-			.add(0, PLACED_COURIER_Y_OFFSET, 0);
-		Vec3 facingDirection = player.getLookAngle().multiply(1, 0, 1);
-		if (facingDirection.lengthSqr() < 1.0E-6) {
-			facingDirection = Vec3.directionFromRotation(0, player.getYRot()).multiply(-1, 0, -1);
-		}
-		facingDirection = facingDirection.normalize();
-		AllayCourierEntity courier = AllayCourierEntity.createWaiting(level, copyCargoPackage(stack), facingDirection);
-		courier.setPos(spawnPos);
-
-		if (!level.noCollision(courier, courier.getBoundingBox())) {
-			return InteractionResult.FAIL;
-		}
-
-		if (!level.isClientSide()) {
-			level.addFreshEntity(courier);
-			if (!player.getAbilities().instabuild) {
-				stack.shrink(1);
+		ItemStack stack = context.getItemInHand();
+		if (player.isShiftKeyDown()) {
+			if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+				tryLaunch(serverPlayer, stack);
 			}
+		} else if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+			openMenu(serverPlayer, stack, context.getHand());
 		}
-		return InteractionResult.SUCCESS;
+		return InteractionResult.sidedSuccess(level.isClientSide);
+	}
+
+	private static boolean tryLaunch(ServerPlayer player, ItemStack stack) {
+		Vec3 launchDirection = horizontalLaunchDirection(player);
+		Vec3 spawnPosition = player.getEyePosition()
+			.add(0, PLAYER_LAUNCH_EYE_OFFSET, 0)
+			.add(launchDirection.scale(PLAYER_LAUNCH_FORWARD_OFFSET));
+		ItemStack box = copyCargoPackage(stack);
+		if (!AllayCourierDispatchService.dispatchFromPlayer(player, box, spawnPosition, launchDirection)) {
+			player.displayClientMessage(
+				Component.translatable("gui.create_biotech.mini_allay.invalid_target")
+					.withStyle(ChatFormatting.RED),
+				true);
+			return false;
+		}
+
+		player.level().playSound(null, player.blockPosition(), SoundEvents.FIREWORK_ROCKET_LAUNCH,
+			SoundSource.PLAYERS, 0.8f, 1.0f);
+		if (!player.getAbilities().instabuild) {
+			stack.shrink(1);
+		}
+		return true;
+	}
+
+	private static Vec3 horizontalLaunchDirection(Player player) {
+		Vec3 direction = player.getLookAngle().multiply(1, 0, 1);
+		if (direction.lengthSqr() < 1.0E-6) {
+			direction = Vec3.directionFromRotation(0, player.getYRot()).multiply(-1, 0, -1);
+		}
+		return direction.normalize();
 	}
 
 	@Override

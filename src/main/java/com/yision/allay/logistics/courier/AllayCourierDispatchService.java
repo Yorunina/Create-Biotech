@@ -15,6 +15,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 public final class AllayCourierDispatchService {
 	private AllayCourierDispatchService() {}
 
@@ -37,6 +39,32 @@ public final class AllayCourierDispatchService {
 		AllayCourierTarget.AllayPortTarget allayPort =
 			findAllayPortExcludingSource(level, address, box, origin, sourceDimension, sourcePos);
 		return allayPort != null ? allayPort : findPlayer(level, address, box);
+	}
+
+	public static boolean dispatchFromPlayer(ServerPlayer player, ItemStack box,
+		Vec3 spawnPosition, Vec3 launchDirection) {
+		ServerLevel level = player.serverLevel();
+		AllayCourierTarget target = resolvePackageTarget(level, box, spawnPosition, null, null);
+		if (target == null) {
+			return false;
+		}
+
+		UUID taskId = UUID.randomUUID();
+		AllayCourierTask task;
+		if (target instanceof AllayCourierTarget.AllayPortTarget allayPortTarget) {
+			task = AllayCourierTask.forPackageToAllayPort(taskId, box, level,
+				allayPortTarget.dimension(), allayPortTarget.pos(), spawnPosition, launchDirection,
+				null, null, player.getUUID(), AllayCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
+		} else if (target instanceof AllayCourierTarget.PlayerTarget playerTarget) {
+			task = AllayCourierTask.forPackageToPlayer(taskId, box, level,
+				playerTarget.playerId(), playerTarget.dimension(), spawnPosition, launchDirection,
+				null, null, player.getUUID(), AllayCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
+		} else {
+			return false;
+		}
+
+		AllayCourierTaskManager.addTask(level.getServer(), task);
+		return true;
 	}
 
 	private static @Nullable AllayCourierTarget.PlayerTarget findPlayer(ServerLevel level, String playerName, ItemStack box) {
