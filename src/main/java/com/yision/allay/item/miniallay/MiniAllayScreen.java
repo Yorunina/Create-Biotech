@@ -6,6 +6,7 @@ import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
+import com.simibubi.create.foundation.gui.widget.ScrollInput;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.nobodiiiii.createbiotech.network.CBPackets;
 import com.yision.allay.network.allay.MiniAllayConfirmPacket;
@@ -72,9 +73,44 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 			.scale(3)
 			.render(graphics);
 
-		if (addressBox.getValue().isBlank() && !addressBox.isFocused())
-			graphics.drawString(font, CreateLang.translate("gui.stock_keeper.package_address")
-				.style(ChatFormatting.ITALIC).component(), addressBox.getX(), addressBox.getY(), 0x8A8794, false);
+	}
+
+	@Override
+	protected void renderForeground(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
+		super.renderForeground(graphics, mouseX, mouseY, partialTicks);
+		if (!addressBox.isHovered() || addressBox.isFocused()) {
+			return;
+		}
+
+		if (addressBox.getValue().isBlank()) {
+			graphics.renderComponentTooltip(font,
+				List.of(
+					CreateLang.translate("gui.redstone_requester.requester_address")
+						.color(ScrollInput.HEADER_RGB)
+						.component(),
+					CreateLang.translate("gui.redstone_requester.requester_address_tip")
+						.style(ChatFormatting.GRAY)
+						.component(),
+					CreateLang.translate("gui.redstone_requester.requester_address_tip_1")
+						.style(ChatFormatting.GRAY)
+						.component(),
+					CreateLang.translate("gui.schedule.lmb_edit")
+						.style(ChatFormatting.DARK_GRAY)
+						.style(ChatFormatting.ITALIC)
+						.component()),
+				mouseX, mouseY);
+			return;
+		}
+
+		graphics.renderComponentTooltip(font,
+			List.of(
+				CreateLang.translate("gui.redstone_requester.requester_address_given")
+					.color(ScrollInput.HEADER_RGB)
+					.component(),
+				CreateLang.text("'" + addressBox.getValue() + "'")
+					.style(ChatFormatting.GRAY)
+					.component()),
+			mouseX, mouseY);
 	}
 
 	@Override
