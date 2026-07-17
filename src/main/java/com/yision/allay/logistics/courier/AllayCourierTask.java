@@ -28,14 +28,29 @@ public final class AllayCourierTask {
 	public static final int FORCE_ARRIVAL_TICKS = 600;
 
 	private static final int TAKEOFF_PHASE_TICKS = 20;
-	private static final double INITIAL_WAYPOINT_COMPLETION_DISTANCE = 0.08;
 	private static final double PRECISE_APPROACH_DISTANCE = 4.0;
 	private static final float VANILLA_ALLAY_CRUISE_SPEED = 2.25f;
 	private static final double VANILLA_ALLAY_APPROACH_SPEED = 1.5;
-	private static final double ALLAY_PORT_COMPLETION_DISTANCE = 0.25;
-	private static final double ALLAY_PORT_ENTRY_OFFSET = 0.5;
-	private static final double ALLAY_PORT_ENTRY_HALF_SIZE = 0.5;
-	private static final int ALLAY_PORT_ENTRY_TICKS = 5;
+	private static final double PORT_HIGH_APPROACH_OFFSET = 3.25;
+	private static final double PORT_HIGH_APPROACH_HEIGHT = 2.25;
+	private static final double PORT_LINEUP_OFFSET = 2.5;
+	private static final double PORT_MOUTH_OFFSET = 0.62;
+	private static final double PORT_INSIDE_OFFSET = -0.15;
+	private static final double PORT_DEPARTURE_CLEAR_OFFSET = 2.75;
+	private static final double PORT_DEPARTURE_CLEAR_HEIGHT = 0.55;
+	private static final double PORT_CAPTURE_RADIUS = 1.15;
+	private static final double PORT_STAGE_COMPLETION_DISTANCE = 0.055;
+	private static final double PORT_ALIGNMENT_SPEED = 0.22;
+	private static final double PORT_ALIGNMENT_ACCELERATION = 0.045;
+	private static final double PORT_ENTRY_SPEED = 0.16;
+	private static final double PORT_ENTRY_ACCELERATION = 0.035;
+	private static final double PORT_DEPARTURE_SPEED = 0.19;
+	private static final double PORT_DEPARTURE_ACCELERATION = 0.04;
+	private static final double PORT_ROUTE_CLEARANCE_HEIGHT = 3.0;
+	private static final double PORT_ROUTE_SAFETY_INFLATION = 0.8;
+	private static final int PORT_TURNAROUND_PAUSE_TICKS = 8;
+	private static final int ESTIMATED_GUIDED_PORT_ARRIVAL_TICKS = 34;
+	private static final int ESTIMATED_GUIDED_PORT_DEPARTURE_TICKS = 24;
 	private static final double PLAYER_COMPLETION_DISTANCE = 1.5;
 	private static final double PLAYER_TARGET_HEIGHT = 1.2;
 	private static final double PLAYER_FORWARD_OFFSET = 0.15;
@@ -58,9 +73,10 @@ public final class AllayCourierTask {
 	private AllayCourierEntity.Phase phase;
 	private Vec3 position;
 	private Vec3 launchDirection;
-	private @Nullable Vec3 initialWaypoint;
+	private PortMotion portMotion = PortMotion.NONE;
+	private @Nullable Vec3 portDepartureOrigin;
 	private int phaseTicks;
-	private int allayPortEntryTicks = -1;
+	private int portMotionTicks;
 	private int deliveryElapsedTicks;
 	private boolean teleportedNearTarget;
 	private boolean forceArrivalPending;
@@ -142,8 +158,10 @@ public final class AllayCourierTask {
 			AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER, spawnPos, launchDirection);
 	}
 
-	public AllayCourierTask withInitialWaypoint(Vec3 waypoint) {
-		initialWaypoint = waypoint;
+	public AllayCourierTask departFromAllayPort(Vec3 portCenter) {
+		portDepartureOrigin = portCenter;
+		portMotion = PortMotion.DEPARTURE_MOUTH;
+		portMotionTicks = 0;
 		return this;
 	}
 
@@ -171,7 +189,7 @@ public final class AllayCourierTask {
 		}
 
 		deliveryElapsedTicks++;
-		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS && !isEnteringAllayPort()) {
+		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS && !isGuidedPortArrival()) {
 			if (hasActiveEntity && teleportToForcedArrivalTarget(server)) {
 				return;
 			}
@@ -190,7 +208,7 @@ public final class AllayCourierTask {
 			return;
 		}
 		startTargetWavingIfArriving(server, target.allayPort);
-		if (tickInitialWaypoint(entity, hasActiveEntity)) {
+		if (tickPortDeparture(currentLevel, entity, hasActiveEntity)) {
 			return;
 		}
 
@@ -202,21 +220,55 @@ public final class AllayCourierTask {
 		tickTowardTarget(server, currentLevel, target, previousPosition, entity, hasActiveEntity);
 	}
 
-	private boolean tickInitialWaypoint(@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
-		if (initialWaypoint == null) {
+	private boolean tickPortDeparture(ServerLevel currentLevel,
+		@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (!isGuidedPortDeparture() || portDepartureOrigin == null) {
 			return false;
 		}
 		phase = AllayCourierEntity.Phase.TAKEOFF;
-		if (position.distanceTo(initialWaypoint) <= INITIAL_WAYPOINT_COMPLETION_DISTANCE) {
-			initialWaypoint = null;
-			phaseTicks = 0;
-			if (hasActiveEntity) {
-				entity.clearCourierDestination();
+		Vec3 outward = launchDirection;
+		Vec3 target;
+		double speed;
+		boolean lockToPath;
+
+		if (portMotion == PortMotion.DEPARTURE_PAUSE) {
+			target = portDepartureOrigin.add(outward.scale(PORT_INSIDE_OFFSET));
+			speed = PORT_ENTRY_SPEED;
+			lockToPath = true;
+			if (++portMotionTicks >= PORT_TURNAROUND_PAUSE_TICKS) {
+				advancePortMotion(PortMotion.DEPARTURE_MOUTH);
+				if (currentLevel.getBlockEntity(BlockPos.containing(portDepartureOrigin))
+					instanceof AllayPortBlockEntity departurePort) {
+					departurePort.flap(false);
+				}
 			}
-			return false;
+		} else if (portMotion == PortMotion.DEPARTURE_MOUTH) {
+			target = portDepartureOrigin.add(outward.scale(PORT_MOUTH_OFFSET));
+			speed = PORT_DEPARTURE_SPEED;
+			lockToPath = true;
+			if (reachedPortStage(target)) {
+				advancePortMotion(PortMotion.DEPARTURE_CLEAR);
+				target = portDepartureTarget();
+			}
+		} else {
+			target = portDepartureTarget();
+			speed = PORT_DEPARTURE_SPEED;
+			lockToPath = true;
+			if (reachedPortStage(target)) {
+				portMotion = PortMotion.NONE;
+				portDepartureOrigin = null;
+				portMotionTicks = 0;
+				phaseTicks = 0;
+				if (hasActiveEntity) {
+					entity.clearCourierDestination();
+				}
+				return false;
+			}
 		}
+
 		if (hasActiveEntity) {
-			entity.approachPreciselyAsVanillaAllay(initialWaypoint, VANILLA_ALLAY_APPROACH_SPEED);
+			entity.guideAlongDockingPath(target, outward, speed,
+				PORT_DEPARTURE_ACCELERATION, lockToPath);
 		}
 		return true;
 	}
@@ -235,33 +287,16 @@ public final class AllayCourierTask {
 	private void tickTowardTarget(MinecraftServer server, ServerLevel currentLevel, ResolvedTarget target,
 		Vec3 previousPosition, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
 		phaseTicks++;
-		Vec3 landingTarget = landingTarget(target.allayPort, target.player);
-		double distance = position.distanceTo(landingTarget);
 		if (target.allayPort != null) {
-			boolean crossedLandingTarget = crossedAllayPortEntryArea(
-				target.allayPort, previousPosition, position, landingTarget);
-			boolean reachedPortCenter = reachedAllayPortTarget(
-				target.allayPort, previousPosition, position, allayPortCenter(target.allayPort));
-			if (reachedPortCenter && (isEnteringAllayPort() || crossedLandingTarget)) {
-				doFinishDeliveryAt(server, currentLevel);
-				return;
-			}
-			if (crossedLandingTarget && !isEnteringAllayPort()) {
-				beginAllayPortEntry();
-			}
-			if (isEnteringAllayPort()) {
-				tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
-				return;
-			}
+			tickTowardAllayPort(server, currentLevel, target.allayPort,
+				previousPosition, entity, hasActiveEntity);
+			return;
 		}
 
-		if (hasReached(target.allayPort, target.player, landingTarget)) {
-			if (target.allayPort != null) {
-				beginAllayPortEntry();
-				tickAllayPortEntry(server, currentLevel, target.allayPort, entity, hasActiveEntity);
-			} else {
-				doFinishDeliveryAt(server, currentLevel);
-			}
+		Vec3 landingTarget = landingTarget(null, target.player);
+		double distance = position.distanceTo(landingTarget);
+		if (hasReachedPlayer(target.player, landingTarget)) {
+			doFinishDeliveryAt(server, currentLevel);
 			return;
 		}
 
@@ -286,24 +321,101 @@ public final class AllayCourierTask {
 		}
 	}
 
-	private void beginAllayPortEntry() {
-		allayPortEntryTicks = 0;
-		teleportedNearTarget = true;
-		phase = AllayCourierEntity.Phase.LANDING;
-		phaseTicks = 0;
-	}
-
-	private void tickAllayPortEntry(MinecraftServer server, ServerLevel currentLevel,
-		AllayPortBlockEntity allayPort, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
-		phase = AllayCourierEntity.Phase.LANDING;
-		if (allayPortEntryTicks >= ALLAY_PORT_ENTRY_TICKS) {
-			doFinishDeliveryAt(server, currentLevel);
+	private void tickTowardAllayPort(MinecraftServer server, ServerLevel currentLevel,
+		AllayPortBlockEntity allayPort, Vec3 previousPosition,
+		@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (isGuidedPortArrival()) {
+			tickGuidedPortArrival(server, currentLevel, allayPort, entity, hasActiveEntity);
 			return;
 		}
-		if (hasActiveEntity) {
-			entity.approachPreciselyAsVanillaAllay(allayPortCenter(allayPort), VANILLA_ALLAY_APPROACH_SPEED);
+
+		Vec3 highApproach = portHighApproach(allayPort);
+		if (segmentDistanceToPointSqr(previousPosition, position, highApproach)
+			<= PORT_CAPTURE_RADIUS * PORT_CAPTURE_RADIUS) {
+			portMotion = PortMotion.ARRIVAL_ALIGN;
+			portMotionTicks = 0;
+			teleportedNearTarget = true;
+			phaseTicks = 0;
+			if (hasActiveEntity) {
+				entity.clearCourierDestination();
+			}
+			tickGuidedPortArrival(server, currentLevel, allayPort, entity, hasActiveEntity);
+			return;
 		}
-		allayPortEntryTicks++;
+
+		double distance = position.distanceTo(highApproach);
+		if (distance <= PRECISE_APPROACH_DISTANCE * 2.0) {
+			if (phase != AllayCourierEntity.Phase.LANDING) {
+				phaseTicks = 0;
+			}
+			phase = AllayCourierEntity.Phase.LANDING;
+		} else if (phase == AllayCourierEntity.Phase.TAKEOFF && phaseTicks >= TAKEOFF_PHASE_TICKS) {
+			phase = AllayCourierEntity.Phase.CRUISE;
+			phaseTicks = 0;
+		}
+
+		if (!hasActiveEntity) {
+			return;
+		}
+		Vec3 cruiseTarget = safePortCruiseTarget(allayPort, highApproach);
+		if (position.distanceTo(cruiseTarget) <= PRECISE_APPROACH_DISTANCE) {
+			entity.approachPreciselyAsVanillaAllay(cruiseTarget, VANILLA_ALLAY_APPROACH_SPEED);
+		} else {
+			entity.flyDirectlyAsVanillaAllay(cruiseTarget, VANILLA_ALLAY_CRUISE_SPEED);
+		}
+	}
+
+	private void tickGuidedPortArrival(MinecraftServer server, ServerLevel currentLevel,
+		AllayPortBlockEntity allayPort, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		phase = AllayCourierEntity.Phase.LANDING;
+		Vec3 outward = portOutward(allayPort);
+		Vec3 target;
+		double speed;
+		double acceleration;
+		boolean lockToPath;
+
+		if (portMotion == PortMotion.ARRIVAL_ALIGN) {
+			target = portLineup(allayPort);
+			speed = PORT_ALIGNMENT_SPEED;
+			acceleration = PORT_ALIGNMENT_ACCELERATION;
+			lockToPath = false;
+			if (reachedPortStage(target)) {
+				advancePortMotion(PortMotion.ARRIVAL_MOUTH);
+				target = portMouth(allayPort);
+				speed = PORT_ENTRY_SPEED;
+				acceleration = PORT_ENTRY_ACCELERATION;
+				lockToPath = true;
+			}
+		} else if (portMotion == PortMotion.ARRIVAL_MOUTH) {
+			target = portMouth(allayPort);
+			speed = PORT_ENTRY_SPEED;
+			acceleration = PORT_ENTRY_ACCELERATION;
+			lockToPath = true;
+			if (reachedPortStage(target)) {
+				advancePortMotion(PortMotion.ARRIVAL_INSIDE);
+				allayPort.flap(true);
+				target = portInside(allayPort);
+			}
+		} else {
+			target = portInside(allayPort);
+			speed = PORT_ENTRY_SPEED;
+			acceleration = PORT_ENTRY_ACCELERATION;
+			lockToPath = true;
+			if (reachedPortStage(target)) {
+				if (hasActiveEntity) {
+					entity.clearCourierDestination();
+					entity.setDeltaMovement(Vec3.ZERO);
+				}
+				position = target;
+				doFinishDeliveryAt(server, currentLevel);
+				return;
+			}
+		}
+
+		if (hasActiveEntity) {
+			entity.guideAlongDockingPath(target, outward.scale(-1), speed, acceleration, lockToPath);
+		}
+		portMotionTicks++;
 	}
 
 	private void teleportNearTarget(MinecraftServer server) {
@@ -315,9 +427,8 @@ public final class AllayCourierTask {
 			target.level.getChunkAt(targetAllayPortPos);
 		}
 
-		Vec3 landingTarget = landingTarget(target.allayPort, target.player);
 		Vec3 waypoint = nearTargetWaypoint(target.allayPort, target.player);
-		Vec3 preferredSpawn = computeNearTargetSpawn(landingTarget, waypoint, target.player != null);
+		Vec3 preferredSpawn = computeNearTargetSpawn(target.allayPort, target.player, waypoint);
 		position = findTickingPosTowardTarget(target.level, preferredSpawn, waypoint);
 		currentDimension = target.level.dimension();
 		if (target.player != null) {
@@ -325,7 +436,9 @@ public final class AllayCourierTask {
 		}
 		phase = AllayCourierEntity.Phase.CRUISE;
 		phaseTicks = 0;
-		initialWaypoint = null;
+		portMotion = PortMotion.NONE;
+		portDepartureOrigin = null;
+		portMotionTicks = 0;
 		teleportedNearTarget = true;
 		relocatedThisTick = true;
 	}
@@ -339,21 +452,34 @@ public final class AllayCourierTask {
 			target.level.getChunkAt(targetAllayPortPos);
 		}
 
-		position = landingTarget(target.allayPort, target.player);
+		if (target.allayPort != null) {
+			position = portHighApproach(target.allayPort);
+			portMotion = PortMotion.ARRIVAL_ALIGN;
+			portMotionTicks = 0;
+			forceArrivalPending = false;
+		} else {
+			position = landingTarget(null, target.player);
+			forceArrivalPending = true;
+		}
 		currentDimension = target.level.dimension();
 		if (target.player != null) {
 			targetDimension = target.player.serverLevel().dimension();
 		}
 		phase = AllayCourierEntity.Phase.LANDING;
 		phaseTicks = 0;
-		initialWaypoint = null;
 		teleportedNearTarget = true;
-		forceArrivalPending = true;
 		relocatedThisTick = true;
 		return true;
 	}
 
-	private Vec3 computeNearTargetSpawn(Vec3 landingTarget, Vec3 waypoint, boolean playerTarget) {
+	private Vec3 computeNearTargetSpawn(@Nullable AllayPortBlockEntity allayPort,
+		@Nullable ServerPlayer player, Vec3 waypoint) {
+		if (allayPort != null) {
+			Vec3 outward = portOutward(allayPort);
+			return waypoint.add(outward.scale(48.0)).add(0, 8.0, 0);
+		}
+
+		Vec3 landingTarget = landingTarget(null, player);
 		Vec3 away = new Vec3(position.x - landingTarget.x, 0, position.z - landingTarget.z);
 		if (away.lengthSqr() < 1.0E-6) {
 			away = launchDirection.scale(-1);
@@ -363,9 +489,7 @@ public final class AllayCourierTask {
 		}
 		away = away.normalize();
 
-		double distance = playerTarget ? 32.0 : 56.0;
-		double yOffset = playerTarget ? 4.0 : 12.0;
-		return waypoint.add(away.scale(distance)).add(0, yOffset, 0);
+		return waypoint.add(away.scale(32.0)).add(0, 4.0, 0);
 	}
 
 	private Vec3 findTickingPosTowardTarget(ServerLevel level, Vec3 preferredSpawn, Vec3 waypoint) {
@@ -395,7 +519,9 @@ public final class AllayCourierTask {
 		if (targetAllayPortPos != null) {
 			target.level.getChunkAt(targetAllayPortPos);
 		}
-		position = landingTarget(target.allayPort, target.player);
+		position = target.allayPort != null
+			? portInside(target.allayPort)
+			: landingTarget(null, target.player);
 		currentDimension = target.level.dimension();
 		doFinishDeliveryAt(server, target.level);
 	}
@@ -440,13 +566,12 @@ public final class AllayCourierTask {
 
 	private void startCarrierReturn(MinecraftServer server) {
 		AllayPortBlockEntity departurePort = resolveTargetAllayPort(server.getLevel(currentDimension));
-		Vec3 departureWaypoint = departurePort == null ? null : landingTarget(departurePort, null);
 		if (sourceAllayPortPos != null && sourceDimension != null) {
 			targetAllayPortPos = sourceAllayPortPos;
 			targetDimension = sourceDimension;
 			targetPlayerId = null;
 			resetForReturn(AllayCourierEntity.Mission.CARRIER_RETURN);
-			initialWaypoint = departureWaypoint;
+			beginPortDeparture(departurePort, true);
 		} else if (sourcePlayerId != null) {
 			ServerPlayer sourcePlayer = server.getPlayerList().getPlayer(sourcePlayerId);
 			if (sourcePlayer != null && sourcePlayer.isAlive()) {
@@ -454,7 +579,7 @@ public final class AllayCourierTask {
 				targetPlayerId = sourcePlayerId;
 				targetDimension = sourcePlayer.serverLevel().dimension();
 				resetForReturn(AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER);
-				initialWaypoint = departureWaypoint;
+				beginPortDeparture(departurePort, true);
 			} else {
 				AllayCourierDeliveryService.dropCarrierOnly(server.getLevel(currentDimension), position);
 				markRemoved();
@@ -470,11 +595,22 @@ public final class AllayCourierTask {
 		mission = nextMission;
 		phase = AllayCourierEntity.Phase.TAKEOFF;
 		phaseTicks = 0;
-		allayPortEntryTicks = -1;
+		portMotion = PortMotion.NONE;
+		portDepartureOrigin = null;
+		portMotionTicks = 0;
 		deliveryElapsedTicks = 0;
 		teleportedNearTarget = false;
 		forceArrivalPending = false;
-		initialWaypoint = null;
+	}
+
+	private void beginPortDeparture(@Nullable AllayPortBlockEntity departurePort, boolean pause) {
+		if (departurePort == null) {
+			return;
+		}
+		launchDirection = portOutward(departurePort);
+		portDepartureOrigin = allayPortCenter(departurePort);
+		portMotion = pause ? PortMotion.DEPARTURE_PAUSE : PortMotion.DEPARTURE_MOUTH;
+		portMotionTicks = 0;
 	}
 
 	private @Nullable ServerLevel resolveTargetLevel(MinecraftServer server) {
@@ -495,9 +631,7 @@ public final class AllayCourierTask {
 
 	private Vec3 landingTarget(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player) {
 		if (allayPort != null) {
-			Direction facing = allayPort.getBlockState().getValue(AllayPortBlock.FACING);
-			return allayPortCenter(allayPort)
-				.add(Vec3.atLowerCornerOf(facing.getNormal()).scale(ALLAY_PORT_ENTRY_OFFSET));
+			return portInside(allayPort);
 		}
 		return player != null ? playerDeliveryTarget(player) : position;
 	}
@@ -506,64 +640,91 @@ public final class AllayCourierTask {
 		return Vec3.atCenterOf(allayPort.getBlockPos()).add(0, -0.25, 0);
 	}
 
-	private boolean crossedAllayPortEntryArea(AllayPortBlockEntity allayPort, Vec3 previousPosition,
-		Vec3 currentPosition, Vec3 point) {
-		Vec3 crossingPoint = inwardCrossingPoint(allayPort, previousPosition, currentPosition, point);
-		if (crossingPoint == null) {
-			return false;
-		}
-		Direction.Axis facingAxis = allayPort.getBlockState().getValue(AllayPortBlock.FACING).getAxis();
-		double horizontalOffset = facingAxis == Direction.Axis.X
-			? Math.abs(crossingPoint.z - point.z)
-			: Math.abs(crossingPoint.x - point.x);
-		return horizontalOffset <= ALLAY_PORT_ENTRY_HALF_SIZE
-			&& Math.abs(crossingPoint.y - point.y) <= ALLAY_PORT_ENTRY_HALF_SIZE;
-	}
-
-	private boolean reachedAllayPortTarget(AllayPortBlockEntity allayPort, Vec3 previousPosition,
-		Vec3 currentPosition, Vec3 point) {
-		AABB targetBounds = allayPortTargetBounds(point);
-		if (targetBounds.contains(currentPosition)) {
-			return true;
-		}
+	private Vec3 portOutward(AllayPortBlockEntity allayPort) {
 		Direction facing = allayPort.getBlockState().getValue(AllayPortBlock.FACING);
-		Vec3 outward = Vec3.atLowerCornerOf(facing.getNormal());
-		if (currentPosition.subtract(previousPosition).dot(outward) >= 0) {
-			return false;
-		}
-		return targetBounds.contains(previousPosition)
-			|| targetBounds.clip(previousPosition, currentPosition).isPresent();
+		return Vec3.atLowerCornerOf(facing.getNormal());
 	}
 
-	private AABB allayPortTargetBounds(Vec3 point) {
-		return new AABB(
-			point.x - ALLAY_PORT_COMPLETION_DISTANCE,
-			point.y - ALLAY_PORT_COMPLETION_DISTANCE,
-			point.z - ALLAY_PORT_COMPLETION_DISTANCE,
-			point.x + ALLAY_PORT_COMPLETION_DISTANCE,
-			point.y + ALLAY_PORT_COMPLETION_DISTANCE,
-			point.z + ALLAY_PORT_COMPLETION_DISTANCE);
+	private Vec3 portHighApproach(AllayPortBlockEntity allayPort) {
+		return allayPortCenter(allayPort)
+			.add(portOutward(allayPort).scale(PORT_HIGH_APPROACH_OFFSET))
+			.add(0, PORT_HIGH_APPROACH_HEIGHT, 0);
 	}
 
-	private @Nullable Vec3 inwardCrossingPoint(AllayPortBlockEntity allayPort, Vec3 previousPosition,
-		Vec3 currentPosition, Vec3 point) {
-		Direction facing = allayPort.getBlockState().getValue(AllayPortBlock.FACING);
-		Vec3 outward = Vec3.atLowerCornerOf(facing.getNormal());
-		double previousSide = previousPosition.subtract(point).dot(outward);
-		double currentSide = currentPosition.subtract(point).dot(outward);
-		if (previousSide <= 0 || currentSide > 0) {
-			return null;
+	private Vec3 portLineup(AllayPortBlockEntity allayPort) {
+		return allayPortCenter(allayPort).add(portOutward(allayPort).scale(PORT_LINEUP_OFFSET));
+	}
+
+	private Vec3 portMouth(AllayPortBlockEntity allayPort) {
+		return allayPortCenter(allayPort).add(portOutward(allayPort).scale(PORT_MOUTH_OFFSET));
+	}
+
+	private Vec3 portInside(AllayPortBlockEntity allayPort) {
+		return allayPortCenter(allayPort).add(portOutward(allayPort).scale(PORT_INSIDE_OFFSET));
+	}
+
+	private Vec3 portDepartureTarget() {
+		return portDepartureOrigin
+			.add(launchDirection.scale(PORT_DEPARTURE_CLEAR_OFFSET))
+			.add(0, PORT_DEPARTURE_CLEAR_HEIGHT, 0);
+	}
+
+	private Vec3 safePortCruiseTarget(AllayPortBlockEntity allayPort, Vec3 highApproach) {
+		AABB safetyBounds = new AABB(allayPort.getBlockPos()).inflate(PORT_ROUTE_SAFETY_INFLATION);
+		if (safetyBounds.clip(position, highApproach).isEmpty()) {
+			return highApproach;
 		}
-		double sideDelta = previousSide - currentSide;
-		if (sideDelta <= 1.0E-6) {
-			return null;
+
+		Vec3 center = allayPortCenter(allayPort);
+		boolean insideHorizontalFootprint = position.x >= safetyBounds.minX && position.x <= safetyBounds.maxX
+			&& position.z >= safetyBounds.minZ && position.z <= safetyBounds.maxZ;
+		if (insideHorizontalFootprint && position.y < safetyBounds.maxY) {
+			Vec3 escape = position.subtract(center).multiply(1, 0, 1);
+			if (escape.lengthSqr() < 1.0E-6) {
+				escape = portOutward(allayPort);
+			}
+			return position.add(escape.normalize().scale(PORT_ROUTE_SAFETY_INFLATION + 1.0));
 		}
-		return previousPosition.lerp(currentPosition, previousSide / sideDelta);
+
+		double clearanceY = Math.max(position.y, center.y + PORT_ROUTE_CLEARANCE_HEIGHT);
+		return new Vec3(position.x, clearanceY, position.z);
+	}
+
+	private boolean reachedPortStage(Vec3 target) {
+		return position.distanceToSqr(target)
+			<= PORT_STAGE_COMPLETION_DISTANCE * PORT_STAGE_COMPLETION_DISTANCE;
+	}
+
+	private void advancePortMotion(PortMotion nextMotion) {
+		portMotion = nextMotion;
+		portMotionTicks = 0;
+	}
+
+	private boolean isGuidedPortArrival() {
+		return portMotion == PortMotion.ARRIVAL_ALIGN
+			|| portMotion == PortMotion.ARRIVAL_MOUTH
+			|| portMotion == PortMotion.ARRIVAL_INSIDE;
+	}
+
+	private boolean isGuidedPortDeparture() {
+		return portMotion == PortMotion.DEPARTURE_PAUSE
+			|| portMotion == PortMotion.DEPARTURE_MOUTH
+			|| portMotion == PortMotion.DEPARTURE_CLEAR;
+	}
+
+	private static double segmentDistanceToPointSqr(Vec3 start, Vec3 end, Vec3 point) {
+		Vec3 segment = end.subtract(start);
+		double lengthSqr = segment.lengthSqr();
+		if (lengthSqr <= 1.0E-8) {
+			return start.distanceToSqr(point);
+		}
+		double progress = Mth.clamp(point.subtract(start).dot(segment) / lengthSqr, 0.0, 1.0);
+		return start.add(segment.scale(progress)).distanceToSqr(point);
 	}
 
 	private Vec3 nearTargetWaypoint(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player) {
 		if (allayPort != null) {
-			return Vec3.atCenterOf(allayPort.getBlockPos()).add(0, 4.0, 0);
+			return portHighApproach(allayPort);
 		}
 		return player != null ? playerDeliveryTarget(player).add(0, 0.6, 0) : position;
 	}
@@ -580,17 +741,9 @@ public final class AllayCourierTask {
 			.add(horizontalLook.scale(PLAYER_FORWARD_OFFSET));
 	}
 
-	private boolean hasReached(@Nullable AllayPortBlockEntity allayPort, @Nullable ServerPlayer player,
-		Vec3 landingTarget) {
-		if (allayPort != null) {
-			return allayPortTargetBounds(landingTarget).contains(position);
-		}
+	private boolean hasReachedPlayer(@Nullable ServerPlayer player, Vec3 landingTarget) {
 		return player != null && (player.getBoundingBox().inflate(0.45, 0.6, 0.45).contains(position)
 			|| position.distanceTo(landingTarget) <= PLAYER_COMPLETION_DISTANCE);
-	}
-
-	private boolean isEnteringAllayPort() {
-		return allayPortEntryTicks >= 0;
 	}
 
 	private void startTargetWavingIfArriving(MinecraftServer server,
@@ -644,12 +797,11 @@ public final class AllayCourierTask {
 		}
 
 		int physicalEstimate;
-		if (isEnteringAllayPort()) {
-			physicalEstimate = Math.max(0, ALLAY_PORT_ENTRY_TICKS - allayPortEntryTicks);
-		} else if (initialWaypoint != null) {
-			physicalEstimate = estimateLinearTicks(position, initialWaypoint,
-				INITIAL_WAYPOINT_COMPLETION_DISTANCE, ESTIMATED_APPROACH_BLOCKS_PER_TICK)
-				+ estimateTravelTicksFrom(initialWaypoint, target.allayPort, target.player, false);
+		if (isGuidedPortArrival() && target.allayPort != null) {
+			physicalEstimate = estimateGuidedPortArrivalTicks(target.allayPort);
+		} else if (isGuidedPortDeparture() && portDepartureOrigin != null) {
+			physicalEstimate = estimateGuidedPortDepartureTicks()
+				+ estimateTravelTicksFrom(portDepartureTarget(), target.allayPort, target.player, false);
 		} else {
 			physicalEstimate = estimateTravelTicksFrom(position, target.allayPort, target.player,
 				phase == AllayCourierEntity.Phase.LANDING);
@@ -663,9 +815,8 @@ public final class AllayCourierTask {
 
 	private int estimateTravelTicksFrom(Vec3 from, @Nullable AllayPortBlockEntity allayPort,
 		@Nullable ServerPlayer player, boolean landingOnly) {
-		Vec3 target = landingTarget(allayPort, player);
-		double completionDistance = allayPort != null
-			? ALLAY_PORT_COMPLETION_DISTANCE : PLAYER_COMPLETION_DISTANCE;
+		Vec3 target = allayPort != null ? portHighApproach(allayPort) : landingTarget(null, player);
+		double completionDistance = allayPort != null ? PORT_CAPTURE_RADIUS : PLAYER_COMPLETION_DISTANCE;
 		double distance = from.distanceTo(target);
 		double remainingDistance = Math.max(0, distance - completionDistance);
 
@@ -682,7 +833,36 @@ public final class AllayCourierTask {
 			travelTicks += ESTIMATED_ACCELERATION_TICKS;
 		}
 
-		return travelTicks + (allayPort != null ? ALLAY_PORT_ENTRY_TICKS : 0);
+		return travelTicks + (allayPort != null ? ESTIMATED_GUIDED_PORT_ARRIVAL_TICKS : 0);
+	}
+
+	private int estimateGuidedPortArrivalTicks(AllayPortBlockEntity allayPort) {
+		return switch (portMotion) {
+			case ARRIVAL_ALIGN -> estimateLinearTicks(position, portLineup(allayPort),
+				PORT_STAGE_COMPLETION_DISTANCE, PORT_ALIGNMENT_SPEED * 0.8)
+				+ estimateLinearTicks(portLineup(allayPort), portMouth(allayPort),
+					PORT_STAGE_COMPLETION_DISTANCE, PORT_ENTRY_SPEED * 0.85)
+				+ estimateLinearTicks(portMouth(allayPort), portInside(allayPort),
+					PORT_STAGE_COMPLETION_DISTANCE, PORT_ENTRY_SPEED * 0.85);
+			case ARRIVAL_MOUTH -> estimateLinearTicks(position, portMouth(allayPort),
+				PORT_STAGE_COMPLETION_DISTANCE, PORT_ENTRY_SPEED * 0.85)
+				+ estimateLinearTicks(portMouth(allayPort), portInside(allayPort),
+					PORT_STAGE_COMPLETION_DISTANCE, PORT_ENTRY_SPEED * 0.85);
+			case ARRIVAL_INSIDE -> estimateLinearTicks(position, portInside(allayPort),
+				PORT_STAGE_COMPLETION_DISTANCE, PORT_ENTRY_SPEED * 0.85);
+			default -> ESTIMATED_GUIDED_PORT_ARRIVAL_TICKS;
+		};
+	}
+
+	private int estimateGuidedPortDepartureTicks() {
+		return switch (portMotion) {
+			case DEPARTURE_PAUSE -> Math.max(0, PORT_TURNAROUND_PAUSE_TICKS - portMotionTicks)
+				+ ESTIMATED_GUIDED_PORT_DEPARTURE_TICKS;
+			case DEPARTURE_MOUTH -> ESTIMATED_GUIDED_PORT_DEPARTURE_TICKS;
+			case DEPARTURE_CLEAR -> estimateLinearTicks(position, portDepartureTarget(),
+				PORT_STAGE_COMPLETION_DISTANCE, PORT_DEPARTURE_SPEED * 0.85);
+			default -> 0;
+		};
 	}
 
 	private int estimateLinearTicks(Vec3 from, Vec3 target, double completionDistance, double speed) {
@@ -692,9 +872,8 @@ public final class AllayCourierTask {
 
 	private Vec3 previewNearTargetPosition(@Nullable AllayPortBlockEntity allayPort,
 		@Nullable ServerPlayer player) {
-		Vec3 target = landingTarget(allayPort, player);
 		Vec3 waypoint = nearTargetWaypoint(allayPort, player);
-		return computeNearTargetSpawn(target, waypoint, player != null);
+		return computeNearTargetSpawn(allayPort, player, waypoint);
 	}
 
 	private static Vec3 horizontalDirection(Vec3 direction) {
@@ -707,6 +886,29 @@ public final class AllayCourierTask {
 		return sourcePlayerId != null && sourceAllayPortPos == null
 			? AllayCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH
 			: AllayCourierReturnMode.DEFAULT_FOR_PORT;
+	}
+
+	/**
+	 * The two halves of the station animation are deliberately mirrored around the front-facing
+	 * axis. Cruise flight may reach the high approach point from any safe direction, but every
+	 * courier must align at the front before crossing the mouth.
+	 */
+	private enum PortMotion {
+		NONE,
+		ARRIVAL_ALIGN,
+		ARRIVAL_MOUTH,
+		ARRIVAL_INSIDE,
+		DEPARTURE_PAUSE,
+		DEPARTURE_MOUTH,
+		DEPARTURE_CLEAR;
+
+		private static PortMotion byName(String name) {
+			try {
+				return valueOf(name);
+			} catch (IllegalArgumentException ignored) {
+				return NONE;
+			}
+		}
 	}
 
 	private record ResolvedTarget(
@@ -751,9 +953,10 @@ public final class AllayCourierTask {
 		tag.putByte("Phase", (byte) phase.ordinal());
 		tag.put("Position", vecToTag(position));
 		tag.put("LaunchDirection", vecToTag(launchDirection));
-		if (initialWaypoint != null) tag.put("InitialWaypoint", vecToTag(initialWaypoint));
+		tag.putString("PortMotion", portMotion.name());
+		if (portDepartureOrigin != null) tag.put("PortDepartureOrigin", vecToTag(portDepartureOrigin));
 		tag.putInt("PhaseTicks", phaseTicks);
-		tag.putInt("AllayPortEntryTicks", allayPortEntryTicks);
+		tag.putInt("PortMotionTicks", portMotionTicks);
 		tag.putInt("DeliveryElapsedTicks", deliveryElapsedTicks);
 		tag.putBoolean("TeleportedNearTarget", teleportedNearTarget);
 		tag.putBoolean("ForceArrivalPending", forceArrivalPending);
@@ -785,13 +988,21 @@ public final class AllayCourierTask {
 			vecFromTag(tag, "Position"), vecFromTag(tag, "LaunchDirection"));
 		task.phase = phase;
 		task.phaseTicks = tag.getInt("PhaseTicks");
-		task.allayPortEntryTicks = tag.contains("AllayPortEntryTicks")
-			? tag.getInt("AllayPortEntryTicks") : -1;
+		task.portMotionTicks = tag.getInt("PortMotionTicks");
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");
 		task.teleportedNearTarget = tag.getBoolean("TeleportedNearTarget");
 		task.forceArrivalPending = tag.getBoolean("ForceArrivalPending");
-		task.initialWaypoint = tag.contains("InitialWaypoint")
-			? vecFromTag(tag, "InitialWaypoint") : null;
+		if (tag.contains("PortMotion")) {
+			task.portMotion = PortMotion.byName(tag.getString("PortMotion"));
+			task.portDepartureOrigin = tag.contains("PortDepartureOrigin")
+				? vecFromTag(tag, "PortDepartureOrigin") : null;
+		} else if (tag.getInt("AllayPortEntryTicks") >= 0 && tag.contains("AllayPortEntryTicks")) {
+			task.portMotion = PortMotion.ARRIVAL_INSIDE;
+		} else if (tag.contains("InitialWaypoint")) {
+			Vec3 legacyWaypoint = vecFromTag(tag, "InitialWaypoint");
+			task.portDepartureOrigin = legacyWaypoint.subtract(task.launchDirection.scale(0.5));
+			task.portMotion = PortMotion.DEPARTURE_MOUTH;
+		}
 		return task;
 	}
 

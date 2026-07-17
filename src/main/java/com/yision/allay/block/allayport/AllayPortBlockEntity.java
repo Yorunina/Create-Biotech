@@ -38,8 +38,6 @@ import java.util.Set;
 import java.util.UUID;
 
 public class AllayPortBlockEntity extends PackagePortBlockEntity {
-	private static final double DEPARTURE_OFFSET = 0.5;
-
 	private final AllayPortInventory portInventory;
 	private final AllayPortDispatchAccess dispatchAccess;
 	private final AllayPortAutomation automation;
@@ -120,8 +118,7 @@ public class AllayPortBlockEntity extends PackagePortBlockEntity {
 	}
 
 	AllayCourierTask prepareCourierDeparture(AllayCourierTask task) {
-		return task.withInitialWaypoint(
-			getCourierSpawnPosition().add(getCourierLaunchDirection().scale(DEPARTURE_OFFSET)));
+		return task.departFromAllayPort(getCourierSpawnPosition());
 	}
 
 	public boolean tryPullFromPackagerSide() {

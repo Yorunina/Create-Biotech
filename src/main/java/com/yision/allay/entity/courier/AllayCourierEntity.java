@@ -62,6 +62,11 @@ public class AllayCourierEntity extends Allay implements Container {
 	private Vec3 launchDirection = new Vec3(0, 0, 1);
 	private @Nullable Vec3 preciseFlightTarget;
 	private double preciseFlightSpeed = 1.0;
+	private @Nullable Vec3 guidedFlightTarget;
+	private Vec3 guidedLookDirection = new Vec3(0, 0, 1);
+	private double guidedMaxSpeed;
+	private double guidedAcceleration;
+	private boolean guidedPathLocked;
 	private boolean renderLogisticsHat = true;
 	private @Nullable UUID taskId;
 	private int invalidTaskChecks;
@@ -161,10 +166,27 @@ public class AllayCourierEntity extends Allay implements Container {
 	private void setPreciseFlightTarget(Vec3 target, double speedModifier) {
 		preciseFlightTarget = target;
 		preciseFlightSpeed = speedModifier;
+		guidedFlightTarget = null;
+	}
+
+	/**
+	 * Takes direct control of the courier for the short, visible docking path. Unlike
+	 * {@link net.minecraft.world.entity.ai.control.FlyingMoveControl}, this controller accounts for
+	 * the Allay's retained velocity and clamps the next movement to the remaining distance.
+	 */
+	public void guideAlongDockingPath(Vec3 target, Vec3 lookDirection, double maxSpeed,
+		double acceleration, boolean lockToPath) {
+		preciseFlightTarget = null;
+		guidedFlightTarget = target;
+		guidedLookDirection = horizontalDirection(lookDirection);
+		guidedMaxSpeed = Math.max(0.01, maxSpeed);
+		guidedAcceleration = Math.max(0.005, acceleration);
+		guidedPathLocked = lockToPath;
 	}
 
 	public void clearCourierDestination() {
 		preciseFlightTarget = null;
+		guidedFlightTarget = null;
 		getNavigation().stop();
 		getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
 		getBrain().eraseMemory(MemoryModuleType.PATH);
@@ -182,19 +204,85 @@ public class AllayCourierEntity extends Allay implements Container {
 			return;
 		}
 
-		if (preciseFlightTarget != null) {
+		if (hasCourierDestination()) {
 			getNavigation().stop();
 			getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
 			getBrain().eraseMemory(MemoryModuleType.PATH);
 		}
 		super.customServerAiStep();
-		if (preciseFlightTarget != null) {
+		if (hasCourierDestination()) {
 			getNavigation().stop();
 			getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
 			getBrain().eraseMemory(MemoryModuleType.PATH);
+		}
+		if (guidedFlightTarget != null) {
+			tickGuidedFlight();
+		} else if (preciseFlightTarget != null) {
 			getMoveControl().setWantedPosition(
 				preciseFlightTarget.x, preciseFlightTarget.y, preciseFlightTarget.z, preciseFlightSpeed);
 		}
+	}
+
+	private boolean hasCourierDestination() {
+		return preciseFlightTarget != null || guidedFlightTarget != null;
+	}
+
+	private void tickGuidedFlight() {
+		setSpeed(0);
+		setYya(0);
+		setZza(0);
+
+		Vec3 offset = guidedFlightTarget.subtract(position());
+		double distance = offset.length();
+		if (distance <= 1.0E-4) {
+			setDeltaMovement(Vec3.ZERO);
+			turnToward(guidedLookDirection);
+			return;
+		}
+
+		Vec3 direction = offset.scale(1.0 / distance);
+		double brakingSpeed = Math.sqrt(2.0 * guidedAcceleration * distance);
+		double desiredSpeed = Math.min(distance, Math.min(guidedMaxSpeed, brakingSpeed));
+		Vec3 desiredVelocity = direction.scale(desiredSpeed);
+		Vec3 nextVelocity;
+
+		if (guidedPathLocked) {
+			double forwardSpeed = Math.max(0.0, getDeltaMovement().dot(direction));
+			double nextSpeed = approach(forwardSpeed, desiredSpeed, guidedAcceleration);
+			nextVelocity = direction.scale(Math.min(distance, nextSpeed));
+		} else {
+			Vec3 correction = desiredVelocity.subtract(getDeltaMovement());
+			if (correction.lengthSqr() > guidedAcceleration * guidedAcceleration) {
+				correction = correction.normalize().scale(guidedAcceleration);
+			}
+			nextVelocity = getDeltaMovement().add(correction);
+			if (nextVelocity.lengthSqr() > distance * distance) {
+				nextVelocity = nextVelocity.normalize().scale(distance);
+			}
+		}
+
+		setDeltaMovement(nextVelocity);
+		turnToward(guidedLookDirection);
+	}
+
+	private void turnToward(Vec3 direction) {
+		float targetYaw = yawForDirection(direction);
+		float nextYaw = Mth.approachDegrees(getYRot(), targetYaw, 22.5f);
+		setYRot(nextYaw);
+		yBodyRot = nextYaw;
+		yHeadRot = nextYaw;
+		setXRot(Mth.approach(getXRot(), 0.0f, 8.0f));
+	}
+
+	private static float yawForDirection(Vec3 direction) {
+		return (float) (Mth.atan2(direction.z, direction.x) * Mth.RAD_TO_DEG) - 90.0f;
+	}
+
+	private static double approach(double value, double target, double step) {
+		if (value < target) {
+			return Math.min(value + step, target);
+		}
+		return Math.max(value - step, target);
 	}
 
 	@Override
@@ -255,7 +343,7 @@ public class AllayCourierEntity extends Allay implements Container {
 
 	private void alignToDirection(Vec3 direction) {
 		setLaunchDirection(direction);
-		float yRot = (float) (Mth.atan2(launchDirection.x, launchDirection.z) * Mth.RAD_TO_DEG);
+		float yRot = yawForDirection(launchDirection);
 		setYRot(yRot);
 		yRotO = yRot;
 		setXRot(0);

@@ -1,7 +1,7 @@
 {
 	"format_version": "1.21.11",
 	"credit": "Made with Blockbench",
-	"texture_size": [64, 64],
+	"texture_size": [32, 32],
 	"textures": {
 		"particle": "create_biotech:item/mini_package",
 		"package": "create_biotech:item/mini_package"
@@ -9,16 +9,16 @@
 	"elements": [
 		{
 			"name": "package",
-			"from": [-3, -4, 0.5],
-			"to": [3, -1, 5.5],
-			"rotation": {"angle": 0, "axis": "y", "origin": [0, -4, 3]},
+			"from": [10, 0, 10],
+			"to": [16, 5, 16],
+			"rotation": {"angle": 0, "axis": "y", "origin": [13.5, 0, 12.5]},
 			"faces": {
-				"north": {"uv": [0, 3, 3, 4.5], "texture": "#package"},
-				"east": {"uv": [3, 0.5, 5.5, 2], "texture": "#package"},
-				"south": {"uv": [0, 0.5, 3, 2], "texture": "#package"},
-				"west": {"uv": [3, 0.5, 5.5, 2], "texture": "#package"},
-				"up": {"uv": [0, 5, 3, 7.5], "texture": "#package"},
-				"down": {"uv": [0, 7.5, 3, 10], "texture": "#package"}
+				"north": {"uv": [0, 0, 3, 2.5], "texture": "#package"},
+				"east": {"uv": [0, 5, 3, 7.5], "texture": "#package"},
+				"south": {"uv": [0, 2.5, 3, 5], "texture": "#package"},
+				"west": {"uv": [0, 5, 3, 7.5], "texture": "#package"},
+				"up": {"uv": [0, 7.5, 3, 10.5], "rotation": 90, "texture": "#package"},
+				"down": {"uv": [0, 10.5, 3, 13.5], "texture": "#package"}
 			}
 		}
 	]
