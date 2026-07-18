@@ -20,6 +20,7 @@ import com.nobodiiiii.createbiotech.registry.CBFluids;
 import com.nobodiiiii.createbiotech.registry.CBItems;
 import com.nobodiiiii.createbiotech.registry.CBMenuTypes;
 import com.nobodiiiii.createbiotech.registry.CBParticleTypes;
+import com.nobodiiiii.createbiotech.registry.CBPoiTypes;
 import com.nobodiiiii.createbiotech.registry.CBRecipeTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
@@ -47,6 +48,7 @@ public class CreateBiotech {
 		CBBlocks.register(modEventBus);
 		CBItems.register(modEventBus);
 		CBFluids.register(modEventBus);
+		CBPoiTypes.register(modEventBus);
 		CBCreativeModeTabs.register(modEventBus);
 		CBBlockEntityTypes.register(modEventBus);
 		CBEntityTypes.register(modEventBus);

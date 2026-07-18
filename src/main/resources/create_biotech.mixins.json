@@ -27,6 +27,7 @@
     "HauntingTypeSlimeMimicMixin",
     "NozzleBlockMixin",
     "NetherPortalBlockMixin",
+    "PortalForcerMixin",
     "MobAccessor",
     "PackageItemCardboardBoxMixin",
     "PressingBehaviourSoundMixin",
