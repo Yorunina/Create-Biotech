@@ -24,6 +24,7 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 	private AddressEditBox addressBox;
 	private IconButton confirmButton;
 	private List<Rect2i> extraAreas = List.of();
+	private boolean addressSubmitted;
 
 	public MiniAllayScreen(MiniAllayMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
@@ -48,7 +49,7 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 		addRenderableWidget(addressBox);
 
 		confirmButton = new IconButton(x + guiWidth - 30, y + guiHeight - 25, AllIcons.I_CONFIRM);
-		confirmButton.withCallback(() -> minecraft.player.closeContainer());
+		confirmButton.withCallback(this::onClose);
 		addRenderableWidget(confirmButton);
 	}
 
@@ -119,9 +120,23 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 	}
 
 	@Override
+	public void onClose() {
+		submitAddress();
+		super.onClose();
+	}
+
+	@Override
 	public void removed() {
+		submitAddress();
+		super.removed();
+	}
+
+	private void submitAddress() {
+		if (addressSubmitted) {
+			return;
+		}
+		addressSubmitted = true;
 		String address = addressBox == null ? menu.initialAddress : addressBox.getValue();
 		CBPackets.sendToServer(new MiniAllayConfirmPacket(menu.hand, address));
-		super.removed();
 	}
 }

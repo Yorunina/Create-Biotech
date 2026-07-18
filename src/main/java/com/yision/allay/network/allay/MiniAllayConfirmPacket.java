@@ -39,6 +39,7 @@ public class MiniAllayConfirmPacket {
 			ItemStack heldStack = sender.getItemInHand(hand);
 			if (MiniAllayItem.updateCargoAddress(heldStack, address)) {
 				sender.getInventory().setChanged();
+				sender.containerMenu.broadcastChanges();
 				sender.inventoryMenu.broadcastChanges();
 			}
 		});

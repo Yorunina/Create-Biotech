@@ -125,7 +125,6 @@ final class AllayPortInventory {
 			? carrierInventory.extractItem(0, amount, simulate)
 			: port.inventory.extractItem(slot, amount, simulate);
 		if (!simulate && !extracted.isEmpty()) {
-			port.flap(false);
 			port.markPortContentsChanged();
 		}
 		return extracted;

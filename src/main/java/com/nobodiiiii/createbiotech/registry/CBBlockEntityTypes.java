@@ -10,6 +10,7 @@ import com.nobodiiiii.createbiotech.content.experience.BuddingExperienceBlockEnt
 import com.nobodiiiii.createbiotech.content.experience.ExperiencePumpBlockEntity;
 import com.nobodiiiii.createbiotech.content.explosionproofitemvault.ExplosionProofItemVaultBlockEntity;
 import com.nobodiiiii.createbiotech.content.fixedcarrotfishingrod.FixedCarrotFishingRodBlockEntity;
+import com.nobodiiiii.createbiotech.content.fluid.NetherPortalFluidBlockEntity;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloonAssemblyStationBlockEntity;
 import com.nobodiiiii.createbiotech.content.schrodingerscat.SchrodingersCatBlockEntity;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerBlockEntity;
@@ -27,6 +28,7 @@ import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainD
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlockEntity;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
 
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -88,6 +90,12 @@ public class CBBlockEntityTypes {
 		BLOCK_ENTITY_TYPES.register("budding_experience",
 			() -> BlockEntityType.Builder
 				.of(BuddingExperienceBlockEntity::new, CBBlocks.BUDDING_EXPERIENCE.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<NetherPortalFluidBlockEntity>> NETHER_PORTAL_FLUID =
+		BLOCK_ENTITY_TYPES.register("nether_portal_fluid",
+			() -> BlockEntityType.Builder
+				.of(NetherPortalFluidBlockEntity::new, Blocks.NETHER_PORTAL)
 				.build(null));
 
 	public static final RegistryObject<BlockEntityType<SquidPrinterBlockEntity>> SQUID_PRINTER =

@@ -73,6 +73,7 @@ public class CBCreativeModeTabs {
 				output.accept(CBItems.SUPER_BUTTER.get());
 				output.accept(CBItems.HALF_SHAFT.get());
 				output.accept(CBItems.CAPTURED_SMALL_SLIME.get());
+				output.accept(CBFluids.TELEPORTATION_BUCKET.get());
 				output.accept(CBFluids.LIQUID_LIVING_SLIME_BUCKET.get());
 				CBFluids.CREAM.getBucket().ifPresent(output::accept);
 			})

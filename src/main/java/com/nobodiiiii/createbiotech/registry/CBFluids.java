@@ -5,10 +5,13 @@ import java.util.function.Consumer;
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModFluids;
 import com.nobodiiiii.createbiotech.content.fluid.LiquidLivingSlimeFluidType;
+import com.nobodiiiii.createbiotech.content.fluid.TeleportationFluid;
+import com.nobodiiiii.createbiotech.content.fluid.TeleportationLiquidBlock;
 import com.simibubi.create.content.fluids.VirtualFluid;
 import com.tterrag.registrate.util.entry.FluidEntry;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -16,6 +19,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -44,6 +48,8 @@ public class CBFluids {
 		CreateBiotech.asResource("fluid/experience_still");
 	private static final ResourceLocation EXPERIENCE_FLOW_TEXTURE =
 		CreateBiotech.asResource("fluid/experience_flow");
+	private static final ResourceLocation NETHER_PORTAL_TEXTURE =
+		new ResourceLocation("minecraft", "block/nether_portal");
 
 	public static final RegistryObject<FluidType> EXPERIENCE_TYPE =
 		FLUID_TYPES.register("experience",
@@ -70,6 +76,55 @@ public class CBFluids {
 
 	public static final RegistryObject<VirtualFluid> EXPERIENCE_FLOWING =
 		FLUIDS.register("flowing_experience", () -> VirtualFluid.createFlowing(experienceProperties()));
+
+	public static final RegistryObject<FluidType> TELEPORTATION_TYPE =
+		FLUID_TYPES.register("teleportation",
+			() -> new FluidType(FluidType.Properties.create()
+				.sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
+				.sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA)
+				.density(3000)
+				.viscosity(6000)
+				.lightLevel(11)) {
+				@Override
+				public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
+					consumer.accept(new IClientFluidTypeExtensions() {
+						@Override
+						public ResourceLocation getStillTexture() {
+							return NETHER_PORTAL_TEXTURE;
+						}
+
+						@Override
+						public ResourceLocation getFlowingTexture() {
+							return NETHER_PORTAL_TEXTURE;
+						}
+					});
+				}
+			});
+
+	public static final RegistryObject<TeleportationFluid.Source> TELEPORTATION =
+		FLUIDS.register("teleportation", () -> new TeleportationFluid.Source(teleportationProperties()));
+
+	public static final RegistryObject<TeleportationFluid.Flowing> TELEPORTATION_FLOWING =
+		FLUIDS.register("flowing_teleportation", () -> new TeleportationFluid.Flowing(teleportationProperties()));
+
+	public static final RegistryObject<TeleportationLiquidBlock> TELEPORTATION_BLOCK =
+		FLUID_BLOCKS.register("teleportation",
+			() -> new TeleportationLiquidBlock(TELEPORTATION, Block.Properties.of()
+				.mapColor(MapColor.COLOR_PURPLE)
+				.replaceable()
+				.noCollission()
+				.strength(100.0F)
+				.lightLevel(state -> 11)
+				.pushReaction(PushReaction.DESTROY)
+				.noLootTable()
+				.liquid()
+				.sound(SoundType.EMPTY)));
+
+	public static final RegistryObject<BucketItem> TELEPORTATION_BUCKET =
+		FLUID_ITEMS.register("teleportation_bucket",
+			() -> new BucketItem(TELEPORTATION, new Item.Properties()
+				.craftRemainder(Items.BUCKET)
+				.stacksTo(1)));
 
 	public static final RegistryObject<LiquidLivingSlimeFluidType> LIQUID_LIVING_SLIME_TYPE =
 		FLUID_TYPES.register("liquid_living_slime",
@@ -110,6 +165,16 @@ public class CBFluids {
 
 	private static ForgeFlowingFluid.Properties experienceProperties() {
 		return new ForgeFlowingFluid.Properties(EXPERIENCE_TYPE, EXPERIENCE, EXPERIENCE_FLOWING);
+	}
+
+	private static ForgeFlowingFluid.Properties teleportationProperties() {
+		return new ForgeFlowingFluid.Properties(TELEPORTATION_TYPE, TELEPORTATION, TELEPORTATION_FLOWING)
+			.bucket(TELEPORTATION_BUCKET)
+			.block(TELEPORTATION_BLOCK)
+			.levelDecreasePerBlock(2)
+			.tickRate(30)
+			.slopeFindDistance(2)
+			.explosionResistance(100f);
 	}
 
 	private static ForgeFlowingFluid.Properties liquidLivingSlimeProperties() {
