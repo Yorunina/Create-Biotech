@@ -12,6 +12,7 @@
     "AssemblyOperatorBlockItemMixin",
     "BasinBlockEntityMixin",
     "BasinBlockMixin",
+    "BlockEntityConfigurationPacketMixin",
     "BlockBreakingMovementBehaviourMixin",
     "BeltMovementHandlerMixin",
     "BeltFunnelBlockMixin",
@@ -37,6 +38,7 @@
     "SequencedRecipeMixin",
     "SmartBlockEntityLegacyRefreshMixin",
     "SpawnEggItemMixin",
+    "StockKeeperRequestMenuAccessor",
     "VillagerSlimeMimicTradesMixin"
   ],
   "client": [
@@ -54,8 +56,10 @@
     "client.JeiRecipeLayoutMixin",
     "client.JeiRecipeSlotMixin",
     "client.LivingEntityRendererMixin",
+    "client.LogisticalStockResponsePacketMixin",
     "client.PressingBehaviourMixin",
     "client.SpoutCategoryMixin",
+    "client.StockKeeperRequestScreenMixin",
     "client.LevelRendererAccessor",
     "client.MixinSuperGlueSelectionHandler",
     "client.ModelPartAccessor",

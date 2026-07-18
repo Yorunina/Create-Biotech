@@ -12,6 +12,8 @@
   "fluid.create_biotech.cream": "鮮奶油",
   "fluid_type.create_biotech.teleportation": "傳送液",
   "fluid.create_biotech.teleportation": "傳送液",
+  "fluid.create_biotech.teleportation.tooltip.summary": "使用動力泵從_地獄傳送門方塊_抽取傳送液",
+  "create_biotech.jei.teleportation.info": "使用動力泵從地獄傳送門方塊抽取傳送液。",
   "fluid.create_biotech.flowing_teleportation": "流動的傳送液",
   "block.create_biotech.teleportation": "傳送液",
   "item.create_biotech.teleportation_bucket": "傳送液桶",

@@ -57,7 +57,7 @@ import com.yision.allay.client.render.AllayPortVisual;
 import com.yision.allay.item.miniallay.MiniAllayMenu;
 import com.yision.allay.item.miniallay.MiniAllayScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
-import com.nobodiiiii.createbiotech.client.particle.HalfScaleNoteParticle;
+import com.nobodiiiii.createbiotech.client.particle.CourierNoteParticle;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
 import com.nobodiiiii.createbiotech.client.render.SlimeMimicRenderLayer;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -220,7 +220,7 @@ public class CreateBiotechClient {
 	@SubscribeEvent
 	public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
 		event.registerSpriteSet(CBParticleTypes.STRAIGHT_ENCHANT.get(), StraightEnchantParticle.Provider::new);
-		event.registerSpriteSet(CBParticleTypes.ALLAY_COURIER_NOTE.get(), HalfScaleNoteParticle.Provider::new);
+		event.registerSpriteSet(CBParticleTypes.ALLAY_COURIER_NOTE.get(), CourierNoteParticle.Provider::new);
 	}
 
 	@SubscribeEvent
@@ -358,12 +358,14 @@ public class CreateBiotechClient {
 	}
 
 	private static void registerItemTooltips() {
+		ItemDescription.useKey(CBFluids.TELEPORTATION_BUCKET.get(), "fluid.create_biotech.teleportation");
 		ItemDescription.useKey(CBItems.SMALL_EXPERIENCE_BUD.get(), "block.create_biotech.experience_bud");
 		ItemDescription.useKey(CBItems.MEDIUM_EXPERIENCE_BUD.get(), "block.create_biotech.experience_bud");
 		ItemDescription.useKey(CBItems.LARGE_EXPERIENCE_BUD.get(), "block.create_biotech.experience_bud");
 		CBItems.BUFFER_PADS.values()
 			.forEach(entry -> ItemDescription.useKey(entry.get(), "block.create_biotech.buffer_pad"));
 
+		registerCreateStyleTooltip(CBFluids.TELEPORTATION_BUCKET.get());
 		registerCreateStyleTooltip(CBItems.BUDDING_EXPERIENCE.get());
 		registerCreateStyleTooltip(CBItems.SMALL_EXPERIENCE_BUD.get());
 		registerCreateStyleTooltip(CBItems.MEDIUM_EXPERIENCE_BUD.get());

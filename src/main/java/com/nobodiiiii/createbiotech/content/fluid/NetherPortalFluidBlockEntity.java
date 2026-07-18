@@ -4,6 +4,9 @@ import javax.annotation.Nullable;
 
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBFluids;
+import com.simibubi.create.content.fluids.FluidPropagator;
+import com.simibubi.create.content.fluids.FluidTransportBehaviour;
+import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -48,6 +51,7 @@ public class NetherPortalFluidBlockEntity extends BlockEntity {
 	public void onLoad() {
 		super.onLoad();
 		destroyPortalIfEmpty();
+		refreshAdjacentCreateFluidNetworks();
 	}
 
 	@Override
@@ -83,6 +87,25 @@ public class NetherPortalFluidBlockEntity extends BlockEntity {
 		if (level.getBlockState(worldPosition)
 			.is(Blocks.NETHER_PORTAL))
 			level.destroyBlock(worldPosition, false);
+	}
+
+	private void refreshAdjacentCreateFluidNetworks() {
+		if (remainingFluid <= 0 || level == null || level.isClientSide || isRemoved())
+			return;
+
+		for (Direction direction : Direction.values()) {
+			BlockPos adjacentPos = worldPosition.relative(direction);
+			BlockState adjacentState = level.getBlockState(adjacentPos);
+
+			if (level.getBlockEntity(adjacentPos) instanceof PumpBlockEntity pump) {
+				pump.updatePipesOnSide(direction.getOpposite());
+				continue;
+			}
+
+			FluidTransportBehaviour pipe = FluidPropagator.getPipe(level, adjacentPos);
+			if (pipe != null && pipe.canHaveFlowToward(adjacentState, direction.getOpposite()))
+				FluidPropagator.propagateChangedPipe(level, adjacentPos, adjacentState);
+		}
 	}
 
 	private class PortalFluidHandler implements IFluidHandler {

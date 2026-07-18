@@ -9,13 +9,13 @@ import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 
-/** Vanilla note particle behavior rendered at half of the vanilla note's visual size. */
-public class HalfScaleNoteParticle extends TextureSheetParticle {
+/** Vanilla note particle behavior rendered at one quarter of the vanilla note's visual size. */
+public class CourierNoteParticle extends TextureSheetParticle {
 
 	private static final float VANILLA_NOTE_SCALE = 1.5f;
-	private static final float COURIER_TRAIL_SCALE = 0.5f;
+	private static final float COURIER_TRAIL_SCALE = 0.25f;
 
-	protected HalfScaleNoteParticle(ClientLevel level, double x, double y, double z, double color) {
+	protected CourierNoteParticle(ClientLevel level, double x, double y, double z, double color) {
 		super(level, x, y, z, 0.0, 0.0, 0.0);
 		friction = 0.66f;
 		speedUpWhenYMotionIsBlocked = true;
@@ -51,7 +51,7 @@ public class HalfScaleNoteParticle extends TextureSheetParticle {
 		@Override
 		public Particle createParticle(SimpleParticleType type, ClientLevel level,
 			double x, double y, double z, double color, double ySpeed, double zSpeed) {
-			HalfScaleNoteParticle particle = new HalfScaleNoteParticle(level, x, y, z, color);
+			CourierNoteParticle particle = new CourierNoteParticle(level, x, y, z, color);
 			particle.pickSprite(sprites);
 			return particle;
 		}

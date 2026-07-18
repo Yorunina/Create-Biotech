@@ -82,7 +82,6 @@ public class CBConfigs {
 		public final GhastHotAirBalloon ghastHotAirBalloon;
 		public final ButterCat butterCat;
 		public final Automation automation;
-		public final Wireless wireless;
 		public final UniversalJoint universalJoint;
 		public final SquidPrinter squidPrinter;
 		public final EvokerEnchantingChamber evokerEnchantingChamber;
@@ -106,7 +105,6 @@ public class CBConfigs {
 			ghastHotAirBalloon = new GhastHotAirBalloon(builder);
 			butterCat = new ButterCat(builder);
 			automation = new Automation(builder);
-			wireless = new Wireless(builder);
 			universalJoint = new UniversalJoint(builder);
 			squidPrinter = new SquidPrinter(builder);
 			evokerEnchantingChamber = new EvokerEnchantingChamber(builder);
@@ -394,18 +392,6 @@ public class CBConfigs {
 	public static class Automation {
 		Automation(ForgeConfigSpec.Builder builder) {
 			builder.push("automation");
-			builder.pop();
-		}
-	}
-
-	public static class Wireless {
-		public final ForgeConfigSpec.IntValue terminalAccessRange;
-		public final ForgeConfigSpec.BooleanValue allowCrossDimensionTerminal;
-
-		Wireless(ForgeConfigSpec.Builder builder) {
-			builder.push("wireless");
-			terminalAccessRange = builder.defineInRange("terminalAccessRange", 32, 0, Integer.MAX_VALUE);
-			allowCrossDimensionTerminal = builder.define("allowCrossDimensionTerminal", false);
 			builder.pop();
 		}
 	}

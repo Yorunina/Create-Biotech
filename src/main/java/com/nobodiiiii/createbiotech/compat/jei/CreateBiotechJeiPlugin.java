@@ -5,20 +5,25 @@ import java.util.List;
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberHighPressureRecipe;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
+import com.nobodiiiii.createbiotech.registry.CBFluids;
 import com.nobodiiiii.createbiotech.registry.CBRecipeTypes;
 import com.simibubi.create.Create;
 import com.simibubi.create.content.kinetics.crusher.AbstractCrushingRecipe;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidType;
 
 @JeiPlugin
 public class CreateBiotechJeiPlugin implements IModPlugin {
@@ -40,6 +45,10 @@ public class CreateBiotechJeiPlugin implements IModPlugin {
 
 	@Override
 	public void registerRecipes(IRecipeRegistration registration) {
+		registration.addIngredientInfo(
+			new FluidStack(CBFluids.TELEPORTATION.get(), FluidType.BUCKET_VOLUME),
+			ForgeTypes.FLUID_STACK,
+			Component.translatable("create_biotech.jei.teleportation.info"));
 		registration.addRecipes(SlimeTransformationJeiCategory.TYPE, List.of(
 			SlimeTransformationJeiRecipe.beltToSlimeBelt(),
 			SlimeTransformationJeiRecipe.beltToMagmaBelt()));

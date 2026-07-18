@@ -51,11 +51,7 @@
         },
         {
           "amount": 250,
-          "fluid": "create:potion",
-          "nbt": {
-            "Bottle": "REGULAR",
-            "Potion": "minecraft:fire_resistance"
-          }
+          "fluid": "create_biotech:teleportation"
         }
       ],
       "results": [
