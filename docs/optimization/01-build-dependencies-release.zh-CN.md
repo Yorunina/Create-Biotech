@@ -46,7 +46,7 @@ refmap 约 20 KiB，最终 JAR 根目录包含：
 1. 在 `jar` 与 `sourcesJar` 中显式加入 `LICENSE.md` 和 `THIRD_PARTY_NOTICES.md`，使用稳定路径，例如 `META-INF/LICENSE_CREATE_BIOTECH.md` 与 `META-INF/THIRD_PARTY_NOTICES.md`。
 2. 重新定义 `mods.toml` 的 `license` 文本，使其准确表达“MIT 代码 + ARR 原创资产 + 第三方许可”，或使用 `Custom` 并指向随包许可文件；不要继续把整个二进制描述为纯 MIT。
 3. 在 Modrinth、CurseForge 和 README 的发布说明中保持同一许可证口径。
-4. 修正 `THIRD_PARTY_NOTICES.md` 中已失效的参考路径 `ref/CreatePhantom-1.20.1/`；当前目录名是 `ref/CreatePhantom/`。
+4. 修正 `THIRD_PARTY_NOTICES.md` 中已失效的本地参考路径，改为 Create Phantom 的线上代码仓库 `https://github.com/yision1/CreatePhantom`，并明确本项目仅参考其代码。
 
 验证：构建后列出 JAR 内容，确认两个许可文件存在；再人工比对平台页面、`mods.toml` 和仓库文档的许可证描述。
 

@@ -24,8 +24,6 @@ DOT_MINECRAFT = PROJECT_ROOT / ".minecraft"
 VERSIONS_DIR = DOT_MINECRAFT / "versions"
 LIBRARIES_DIR = DOT_MINECRAFT / "libraries"
 ASSETS_DIR = DOT_MINECRAFT / "assets"
-MODS_DIR = DOT_MINECRAFT / "mods"
-SAVES_DIR = DOT_MINECRAFT / "saves"
 
 DEFAULT_INSTANCE = "1.20.1-Forge"
 DEFAULT_WIDTH = 1600
@@ -98,6 +96,10 @@ def resolve_version_json(instance: str) -> Path:
     return json_path
 
 
+def resolve_instance_dir(instance: str) -> Path:
+    return resolve_version_json(instance).parent
+
+
 def build_classpath(version_data: dict, instance_dir: Path) -> list[str]:
     entries: list[str] = []
     for library in version_data.get("libraries", []):
@@ -150,12 +152,12 @@ def build_jvm_args(version_data: dict, instance_dir: Path, classpath: str) -> li
     return args
 
 
-def build_game_args(version_data: dict, world: str, width: int, height: int) -> list[str]:
+def build_game_args(version_data: dict, game_dir: Path, world: str, width: int, height: int) -> list[str]:
     asset_index = version_data.get("assetIndex", {}).get("id", version_data.get("assets", "5"))
     replacements = {
         "${auth_player_name}": "Dev",
         "${version_name}": version_data["id"],
-        "${game_directory}": str(DOT_MINECRAFT),
+        "${game_directory}": str(game_dir),
         "${assets_root}": str(ASSETS_DIR),
         "${assets_index_name}": str(asset_index),
         "${auth_uuid}": str(uuid.uuid4()).replace("-", ""),
@@ -194,10 +196,10 @@ def replace_tokens(value: str, replacements: dict[str, str]) -> str:
     return value
 
 
-def newest_world() -> str:
-    worlds = [path for path in SAVES_DIR.glob("*") if path.is_dir() and (path / "level.dat").exists()]
+def newest_world(saves_dir: Path) -> str:
+    worlds = [path for path in saves_dir.glob("*") if path.is_dir() and (path / "level.dat").exists()]
     if not worlds:
-        raise FileNotFoundError(f"No worlds found under {SAVES_DIR}")
+        raise FileNotFoundError(f"No worlds found under {saves_dir}")
     return max(worlds, key=lambda path: (path / "level.dat").stat().st_mtime).name
 
 
@@ -211,7 +213,7 @@ def run_build(offline: bool = True) -> None:
     subprocess.run(command, cwd=PROJECT_ROOT, env=env, check=True)
 
 
-def copy_mod_jar() -> Path:
+def copy_mod_jar(mods_dir: Path) -> Path:
     props = read_gradle_properties()
     mod_id = props.get("mod_id", "create_biotech")
     pattern = str(PROJECT_ROOT / "build" / "libs" / f"{mod_id}-*.jar")
@@ -219,10 +221,10 @@ def copy_mod_jar() -> Path:
     if not candidates:
         raise FileNotFoundError("Built mod jar not found in build/libs")
 
-    MODS_DIR.mkdir(exist_ok=True)
+    mods_dir.mkdir(exist_ok=True)
     jar_path = max(candidates, key=lambda path: path.stat().st_mtime)
-    destination = MODS_DIR / jar_path.name
-    for existing in MODS_DIR.glob(f"{mod_id}-*.jar"):
+    destination = mods_dir / jar_path.name
+    for existing in mods_dir.glob(f"{mod_id}-*.jar"):
         if existing != destination:
             try:
                 existing.unlink()
@@ -238,24 +240,23 @@ def copy_mod_jar() -> Path:
     return destination
 
 
-def build_launch_command(instance: str, world: str, width: int, height: int) -> list[str]:
-    version_json = resolve_version_json(instance)
-    instance_dir = version_json.parent
+def build_launch_command(instance: str, instance_dir: Path, world: str, width: int, height: int) -> list[str]:
+    version_json = instance_dir / f"{instance}.json"
     version_data = json.loads(version_json.read_text(encoding="utf-8"))
     classpath = os.pathsep.join(build_classpath(version_data, instance_dir))
     return [
         find_java(),
         *build_jvm_args(version_data, instance_dir, classpath),
         version_data["mainClass"],
-        *build_game_args(version_data, world, width, height),
+        *build_game_args(version_data, instance_dir, world, width, height),
     ]
 
 
-def launch(instance: str, world: str, width: int, height: int) -> None:
-    command = build_launch_command(instance, world, width, height)
+def launch(instance: str, instance_dir: Path, world: str, width: int, height: int) -> None:
+    command = build_launch_command(instance, instance_dir, world, width, height)
     process = subprocess.Popen(
         command,
-        cwd=DOT_MINECRAFT,
+        cwd=instance_dir,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0) if os.name == "nt" else 0,
@@ -268,7 +269,7 @@ def launch(instance: str, world: str, width: int, height: int) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build, copy, and quickplay the local Forge test instance.")
     parser.add_argument("--instance", default=DEFAULT_INSTANCE)
-    parser.add_argument("--world", help="Save folder name under .minecraft/saves. Defaults to the newest world.")
+    parser.add_argument("--world", help="Save folder name under the instance saves directory. Defaults to the newest world.")
     parser.add_argument("--skip-build", action="store_true")
     parser.add_argument("--online-build", action="store_true")
     parser.add_argument("--no-copy", action="store_true")
@@ -276,18 +277,22 @@ def main() -> int:
     parser.add_argument("--height", type=int, default=DEFAULT_HEIGHT)
     args = parser.parse_args()
 
-    world = args.world or newest_world()
-    if not (SAVES_DIR / world / "level.dat").exists():
-        raise FileNotFoundError(f"World not found: {SAVES_DIR / world}")
+    instance_dir = resolve_instance_dir(args.instance)
+    saves_dir = instance_dir / "saves"
+    mods_dir = instance_dir / "mods"
+
+    world = args.world or newest_world(saves_dir)
+    if not (saves_dir / world / "level.dat").exists():
+        raise FileNotFoundError(f"World not found: {saves_dir / world}")
 
     if not args.skip_build:
         print("[BUILD] gradlew build" if args.online_build else "[BUILD] gradlew --offline build")
         run_build(offline=not args.online_build)
 
     if not args.no_copy:
-        print(f"[COPY] {copy_mod_jar()}")
+        print(f"[COPY] {copy_mod_jar(mods_dir)}")
 
-    launch(args.instance, world, args.width, args.height)
+    launch(args.instance, instance_dir, world, args.width, args.height)
     return 0
 
 

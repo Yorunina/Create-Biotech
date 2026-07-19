@@ -1,14 +1,9 @@
 {
   "type": "create:cutting",
   "ingredients": [
-    [
-      {
-        "item": "create:cardboard_block"
-      },
-      {
-        "item": "create:bound_cardboard_block"
-      }
-    ]
+    {
+      "item": "create:bound_cardboard_block"
+    }
   ],
   "processingTime": 50,
   "results": [

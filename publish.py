@@ -49,6 +49,12 @@ CF_LOADER_VERSION_IDS = {
     "NeoForge": 10150,
 }
 
+CF_ENVIRONMENT_TYPE_ID = 75208
+CF_ENVIRONMENT_VERSION_IDS = {
+    "Client": 9638,
+    "Server": 9639,
+}
+
 # 分支 → 构建配置映射
 # Create: Biotech 当前只有 1.20.1 Forge 单平台，结构保留以便后续扩展
 BRANCH_CONFIG = {
@@ -386,6 +392,25 @@ def find_cf_version_ids(token: str, mc_version: str, loader_name: str):
     return ids
 
 
+def find_cf_environment_ids(token: str, environments=("Client", "Server")):
+    """查找 CurseForge 环境版本 ID，默认同时支持客户端和服务端。"""
+    fixed_ids = [CF_ENVIRONMENT_VERSION_IDS[name] for name in environments if name in CF_ENVIRONMENT_VERSION_IDS]
+    if len(fixed_ids) == len(environments):
+        return fixed_ids
+
+    versions = get_curseforge_game_versions(token)
+    if not versions:
+        return fixed_ids
+
+    missing = set(environments) - set(CF_ENVIRONMENT_VERSION_IDS)
+    ids = fixed_ids[:]
+    for v in versions:
+        if v.get("gameVersionTypeID") == CF_ENVIRONMENT_TYPE_ID and v.get("name") in missing:
+            ids.append(v["id"])
+
+    return ids
+
+
 def upload_curseforge(
     token: str,
     project_id: int,
@@ -401,6 +426,11 @@ def upload_curseforge(
     if not game_version_ids:
         print(f"  CurseForge: 无法找到对应的 game version ID (MC {mc_version}, {loader_name})")
         return False
+    environment_ids = find_cf_environment_ids(token)
+    if not environment_ids:
+        print(f"  CurseForge: 无法找到 Environment version ID (Client/Server)")
+        return False
+    game_version_ids += environment_ids
 
     metadata = {
         "changelog": changelog,
@@ -409,6 +439,7 @@ def upload_curseforge(
         "gameVersions": game_version_ids,
         "releaseType": version_type,
     }
+    print(f"  CurseForge gameVersions: {game_version_ids}")
 
     resp = requests.post(
         f"{CURSEFORGE_UPLOAD_API}/projects/{project_id}/upload-file",
