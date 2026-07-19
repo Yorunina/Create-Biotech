@@ -31,6 +31,8 @@ public final class AllayCourierTask {
 	public static final int FORCE_ARRIVAL_TICKS = 600;
 
 	private static final int TAKEOFF_PHASE_TICKS = 20;
+	private static final int LOST_TARGET_RESCAN_INTERVAL_TICKS = 20;
+	private static final double LOST_TARGET_COMPLETION_DISTANCE = 0.75;
 	private static final double PRECISE_APPROACH_DISTANCE = 4.0;
 	private static final float VANILLA_ALLAY_CRUISE_SPEED = 2.25f;
 	private static final double VANILLA_ALLAY_APPROACH_SPEED = 1.5;
@@ -84,6 +86,10 @@ public final class AllayCourierTask {
 	private int deliveryElapsedTicks;
 	private boolean teleportedNearTarget;
 	private boolean forceArrivalPending;
+	private @Nullable ResourceKey<Level> lastKnownTargetDimension;
+	private @Nullable Vec3 lastKnownTargetPosition;
+	private int lostTargetTicks;
+	private boolean placeCourierWhenRemoved;
 	private boolean relocatedThisTick;
 	private boolean removed;
 
@@ -112,6 +118,10 @@ public final class AllayCourierTask {
 		this.phase = AllayCourierEntity.Phase.TAKEOFF;
 		this.position = position;
 		this.launchDirection = horizontalDirection(launchDirection);
+		this.lastKnownTargetDimension = targetDimension;
+		if (targetAllayPortPos != null) {
+			this.lastKnownTargetPosition = Vec3.atCenterOf(targetAllayPortPos).add(0, -0.25, 0);
+		}
 	}
 
 	public static AllayCourierTask forPackageToAllayPort(
@@ -191,13 +201,22 @@ public final class AllayCourierTask {
 		if (hasActiveEntity) {
 			position = entity.position();
 		}
+		deliveryElapsedTicks++;
+		ResolvedTarget target = resolveTarget(server);
+		if (target == null) {
+			target = tickLostTarget(server, currentLevel, previousPosition, entity, hasActiveEntity);
+			if (target == null) {
+				return;
+			}
+		}
+		rememberResolvedTarget(target);
+
 		if (forceArrivalPending) {
 			forceArrivalPending = false;
 			doFinishDeliveryAt(server, currentLevel);
 			return;
 		}
 
-		deliveryElapsedTicks++;
 		if (deliveryElapsedTicks > FORCE_ARRIVAL_TICKS && !isGuidedPortArrival()) {
 			if (hasActiveEntity && teleportToForcedArrivalTarget(server)) {
 				return;
@@ -211,11 +230,6 @@ public final class AllayCourierTask {
 			return;
 		}
 
-		ResolvedTarget target = resolveTarget(server);
-		if (target == null) {
-			doFail(server, currentLevel);
-			return;
-		}
 		startTargetWavingIfArriving(server, target.allayPort);
 		if (tickPortDeparture(currentLevel, entity, hasActiveEntity)) {
 			return;
@@ -227,6 +241,194 @@ public final class AllayCourierTask {
 		}
 
 		tickTowardTarget(server, currentLevel, target, previousPosition, entity, hasActiveEntity);
+	}
+
+	private @Nullable ResolvedTarget tickLostTarget(MinecraftServer server, ServerLevel currentLevel,
+		Vec3 previousPosition, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (lostTargetTicks == 0) {
+			stopGuidedArrivalAfterTargetLoss(entity, hasActiveEntity);
+		}
+		lostTargetTicks++;
+
+		if (lostTargetTicks == 1 || lostTargetTicks % LOST_TARGET_RESCAN_INTERVAL_TICKS == 0) {
+			ResolvedTarget replacement = scanForReplacementTarget(server, currentLevel);
+			if (replacement != null) {
+				return replacement;
+			}
+		}
+
+		if (tickPortDeparture(currentLevel, entity, hasActiveEntity)) {
+			return null;
+		}
+		tickTowardLastKnownTarget(server, currentLevel, previousPosition, entity, hasActiveEntity);
+		return null;
+	}
+
+	private void stopGuidedArrivalAfterTargetLoss(@Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (!isGuidedPortArrival()) {
+			return;
+		}
+		portMotion = PortMotion.NONE;
+		portMotionTicks = 0;
+		if (hasActiveEntity) {
+			entity.clearCourierDestination();
+		}
+	}
+
+	private @Nullable ResolvedTarget scanForReplacementTarget(MinecraftServer server, ServerLevel currentLevel) {
+		if (!PackageItem.isPackage(box)
+			|| mission == AllayCourierEntity.Mission.CARRIER_RETURN
+			|| mission == AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER) {
+			return null;
+		}
+
+		AllayCourierTarget replacement = AllayCourierDispatchService.resolvePackageTarget(
+			currentLevel, box, position, sourceDimension, sourceAllayPortPos);
+		if (replacement instanceof AllayCourierTarget.AllayPortTarget allayPortTarget) {
+			targetDimension = allayPortTarget.dimension();
+			targetAllayPortPos = allayPortTarget.pos().immutable();
+			targetPlayerId = null;
+			mission = AllayCourierEntity.Mission.PACKAGE_TO_ALLAY_PORT;
+		} else if (replacement instanceof AllayCourierTarget.PlayerTarget playerTarget) {
+			targetDimension = playerTarget.dimension();
+			targetAllayPortPos = null;
+			targetPlayerId = playerTarget.playerId();
+			mission = AllayCourierEntity.Mission.PACKAGE_TO_PLAYER;
+		} else {
+			return null;
+		}
+
+		deliveryElapsedTicks = 0;
+		teleportedNearTarget = false;
+		forceArrivalPending = false;
+		phaseTicks = 0;
+		if (!isGuidedPortDeparture()) {
+			phase = AllayCourierEntity.Phase.CRUISE;
+		}
+		return resolveTarget(server);
+	}
+
+	private void rememberResolvedTarget(ResolvedTarget target) {
+		lastKnownTargetDimension = target.level.dimension();
+		lastKnownTargetPosition = landingTarget(target.allayPort, target.player);
+		if (target.player != null) {
+			targetDimension = target.player.serverLevel().dimension();
+		}
+		lostTargetTicks = 0;
+	}
+
+	private void tickTowardLastKnownTarget(MinecraftServer server, ServerLevel currentLevel,
+		Vec3 previousPosition, @Nullable AllayCourierEntity entity, boolean hasActiveEntity) {
+		if (lastKnownTargetDimension == null || lastKnownTargetPosition == null) {
+			lastKnownTargetDimension = currentDimension;
+			lastKnownTargetPosition = position;
+		}
+
+		if (lostTargetTicks > FORCE_ARRIVAL_TICKS) {
+			if (recoverBeforePlacement(server, currentLevel)) {
+				return;
+			}
+			placeAtLastKnownTarget(server, currentLevel);
+			return;
+		}
+
+		if (!lastKnownTargetDimension.equals(currentDimension)) {
+			if (lostTargetTicks >= TELEPORT_AFTER_TICKS) {
+				teleportNearLastKnownTarget(server, currentLevel);
+			} else {
+				tickCrossDimensionExit(entity, hasActiveEntity);
+			}
+			return;
+		}
+
+		Vec3 target = lastKnownTargetPosition;
+		if (position.distanceTo(target) <= LOST_TARGET_COMPLETION_DISTANCE
+			|| segmentDistanceToPointSqr(previousPosition, position, target)
+				<= LOST_TARGET_COMPLETION_DISTANCE * LOST_TARGET_COMPLETION_DISTANCE) {
+			if (recoverBeforePlacement(server, currentLevel)) {
+				return;
+			}
+			position = target;
+			placeAtLastKnownTarget(server, currentLevel);
+			return;
+		}
+
+		double distance = position.distanceTo(target);
+		if (distance <= PRECISE_APPROACH_DISTANCE) {
+			phase = AllayCourierEntity.Phase.LANDING;
+		} else if (phase == AllayCourierEntity.Phase.TAKEOFF && phaseTicks >= TAKEOFF_PHASE_TICKS) {
+			phase = AllayCourierEntity.Phase.CRUISE;
+			phaseTicks = 0;
+		}
+		phaseTicks++;
+
+		if (!hasActiveEntity) {
+			return;
+		}
+		if (distance <= PRECISE_APPROACH_DISTANCE) {
+			entity.approachPreciselyAsVanillaAllay(target, VANILLA_ALLAY_APPROACH_SPEED);
+		} else {
+			entity.flyDirectlyAsVanillaAllay(target, VANILLA_ALLAY_CRUISE_SPEED);
+		}
+	}
+
+	private boolean recoverBeforePlacement(MinecraftServer server, ServerLevel currentLevel) {
+		ResolvedTarget replacement = scanForReplacementTarget(server, currentLevel);
+		if (replacement == null) {
+			return false;
+		}
+		rememberResolvedTarget(replacement);
+		return true;
+	}
+
+	private void teleportNearLastKnownTarget(MinecraftServer server, ServerLevel originLevel) {
+		ServerLevel targetLevel = server.getLevel(lastKnownTargetDimension);
+		if (targetLevel == null || lastKnownTargetPosition == null) {
+			return;
+		}
+
+		Vec3 originPosition = position;
+		targetLevel.getChunkAt(BlockPos.containing(lastKnownTargetPosition));
+		Vec3 away = position.subtract(lastKnownTargetPosition).multiply(1, 0, 1);
+		if (away.lengthSqr() < 1.0E-6) {
+			away = launchDirection.scale(-1);
+		}
+		Vec3 preferredSpawn = lastKnownTargetPosition.add(away.normalize().scale(32.0)).add(0, 4.0, 0);
+		position = findTickingPosTowardTarget(targetLevel, preferredSpawn, lastKnownTargetPosition);
+		currentDimension = targetLevel.dimension();
+		phase = AllayCourierEntity.Phase.CRUISE;
+		phaseTicks = 0;
+		portMotion = PortMotion.NONE;
+		portDepartureOrigin = null;
+		portMotionTicks = 0;
+		teleportedNearTarget = true;
+		relocatedThisTick = true;
+		spawnTeleportParticles(originLevel, originPosition);
+		spawnTeleportParticles(targetLevel, position);
+	}
+
+	private void placeAtLastKnownTarget(MinecraftServer server, ServerLevel fallbackLevel) {
+		ServerLevel placementLevel = lastKnownTargetDimension != null
+			? server.getLevel(lastKnownTargetDimension)
+			: null;
+		if (placementLevel == null) {
+			placementLevel = fallbackLevel;
+			lastKnownTargetDimension = fallbackLevel.dimension();
+			lastKnownTargetPosition = position;
+		}
+
+		Vec3 placementPosition = lastKnownTargetPosition != null ? lastKnownTargetPosition : position;
+		placementLevel.getChunkAt(BlockPos.containing(placementPosition));
+		currentDimension = placementLevel.dimension();
+		position = placementPosition;
+		phase = AllayCourierEntity.Phase.WAITING;
+		portMotion = PortMotion.NONE;
+		portDepartureOrigin = null;
+		portMotionTicks = 0;
+		forceArrivalPending = false;
+		placeCourierWhenRemoved = true;
+		AllayCourierHudSync.onFailed(server, this);
+		markRemoved();
 	}
 
 	private boolean tickPortDeparture(ServerLevel currentLevel,
@@ -980,6 +1182,7 @@ public final class AllayCourierTask {
 	public Vec3 launchDirection() { return launchDirection; }
 	public boolean relocatedThisTick() { return relocatedThisTick; }
 	public boolean isRemoved() { return removed; }
+	public boolean placeCourierWhenRemoved() { return placeCourierWhenRemoved; }
 	public void markRemoved() { removed = true; }
 
 	public @Nullable UUID hudTrackingPlayerId() {
@@ -1023,6 +1226,13 @@ public final class AllayCourierTask {
 		tag.putInt("DeliveryElapsedTicks", deliveryElapsedTicks);
 		tag.putBoolean("TeleportedNearTarget", teleportedNearTarget);
 		tag.putBoolean("ForceArrivalPending", forceArrivalPending);
+		if (lastKnownTargetDimension != null) {
+			tag.putString("LastKnownTargetDimension", lastKnownTargetDimension.location().toString());
+		}
+		if (lastKnownTargetPosition != null) {
+			tag.put("LastKnownTargetPosition", vecToTag(lastKnownTargetPosition));
+		}
+		tag.putInt("LostTargetTicks", lostTargetTicks);
 		return tag;
 	}
 
@@ -1055,6 +1265,13 @@ public final class AllayCourierTask {
 		task.deliveryElapsedTicks = tag.getInt("DeliveryElapsedTicks");
 		task.teleportedNearTarget = tag.getBoolean("TeleportedNearTarget");
 		task.forceArrivalPending = tag.getBoolean("ForceArrivalPending");
+		if (tag.contains("LastKnownTargetDimension")) {
+			task.lastKnownTargetDimension = dimensionKey(tag.getString("LastKnownTargetDimension"));
+		}
+		if (tag.contains("LastKnownTargetPosition")) {
+			task.lastKnownTargetPosition = vecFromTag(tag, "LastKnownTargetPosition");
+		}
+		task.lostTargetTicks = tag.getInt("LostTargetTicks");
 		if (tag.contains("PortMotion")) {
 			task.portMotion = PortMotion.byName(tag.getString("PortMotion"));
 			task.portDepartureOrigin = tag.contains("PortDepartureOrigin")

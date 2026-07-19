@@ -34,8 +34,8 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 	private static final int LINE_GAP = 2;
 	private static final long ANIMATION_TIME_MILLIS = 600L;
 	private static final int TEXT_COLOR = 0x3D3C48;
-	private static final int DELIVERED_TEXT_COLOR = 0x285B3A;
-	private static final int FAILED_TEXT_COLOR = 0x7A2830;
+	private static final int DELIVERED_TEXT_COLOR = 0x207C3B;
+	private static final int FAILED_TEXT_COLOR = 0x9C3137;
 	private static final int LABEL_LEFT_U = 27;
 	private static final int LABEL_LEFT_V = 150;
 	private static final int LABEL_LEFT_WIDTH = 46;

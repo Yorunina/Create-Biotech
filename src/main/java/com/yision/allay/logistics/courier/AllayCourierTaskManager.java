@@ -54,7 +54,11 @@ public final class AllayCourierTaskManager {
 			task.tick(server, courier);
 
 			if (task.isRemoved()) {
-				removeCourier(task);
+				if (task.placeCourierWhenRemoved()) {
+					placeCourier(server, task);
+				} else {
+					removeCourier(task);
+				}
 				completed.add(task);
 				continue;
 			}
@@ -145,6 +149,33 @@ public final class AllayCourierTaskManager {
 		AllayCourierEntity entity = courierEntities.remove(task.id());
 		if (entity != null && entity.isAlive()) {
 			entity.discard();
+		}
+	}
+
+	private static void placeCourier(MinecraftServer server, AllayCourierTask task) {
+		AllayCourierEntity entity = courierEntities.remove(task.id());
+		ServerLevel level = server.getLevel(task.currentDimension());
+		if (level == null) {
+			if (entity != null && entity.isAlive()) {
+				entity.becomePlaced(entity.position());
+			}
+			return;
+		}
+
+		if (entity != null && entity.isAlive() && entity.level() == level) {
+			entity.becomePlaced(task.position());
+			return;
+		}
+
+		level.getChunkAt(BlockPos.containing(task.position()));
+		AllayCourierEntity placed = AllayCourierEntity.createFromTask(level, task);
+		placed.becomePlaced(task.position());
+		if (level.addFreshEntity(placed)) {
+			if (entity != null && entity.isAlive()) {
+				entity.discard();
+			}
+		} else if (entity != null && entity.isAlive()) {
+			entity.becomePlaced(entity.position());
 		}
 	}
 

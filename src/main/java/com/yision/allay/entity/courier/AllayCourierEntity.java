@@ -4,21 +4,14 @@ import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper
 import com.nobodiiiii.createbiotech.registry.CBParticleTypes;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.item.allaycourier.AllayCourierItem;
-import com.yision.allay.logistics.courier.AllayCourierDispatchService;
-import com.yision.allay.logistics.courier.AllayCourierReturnMode;
-import com.yision.allay.logistics.courier.AllayCourierTarget;
 import com.yision.allay.logistics.courier.AllayCourierTask;
 import com.yision.allay.logistics.courier.AllayCourierTaskManager;
 import com.yision.allay.registry.AllEntityTypes;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -31,7 +24,6 @@ import net.minecraft.world.entity.animal.allay.Allay;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -190,6 +182,17 @@ public class AllayCourierEntity extends Allay implements Container {
 		getNavigation().stop();
 		getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
 		getBrain().eraseMemory(MemoryModuleType.PATH);
+	}
+
+	public void becomePlaced(Vec3 placementPosition) {
+		taskId = null;
+		invalidTaskChecks = 0;
+		clearCourierDestination();
+		setDeltaMovement(Vec3.ZERO);
+		setPos(placementPosition);
+		setPhase(Phase.WAITING);
+		hasImpulse = true;
+		hurtMarked = true;
 	}
 
 	@Override
@@ -470,59 +473,6 @@ public class AllayCourierEntity extends Allay implements Container {
 		}
 
 		ItemStack heldItem = player.getItemInHand(hand);
-		if (heldItem.is(Items.FIREWORK_ROCKET)) {
-			if (level().isClientSide()) {
-				return InteractionResult.SUCCESS;
-			}
-			if (!(level() instanceof ServerLevel serverLevel)) {
-				return InteractionResult.CONSUME;
-			}
-
-			AllayCourierTarget target = AllayCourierDispatchService.resolvePackageTarget(
-				serverLevel, getPackage(), position(), null, null);
-			if (target == null) {
-				player.displayClientMessage(
-					Component.translatable("gui.create_biotech.allay_courier.invalid_target")
-						.withStyle(ChatFormatting.RED), true);
-				return InteractionResult.CONSUME;
-			}
-
-			Vec3 launchDir = horizontalDirection(launchDirection);
-			Vec3 spawnPos = position().add(0, 0.01, 0);
-			java.util.UUID newTaskId = java.util.UUID.randomUUID();
-			AllayCourierTask task;
-
-			if (target instanceof AllayCourierTarget.AllayPortTarget allayPortTarget) {
-				task = AllayCourierTask.forPackageToAllayPort(newTaskId, getPackage(), serverLevel,
-					allayPortTarget.dimension(), allayPortTarget.pos(), spawnPos, launchDir,
-					null, null, player instanceof ServerPlayer sp ? sp.getUUID() : null,
-					AllayCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
-			} else if (target instanceof AllayCourierTarget.PlayerTarget playerTarget) {
-				ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(playerTarget.playerId());
-				if (targetPlayer == null) {
-					player.displayClientMessage(
-						Component.translatable("gui.create_biotech.allay_courier.invalid_target")
-							.withStyle(ChatFormatting.RED), true);
-					return InteractionResult.CONSUME;
-				}
-				task = AllayCourierTask.forPackageToPlayer(newTaskId, getPackage(), serverLevel,
-					playerTarget.playerId(), playerTarget.dimension(), spawnPos, launchDir,
-					null, null, player instanceof ServerPlayer sp ? sp.getUUID() : null,
-					AllayCourierReturnMode.DEFAULT_FOR_PLAYER_LAUNCH);
-			} else {
-				return InteractionResult.CONSUME;
-			}
-
-			AllayCourierTaskManager.addTask(serverLevel.getServer(), task);
-			level().playSound(null, blockPosition(), SoundEvents.FIREWORK_ROCKET_LAUNCH,
-				SoundSource.PLAYERS, 0.8f, 1.0f);
-			if (!player.getAbilities().instabuild) {
-				heldItem.shrink(1);
-			}
-			discard();
-			return InteractionResult.SUCCESS;
-		}
-
 		if (!heldItem.isEmpty()) {
 			return InteractionResult.PASS;
 		}
