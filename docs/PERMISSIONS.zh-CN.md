@@ -16,8 +16,8 @@
 ### Create Phantom
 
 - 玩家介绍中署名的原作者：bilibili **[@改名字困难户](https://space.bilibili.com/286926825)**、**[@咖喱之恶魔](https://space.bilibili.com/3493112578050237)**
-- 来源作品：**[Create Phantom](https://www.curseforge.com/minecraft/mc-mods/create-phantom)**
-- 在本仓库中的使用方式：经授权整合并修改
+- 代码参考来源：**[Create Phantom 线上仓库](https://github.com/yision1/CreatePhantom)**
+- 在本仓库中的使用方式：仅经授权参考代码；未使用其美术、数据文件、本地化、配方或其他资源
 - [授权截图](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/assets/permissions/create-phantom-permission.png)
 
 ## 相关文件

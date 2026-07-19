@@ -16,8 +16,8 @@ This page records the third-party content in Create: Biotech that was integrated
 ### Create Phantom
 
 - Original creators credited in the player intro: bilibili **[@改名字困难户](https://space.bilibili.com/286926825)** and **[@咖喱之恶魔](https://space.bilibili.com/3493112578050237)**
-- Source work: **[Create Phantom](https://www.curseforge.com/minecraft/mc-mods/create-phantom)**
-- Usage in this repository: integrated and modified with permission
+- Code reference: **[Create Phantom online repository](https://github.com/yision1/CreatePhantom)**
+- Usage in this repository: source code reference only, with permission; no assets, data files, localization, recipes, or other resources were used
 - [Authorization screenshot](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/assets/permissions/create-phantom-permission.png)
 
 ## Related Files

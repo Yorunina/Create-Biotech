@@ -34,15 +34,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-## yision/CreatePhantom
+## yision1/CreatePhantom
 
-This repository contains material adapted from or derived from:
+The Allay logistics implementation in this repository references source code from:
 
-- Repository: `yision/CreatePhantom`
-- Reference copy used for porting: `ref/CreatePhantom-1.20.1/`
-- Upstream version caveat: the local upstream checkout targeted Minecraft 1.21.1 / NeoForge and was ported here to Minecraft 1.20.1 / Legacy Forge.
+- Online repository: [`yision1/CreatePhantom`](https://github.com/yision1/CreatePhantom)
+- Upstream version caveat: the referenced upstream code targets Minecraft 1.21.1 / NeoForge and was adapted here for Minecraft 1.20.1 / Legacy Forge.
 
-The adapted portions may include code, assets, data files, localization, recipes, and related resources. Later edits to those adapted portions remain subject to the upstream BSD-3-Clause notice requirement.
+Only source code was referenced. No assets, data files, localization, recipes, or other resources from Create Phantom were used. Later edits to code adapted from that reference remain subject to the upstream BSD-3-Clause notice requirement.
 
 Upstream license text:
 

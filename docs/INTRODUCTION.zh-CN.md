@@ -30,6 +30,6 @@
 这是一个还在持续开发中的兴趣项目，内容和数值都可能继续调整，有些地方也还比较粗糙。欢迎反馈和 bug 报告，更欢迎更多有趣新奇的想法。
 
 ## 致谢与声明
-本模组的黄油猫部分内容经授权整合并修改自 **[Sylvia](https://www.mcmod.cn/author/39181.html)** 制作的 **[机械动力：黄油猫](https://www.mcmod.cn/class/25765.html)**；悦灵物流部分代码经授权整合并修改自 **bilibili [@改名字困难户](https://space.bilibili.com/286926825) [@咖喱之恶魔](https://space.bilibili.com/3493112578050237)** 制作的 **[Create Phantom](https://www.curseforge.com/minecraft/mc-mods/create-phantom)**。
+本模组的黄油猫部分内容经授权整合并修改自 **[Sylvia](https://www.mcmod.cn/author/39181.html)** 制作的 **[机械动力：黄油猫](https://www.mcmod.cn/class/25765.html)**；悦灵物流功能仅经授权参考了 **bilibili [@改名字困难户](https://space.bilibili.com/286926825) [@咖喱之恶魔](https://space.bilibili.com/3493112578050237)** 制作的 **[Create Phantom](https://github.com/yision1/CreatePhantom)** 代码。
 
 感谢以上原作者的创作与授权支持。相关内容已根据本模组玩法进行适配与修改，原作及其资源权利仍归原作者所有。详见[授权与来源说明](https://github.com/Nobodiiiii/Create-Biotech/blob/main/docs/PERMISSIONS.zh-CN.md)。

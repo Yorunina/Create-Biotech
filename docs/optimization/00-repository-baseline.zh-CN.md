@@ -96,7 +96,7 @@ Java 文件行数分布：
 
 ### 3.4 本地参考源缺少统一来源清单
 
-`ref/` 包含 Create、JEI、Catnip、Create Mobile Packages、Create Enchantment Industry、Create Phantom、Forge、Minecraft 等参考目录，但 `ref/SOURCES.md` 缺失，且只有部分目录保留可读取的 Git 元数据。
+`ref/` 包含 Create、JEI、Catnip、Create Mobile Packages、Create Enchantment Industry、Forge、Minecraft 等参考目录，但 `ref/SOURCES.md` 缺失，且只有部分目录保留可读取的 Git 元数据。Create Phantom 仅作为代码参考，并应直接使用线上仓库 `https://github.com/yision1/CreatePhantom`，不使用本地 `ref/` 路径。
 
 影响：未来维护者难以判断某段参考代码是精确版本、邻近版本还是临时快照，容易把内部实现误当成当前依赖的稳定 API。
 
