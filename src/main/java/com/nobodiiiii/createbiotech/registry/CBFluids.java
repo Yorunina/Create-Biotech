@@ -9,7 +9,13 @@ import com.nobodiiiii.createbiotech.content.fluid.TeleportationFluid;
 import com.nobodiiiii.createbiotech.content.fluid.TeleportationLiquidBlock;
 import com.simibubi.create.content.fluids.VirtualFluid;
 import com.tterrag.registrate.util.entry.FluidEntry;
+import org.joml.Vector3f;
 
+import com.mojang.blaze3d.shaders.FogShape;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Camera;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogRenderer.FogMode;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.item.BucketItem;
@@ -50,6 +56,8 @@ public class CBFluids {
 		CreateBiotech.asResource("fluid/experience_flow");
 	private static final ResourceLocation NETHER_PORTAL_TEXTURE =
 		new ResourceLocation("minecraft", "block/nether_portal");
+	private static final Vector3f TELEPORTATION_SUBMERGED_FOG_COLOR = new Vector3f(0.72F, 0.48F, 0.86F);
+	private static final float TELEPORTATION_FOG_DISTANCE_MODIFIER = 1F / 10F;
 
 	public static final RegistryObject<FluidType> EXPERIENCE_TYPE =
 		FLUID_TYPES.register("experience",
@@ -96,6 +104,20 @@ public class CBFluids {
 						@Override
 						public ResourceLocation getFlowingTexture() {
 							return NETHER_PORTAL_TEXTURE;
+						}
+
+						@Override
+						public Vector3f modifyFogColor(Camera camera, float partialTick, ClientLevel level,
+							int renderDistance, float darkenWorldAmount, Vector3f fluidFogColor) {
+							return TELEPORTATION_SUBMERGED_FOG_COLOR;
+						}
+
+						@Override
+						public void modifyFogRender(Camera camera, FogMode mode, float renderDistance, float partialTick,
+							float nearDistance, float farDistance, FogShape shape) {
+							RenderSystem.setShaderFogShape(FogShape.CYLINDER);
+							RenderSystem.setShaderFogStart(-8.0F);
+							RenderSystem.setShaderFogEnd(96.0F * TELEPORTATION_FOG_DISTANCE_MODIFIER);
 						}
 					});
 				}
