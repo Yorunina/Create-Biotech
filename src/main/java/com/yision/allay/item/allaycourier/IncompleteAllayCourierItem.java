@@ -1,17 +1,17 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import java.util.function.Consumer;
 
 import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
-import com.yision.allay.client.render.MiniAllayItemRenderer;
+import com.yision.allay.client.render.AllayCourierItemRenderer;
 
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 
-public class IncompleteMiniAllayItem extends Item {
-	public IncompleteMiniAllayItem(Properties properties) {
+public class IncompleteAllayCourierItem extends Item {
+	public IncompleteAllayCourierItem(Properties properties) {
 		super(properties);
 	}
 
@@ -19,6 +19,6 @@ public class IncompleteMiniAllayItem extends Item {
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		consumer.accept(SimpleCustomRenderer.create(this, new MiniAllayItemRenderer(false)));
+		consumer.accept(SimpleCustomRenderer.create(this, new AllayCourierItemRenderer(false)));
 	}
 }

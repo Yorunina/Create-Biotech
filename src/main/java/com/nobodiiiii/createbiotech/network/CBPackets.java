@@ -16,7 +16,7 @@ import com.nobodiiiii.createbiotech.content.smartglue.SmartSuperGlueSelectionPac
 import com.yision.allay.block.allayport.AllayPortConfigurationPacket;
 import com.yision.allay.block.allayport.AllayPortFlapPacket;
 import com.yision.allay.logistics.courier.hud.AllayCourierHudPacket;
-import com.yision.allay.network.allay.MiniAllayConfirmPacket;
+import com.yision.allay.network.allay.AllayCourierConfirmPacket;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.Entity;
@@ -68,8 +68,8 @@ public class CBPackets {
 		register(ShulkerTeleporterConfigPacket.class, ShulkerTeleporterConfigPacket::new,
 			ShulkerTeleporterConfigPacket::write, ShulkerTeleporterConfigPacket::handle,
 			NetworkDirection.PLAY_TO_SERVER);
-		register(MiniAllayConfirmPacket.class, MiniAllayConfirmPacket::new,
-			MiniAllayConfirmPacket::write, MiniAllayConfirmPacket::handle,
+		register(AllayCourierConfirmPacket.class, AllayCourierConfirmPacket::new,
+			AllayCourierConfirmPacket::write, AllayCourierConfirmPacket::handle,
 			NetworkDirection.PLAY_TO_SERVER);
 		register(AllayPortConfigurationPacket.class, AllayPortConfigurationPacket::new,
 			AllayPortConfigurationPacket::write, (packet, context) -> packet.handle(context),

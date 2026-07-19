@@ -62,7 +62,7 @@
 - 重放、重复包和乱序包；
 - 非法数据不得部分修改 world/BE。
 
-`AllayCourierHudPacket` 是 S2C，但 decoder同样应限制 count到 `AllayCourierHudPayload.MAX_VISIBLE_ENTRIES` 或协议上限，避免损坏/不兼容服务端导致客户端大分配。`MiniAllayConfirmPacket` 的 `readUtf()` 也应使用与菜单规则一致的显式最大长度。
+`AllayCourierHudPacket` 是 S2C，但 decoder同样应限制 count到 `AllayCourierHudPayload.MAX_VISIBLE_ENTRIES` 或协议上限，避免损坏/不兼容服务端导致客户端大分配。`AllayCourierConfirmPacket` 的 `readUtf()` 也应使用与菜单规则一致的显式最大长度。
 
 ### TEST-03：引入 Forge GameTest 覆盖 world 行为和持久化
 

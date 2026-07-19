@@ -160,7 +160,7 @@ public final class AllayCourierDeliveryService {
 	public static void dropCarrierOnly(@Nullable ServerLevel level, Vec3 pos) {
 		if (level == null) return;
 		level.addFreshEntity(new ItemEntity(level, pos.x, pos.y, pos.z,
-			AllItems.MINI_ALLAY.asStack()));
+			AllItems.ALLAY_COURIER.asStack()));
 		level.playSound(null, BlockPos.containing(pos),
 			SoundEvents.ITEM_FRAME_BREAK, SoundSource.NEUTRAL, 0.7f, 0.9f);
 	}

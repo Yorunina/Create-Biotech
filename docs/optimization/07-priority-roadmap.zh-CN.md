@@ -49,7 +49,7 @@
    - 每个点的服务端重建与范围/权限校验。
 2. `ShulkerTeleporterConfigPacket` 在 `new ArrayList<>(size)` 前拒绝负数与 `>64`。
 3. Smart Glue删除/选择校验工具、距离、权限和 server-side selection。
-4. `MiniAllayConfirmPacket`、Allay filter和 HUD count使用显式上限。
+4. `AllayCourierConfirmPacket`、Allay filter和 HUD count使用显式上限。
 
 验收：恶意输入测试全部拒绝且不产生部分 world修改；正常客户端流程保持兼容。
 

@@ -37,7 +37,7 @@
 - `PowerBeltSurfaceMovementPacket` 校验发送者、旁观者/飞行状态、有限浮点、加载范围、4 格距离、方块类型、传送带斜率和玩家实际站位，并在服务端限幅。
 - `GhastBalloonMagnetTargetPacket` 校验控制权、实体类型、目标距离、目标方块实体和可接受状态。
 - `AllayPortConfigurationPacket` 继承精确匹配的 `ref/Create/.../BlockEntityConfigurationPacket.java`，由 Create 基类统一检查旁观/冒险模式、区块加载和 20 格距离。
-- `MiniAllayConfirmPacket` 要求发送者当前打开 `MiniAllayMenu`，`confirm()` 再调用 `stillValid()`。
+- `AllayCourierConfirmPacket` 要求发送者当前打开 `AllayCourierMenu`，`confirm()` 再调用 `stillValid()`。
 
 这些模式应成为其他客户端到服务端数据包的统一基线。
 
@@ -77,7 +77,7 @@
 - `SmartSuperGlueRemovalPacket` 允许客户端删除 32 格内任意兼容胶实体，没有验证当前持有智能胶/扳手、交互权限或玩家是否真的选中了该实体；`soundSource` 也完全由客户端指定。
 - `SmartSuperGlueSelectionPacket` 消耗物品与生成胶实体前没有统一调用方块交互权限检查，对起点的独立距离限制也不直观。
 - `AllayPortConfigurationPacket` 使用无显式上限的 `readUtf()` 读取过滤器；Create 基类解决了距离和模式校验，但没有替子类限制字符串业务长度。
-- `MiniAllayConfirmPacket` 和菜单初始化使用无显式上限的 `readUtf()`，应与包裹地址规则共享单一最大长度。
+- `AllayCourierConfirmPacket` 和菜单初始化使用无显式上限的 `readUtf()`，应与包裹地址规则共享单一最大长度。
 - 服务端到客户端的 Air Courier HUD 包先按远端提供的 count 分配列表；正常服务器可信，但连接不受信服务器时仍应设置条目和物品堆数量上限，避免客户端内存峰值或解码异常。
 
 建议建立共享的包解码工具：有界字符串、有界集合、有限数值、合法枚举；每个 C2S handler 使用统一的 sender/menu/distance/permission/rate-limit 检查模板。

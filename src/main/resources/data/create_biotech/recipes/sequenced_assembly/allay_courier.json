@@ -7,7 +7,7 @@
   "loops": 1,
   "results": [
     {
-      "item": "create_biotech:mini_allay"
+      "item": "create_biotech:allay_courier"
     }
   ],
   "sequence": [
@@ -15,7 +15,7 @@
       "type": "create:deploying",
       "ingredients": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         },
         {
           "item": "minecraft:firework_rocket"
@@ -23,7 +23,7 @@
       ],
       "results": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         }
       ]
     },
@@ -31,7 +31,7 @@
       "type": "create:deploying",
       "ingredients": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         },
         {
           "item": "minecraft:compass"
@@ -39,7 +39,7 @@
       ],
       "results": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         }
       ]
     },
@@ -47,7 +47,7 @@
       "type": "create:filling",
       "ingredients": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         },
         {
           "amount": 250,
@@ -56,12 +56,12 @@
       ],
       "results": [
         {
-          "item": "create_biotech:incomplete_mini_allay"
+          "item": "create_biotech:incomplete_allay_courier"
         }
       ]
     }
   ],
   "transitionalItem": {
-    "item": "create_biotech:incomplete_mini_allay"
+    "item": "create_biotech:incomplete_allay_courier"
   }
 }

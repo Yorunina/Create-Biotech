@@ -1,10 +1,10 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import com.simibubi.create.content.logistics.box.PackageItem;
 import net.minecraft.world.item.ItemStack;
 
-public record MiniAllayCargo(ItemStack packageStack) {
-	public MiniAllayCargo {
+public record AllayCourierCargo(ItemStack packageStack) {
+	public AllayCourierCargo {
 		packageStack = sanitize(packageStack);
 	}
 

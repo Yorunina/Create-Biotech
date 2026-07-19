@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [32, 32],
 	"textures": {
-		"particle": "create_biotech:item/mini_package",
-		"package": "create_biotech:item/mini_package"
+		"particle": "create_biotech:item/allay_courier_package",
+		"package": "create_biotech:item/allay_courier_package"
 	},
 	"elements": [
 		{

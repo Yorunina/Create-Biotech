@@ -1,8 +1,8 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.simibubi.create.foundation.item.render.SimpleCustomRenderer;
-import com.yision.allay.client.render.MiniAllayItemRenderer;
+import com.yision.allay.client.render.AllayCourierItemRenderer;
 import com.yision.allay.logistics.courier.AllayCourierDispatchService;
 import com.yision.allay.registry.AllItems;
 import java.util.List;
@@ -32,14 +32,14 @@ import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
-public class MiniAllayItem extends Item {
+public class AllayCourierItem extends Item {
 	private static final int EMPTY_CARRIER_MAX_STACK_SIZE = 64;
 	private static final String CARGO_KEY = "Cargo";
 	private static final String HEADING_KEY = "Heading";
 	private static final double PLAYER_LAUNCH_FORWARD_OFFSET = 0.75;
 	private static final double PLAYER_LAUNCH_EYE_OFFSET = -0.35;
 
-	public MiniAllayItem(Properties properties) {
+	public AllayCourierItem(Properties properties) {
 		super(properties);
 	}
 
@@ -88,7 +88,7 @@ public class MiniAllayItem extends Item {
 		ItemStack box = copyCargoPackage(stack);
 		if (!AllayCourierDispatchService.dispatchFromPlayer(player, box, spawnPosition, launchDirection)) {
 			player.displayClientMessage(
-				Component.translatable("gui.create_biotech.mini_allay.invalid_target")
+				Component.translatable("gui.create_biotech.allay_courier.invalid_target")
 					.withStyle(ChatFormatting.RED),
 				true);
 			return false;
@@ -120,12 +120,12 @@ public class MiniAllayItem extends Item {
 	}
 
 	protected static void openMenu(ServerPlayer serverPlayer, ItemStack stack, InteractionHand usedHand) {
-		LegacyMiniAllayClipboardData.recoverClipboard(serverPlayer);
+		LegacyAllayCourierClipboardData.recoverClipboard(serverPlayer);
 		stack = isolateCarrierForEditing(serverPlayer, stack, usedHand);
 		ItemStack openedStack = stack;
 		NetworkHooks.openScreen(serverPlayer,
-			new SimpleMenuProvider((id, inv, p) -> MiniAllayMenu.create(id, inv, openedStack, usedHand),
-				Component.translatable("item.create_biotech.mini_allay")),
+			new SimpleMenuProvider((id, inv, p) -> AllayCourierMenu.create(id, inv, openedStack, usedHand),
+				Component.translatable("item.create_biotech.allay_courier")),
 			buffer -> {
 				buffer.writeItem(openedStack);
 				buffer.writeEnum(usedHand);
@@ -179,13 +179,13 @@ public class MiniAllayItem extends Item {
 	}
 
 	public static ItemStack createLoaded(ItemStack packageStack) {
-		ItemStack allay = AllItems.MINI_ALLAY.asStack();
+		ItemStack allay = AllItems.ALLAY_COURIER.asStack();
 		loadCargo(allay, packageStack);
 		return allay;
 	}
 
 	public static boolean loadCargo(ItemStack allay, ItemStack packageStack) {
-		MiniAllayCargo cargo = new MiniAllayCargo(packageStack);
+		AllayCourierCargo cargo = new AllayCourierCargo(packageStack);
 		if (!cargo.isValid()) {
 			remove(allay, CARGO_KEY);
 			return false;
@@ -196,7 +196,7 @@ public class MiniAllayItem extends Item {
 	}
 
 	public static boolean updateCargoAddress(ItemStack allay, String address) {
-		if (!allay.is(AllItems.MINI_ALLAY.get())) {
+		if (!allay.is(AllItems.ALLAY_COURIER.get())) {
 			return false;
 		}
 		ItemStack packageStack = copyCargoPackage(allay);
@@ -226,7 +226,7 @@ public class MiniAllayItem extends Item {
 	}
 
 	public static boolean isPlainCarrier(ItemStack stack) {
-		return stack.is(AllItems.MINI_ALLAY.get())
+		return stack.is(AllItems.ALLAY_COURIER.get())
 			&& !hasCargo(stack);
 	}
 
@@ -259,6 +259,6 @@ public class MiniAllayItem extends Item {
 	@Override
 	@OnlyIn(Dist.CLIENT)
 	public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-		consumer.accept(SimpleCustomRenderer.create(this, new MiniAllayItemRenderer()));
+		consumer.accept(SimpleCustomRenderer.create(this, new AllayCourierItemRenderer()));
 	}
 }

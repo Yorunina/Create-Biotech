@@ -34,7 +34,7 @@ import org.joml.Vector3f;
  */
 public class AllayCourierEntityRenderer extends AllayRenderer {
 
-	private static final ResourceLocation CARGO_MODEL = CreateAllay.asResource("item/mini_allay_package");
+	private static final ResourceLocation CARGO_MODEL = CreateAllay.asResource("item/allay_courier_package");
 	private static final PartialModel LOGISTICS_HAT =
 		PartialModel.of(new ResourceLocation("create", "entity/logistics_hat"));
 

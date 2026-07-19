@@ -1,7 +1,7 @@
 package com.yision.allay.block.allayport;
 
 import com.simibubi.create.content.logistics.box.PackageItem;
-import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.item.allaycourier.AllayCourierItem;
 import com.yision.allay.logistics.address.AllayAddressRules;
 import com.yision.allay.registry.AllItems;
 import net.minecraft.core.BlockPos;
@@ -89,7 +89,7 @@ final class AllayPortInventory {
 
 	private @NotNull ItemStack insertIntoCombinedSlot(int slot, @NotNull ItemStack stack, boolean simulate) {
 		ItemStack remainder;
-		if (stack.is(AllItems.MINI_ALLAY.get())) {
+		if (stack.is(AllItems.ALLAY_COURIER.get())) {
 			if (!isCarrierSlot(slot) || !isEmptyCarrier(stack)) {
 				return stack;
 			}
@@ -151,7 +151,7 @@ final class AllayPortInventory {
 	}
 
 	static boolean isEmptyCarrier(ItemStack stack) {
-		return MiniAllayItem.isPlainCarrier(stack);
+		return AllayCourierItem.isPlainCarrier(stack);
 	}
 
 	boolean hasStoredCarrier() {
@@ -180,7 +180,7 @@ final class AllayPortInventory {
 	}
 
 	boolean canReceiveCourier(ItemStack box) {
-		ItemStack carrier = AllItems.MINI_ALLAY.asStack();
+		ItemStack carrier = AllItems.ALLAY_COURIER.asStack();
 		return carrierInventory.insertItem(0, carrier, true).isEmpty() && addPackage(box.copy(), true);
 	}
 
@@ -188,7 +188,7 @@ final class AllayPortInventory {
 		if (!canReceiveCourier(box)) {
 			return false;
 		}
-		ItemStack carrier = AllItems.MINI_ALLAY.asStack();
+		ItemStack carrier = AllItems.ALLAY_COURIER.asStack();
 		carrierInventory.insertItem(0, carrier.copy(), false);
 		addPackage(box.copy(), false);
 		port.markPortContentsChanged();
@@ -208,7 +208,7 @@ final class AllayPortInventory {
 	}
 
 	boolean canReceiveCarrier() {
-		ItemStack carrier = AllItems.MINI_ALLAY.asStack();
+		ItemStack carrier = AllItems.ALLAY_COURIER.asStack();
 		return carrierInventory.insertItem(0, carrier, true).isEmpty();
 	}
 
@@ -216,7 +216,7 @@ final class AllayPortInventory {
 		if (!canReceiveCarrier()) {
 			return false;
 		}
-		carrierInventory.insertItem(0, AllItems.MINI_ALLAY.asStack().copy(), false);
+		carrierInventory.insertItem(0, AllItems.ALLAY_COURIER.asStack().copy(), false);
 		port.markPortContentsChanged();
 		return true;
 	}

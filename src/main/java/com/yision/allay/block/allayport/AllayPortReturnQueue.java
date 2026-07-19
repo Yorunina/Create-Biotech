@@ -96,7 +96,7 @@ final class AllayPortReturnQueue {
 		if (!inventory.canReceivePackage(box) || !inventory.canReceiveCarrier()) {
 			return false;
 		}
-		ItemStack carrier = com.yision.allay.registry.AllItems.MINI_ALLAY.asStack();
+		ItemStack carrier = com.yision.allay.registry.AllItems.ALLAY_COURIER.asStack();
 		if (!inventory.carrierInventory.insertItem(0, carrier.copy(), false).isEmpty()) {
 			return false;
 		}

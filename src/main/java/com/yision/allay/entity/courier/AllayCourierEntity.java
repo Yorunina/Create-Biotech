@@ -3,7 +3,7 @@ package com.yision.allay.entity.courier;
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.nobodiiiii.createbiotech.registry.CBParticleTypes;
 import com.simibubi.create.content.logistics.box.PackageItem;
-import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.item.allaycourier.AllayCourierItem;
 import com.yision.allay.logistics.courier.AllayCourierDispatchService;
 import com.yision.allay.logistics.courier.AllayCourierReturnMode;
 import com.yision.allay.logistics.courier.AllayCourierTarget;
@@ -424,8 +424,8 @@ public class AllayCourierEntity extends Allay implements Container {
 		if (getPhase() != Phase.WAITING) {
 			return ItemStack.EMPTY;
 		}
-		ItemStack picked = MiniAllayItem.createLoaded(getPackage());
-		MiniAllayItem.setHeadingAngle(picked, Math.round(getYRot()));
+		ItemStack picked = AllayCourierItem.createLoaded(getPackage());
+		AllayCourierItem.setHeadingAngle(picked, Math.round(getYRot()));
 		return picked;
 	}
 
@@ -441,8 +441,8 @@ public class AllayCourierEntity extends Allay implements Container {
 			return false;
 		}
 
-		ItemStack droppedStack = MiniAllayItem.createLoaded(getPackage());
-		MiniAllayItem.setHeadingAngle(droppedStack, Math.round(getYRot()));
+		ItemStack droppedStack = AllayCourierItem.createLoaded(getPackage());
+		AllayCourierItem.setHeadingAngle(droppedStack, Math.round(getYRot()));
 		ItemEntity itemEntity = new ItemEntity(level(), getX(), getY(), getZ(), droppedStack);
 		Vec3 popMotion = player.getLookAngle().multiply(1, 0, 1);
 		popMotion = popMotion.lengthSqr() > 1.0E-6 ? popMotion.normalize().scale(0.12) : Vec3.ZERO;
@@ -482,7 +482,7 @@ public class AllayCourierEntity extends Allay implements Container {
 				serverLevel, getPackage(), position(), null, null);
 			if (target == null) {
 				player.displayClientMessage(
-					Component.translatable("gui.create_biotech.mini_allay.invalid_target")
+					Component.translatable("gui.create_biotech.allay_courier.invalid_target")
 						.withStyle(ChatFormatting.RED), true);
 				return InteractionResult.CONSUME;
 			}
@@ -501,7 +501,7 @@ public class AllayCourierEntity extends Allay implements Container {
 				ServerPlayer targetPlayer = serverLevel.getServer().getPlayerList().getPlayer(playerTarget.playerId());
 				if (targetPlayer == null) {
 					player.displayClientMessage(
-						Component.translatable("gui.create_biotech.mini_allay.invalid_target")
+						Component.translatable("gui.create_biotech.allay_courier.invalid_target")
 							.withStyle(ChatFormatting.RED), true);
 					return InteractionResult.CONSUME;
 				}
@@ -530,8 +530,8 @@ public class AllayCourierEntity extends Allay implements Container {
 			return InteractionResult.SUCCESS;
 		}
 
-		ItemStack pickedUp = MiniAllayItem.createLoaded(getPackage());
-		MiniAllayItem.setHeadingAngle(pickedUp, Math.round(getYRot()));
+		ItemStack pickedUp = AllayCourierItem.createLoaded(getPackage());
+		AllayCourierItem.setHeadingAngle(pickedUp, Math.round(getYRot()));
 		player.setItemInHand(hand, pickedUp);
 		level().playSound(null, blockPosition(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.2f,
 			0.75f + level().random.nextFloat());

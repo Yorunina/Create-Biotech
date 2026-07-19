@@ -2,6 +2,7 @@ package com.nobodiiiii.createbiotech.infrastructure;
 
 import com.mojang.logging.LogUtils;
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.nobodiiiii.createbiotech.registry.CBItems;
 import com.simibubi.create.AllBlockEntityTypes;
 import com.simibubi.create.AllBlocks;
 
@@ -44,6 +45,8 @@ public class CBRemapHelper {
 				.getPath()) {
 				case "experience_pipe", "encased_experience_pipe" -> AllBlocks.FLUID_PIPE.asItem();
 				case "experience_tank" -> AllBlocks.FLUID_TANK.asItem();
+				case "mini_allay" -> CBItems.ALLAY_COURIER.get();
+				case "incomplete_mini_allay" -> CBItems.INCOMPLETE_ALLAY_COURIER.get();
 				default -> null;
 			};
 			remap(mapping, remapped);

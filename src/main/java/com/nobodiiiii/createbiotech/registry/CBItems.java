@@ -28,8 +28,8 @@ import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
 import com.yision.allay.block.allayport.AllayPortItem;
-import com.yision.allay.item.miniallay.MiniAllayItem;
-import com.yision.allay.item.miniallay.IncompleteMiniAllayItem;
+import com.yision.allay.item.allaycourier.AllayCourierItem;
+import com.yision.allay.item.allaycourier.IncompleteAllayCourierItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.DyeColor;
@@ -153,10 +153,10 @@ public class CBItems {
 	public static final RegistryObject<Item> ALLAY_PORT = ITEMS.register("allay_port",
 		() -> new AllayPortItem(CBBlocks.ALLAY_PORT.get(), new Item.Properties()));
 
-	public static final RegistryObject<MiniAllayItem> MINI_ALLAY = ITEMS.register("mini_allay",
-		() -> new MiniAllayItem(new Item.Properties()));
-	public static final RegistryObject<IncompleteMiniAllayItem> INCOMPLETE_MINI_ALLAY =
-		ITEMS.register("incomplete_mini_allay", () -> new IncompleteMiniAllayItem(new Item.Properties()));
+	public static final RegistryObject<AllayCourierItem> ALLAY_COURIER = ITEMS.register("allay_courier",
+		() -> new AllayCourierItem(new Item.Properties()));
+	public static final RegistryObject<IncompleteAllayCourierItem> INCOMPLETE_ALLAY_COURIER =
+		ITEMS.register("incomplete_allay_courier", () -> new IncompleteAllayCourierItem(new Item.Properties()));
 
 	public static final RegistryObject<Item> INCOMPLETE_CREEPER_BLAST_CHAMBER =
 		ITEMS.register("incomplete_creeper_blast_chamber", () -> new Item(new Item.Properties()));

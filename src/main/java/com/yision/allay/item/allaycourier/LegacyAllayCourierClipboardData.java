@@ -1,4 +1,4 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -7,21 +7,22 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 
-final class LegacyMiniAllayClipboardData {
-	private static final String ROOT_KEY = "CreateBiotechMiniAllayClipboard";
+final class LegacyAllayCourierClipboardData {
+	// Keep the historical key so clipboard data written by older releases can still be recovered.
+	private static final String LEGACY_ROOT_KEY = "CreateBiotechMiniAllayClipboard";
 
-	private LegacyMiniAllayClipboardData() {}
+	private LegacyAllayCourierClipboardData() {}
 
 	static void recoverClipboard(Player player) {
 		CompoundTag persistentData = player.getPersistentData();
-		if (!persistentData.contains(ROOT_KEY, Tag.TAG_COMPOUND)) {
+		if (!persistentData.contains(LEGACY_ROOT_KEY, Tag.TAG_COMPOUND)) {
 			return;
 		}
 
 		ItemStackHandler legacyInventory = new ItemStackHandler(1);
-		legacyInventory.deserializeNBT(persistentData.getCompound(ROOT_KEY));
+		legacyInventory.deserializeNBT(persistentData.getCompound(LEGACY_ROOT_KEY));
 		ItemStack clipboard = legacyInventory.getStackInSlot(0).copy();
-		persistentData.remove(ROOT_KEY);
+		persistentData.remove(LEGACY_ROOT_KEY);
 		if (!clipboard.isEmpty()) {
 			ItemHandlerHelper.giveItemToPlayer(player, clipboard);
 		}

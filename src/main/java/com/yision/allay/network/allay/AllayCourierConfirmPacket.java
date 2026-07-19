@@ -1,19 +1,19 @@
 package com.yision.allay.network.allay;
 
-import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.item.allaycourier.AllayCourierItem;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent.Context;
 
-public class MiniAllayConfirmPacket {
+public class AllayCourierConfirmPacket {
 	private static final int MAX_ADDRESS_LENGTH = 25;
 
 	private final InteractionHand hand;
 	private final String address;
 
-	public MiniAllayConfirmPacket(InteractionHand hand, String address) {
+	public AllayCourierConfirmPacket(InteractionHand hand, String address) {
 		this.hand = hand;
 		String normalizedAddress = address == null ? "" : address.trim();
 		this.address = normalizedAddress.length() > MAX_ADDRESS_LENGTH
@@ -21,7 +21,7 @@ public class MiniAllayConfirmPacket {
 			: normalizedAddress;
 	}
 
-	public MiniAllayConfirmPacket(FriendlyByteBuf buffer) {
+	public AllayCourierConfirmPacket(FriendlyByteBuf buffer) {
 		this(buffer.readEnum(InteractionHand.class), buffer.readUtf(MAX_ADDRESS_LENGTH));
 	}
 
@@ -37,7 +37,7 @@ public class MiniAllayConfirmPacket {
 				return;
 			}
 			ItemStack heldStack = sender.getItemInHand(hand);
-			if (MiniAllayItem.updateCargoAddress(heldStack, address)) {
+			if (AllayCourierItem.updateCargoAddress(heldStack, address)) {
 				sender.getInventory().setChanged();
 				sender.containerMenu.broadcastChanges();
 				sender.inventoryMenu.broadcastChanges();

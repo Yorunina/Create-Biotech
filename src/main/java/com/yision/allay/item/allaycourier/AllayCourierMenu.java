@@ -1,4 +1,4 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxItem;
@@ -21,7 +21,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class MiniAllayMenu extends AbstractContainerMenu {
+public class AllayCourierMenu extends AbstractContainerMenu {
 	private static final int PACKAGE_SLOT_COUNT = 9;
 	private static final int PLAYER_SLOT_START = PACKAGE_SLOT_COUNT;
 	private static final int SLOT_X = 27;
@@ -47,11 +47,11 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 	public final InteractionHand hand;
 	public final String initialAddress;
 
-	public MiniAllayMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
-		this(AllMenuTypes.MINI_ALLAY.get(), id, playerInventory, extraData);
+	public AllayCourierMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+		this(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, extraData);
 	}
 
-	public MiniAllayMenu(MenuType<?> type, int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+	public AllayCourierMenu(MenuType<?> type, int id, Inventory playerInventory, FriendlyByteBuf extraData) {
 		super(type, id);
 		this.player = playerInventory.player;
 		this.playerInventory = playerInventory;
@@ -63,7 +63,7 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		addSlots();
 	}
 
-	public MiniAllayMenu(MenuType<?> type, int id, Inventory playerInventory, ItemStack openedStack, InteractionHand hand) {
+	public AllayCourierMenu(MenuType<?> type, int id, Inventory playerInventory, ItemStack openedStack, InteractionHand hand) {
 		super(type, id);
 		this.player = playerInventory.player;
 		this.playerInventory = playerInventory;
@@ -75,8 +75,8 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		addSlots();
 	}
 
-	public static MiniAllayMenu create(int id, Inventory playerInventory, ItemStack openedStack, InteractionHand hand) {
-		return new MiniAllayMenu(AllMenuTypes.MINI_ALLAY.get(), id, playerInventory, openedStack, hand);
+	public static AllayCourierMenu create(int id, Inventory playerInventory, ItemStack openedStack, InteractionHand hand) {
+		return new AllayCourierMenu(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, openedStack, hand);
 	}
 
 	private void addSlots() {
@@ -84,7 +84,7 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 			addSlot(new SlotItemHandler(packageInventory, slot, SLOT_X + 20 * slot, SLOT_Y) {
 				@Override
 				public boolean mayPlace(@NotNull ItemStack stack) {
-					return !PackageItem.isPackage(stack) && !stack.is(AllItems.MINI_ALLAY.get());
+					return !PackageItem.isPackage(stack) && !stack.is(AllItems.ALLAY_COURIER.get());
 				}
 
 				@Override
@@ -126,11 +126,11 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 	}
 
 	private String readInitialContents(ItemStack stack) {
-		if (!MiniAllayItem.hasCargo(stack)) {
+		if (!AllayCourierItem.hasCargo(stack)) {
 			return "";
 		}
 
-		ItemStack box = MiniAllayItem.copyCargoPackage(stack);
+		ItemStack box = AllayCourierItem.copyCargoPackage(stack);
 		if (!PackageItem.isPackage(box)) {
 			return "";
 		}
@@ -154,16 +154,16 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 		}
 
 		ItemStack heldStack = player.getItemInHand(hand);
-		if (!heldStack.is(AllItems.MINI_ALLAY.get()) || heldStack.isEmpty()) {
+		if (!heldStack.is(AllItems.ALLAY_COURIER.get()) || heldStack.isEmpty()) {
 			return false;
 		}
 
-		ItemStack packageBox = createCurrentPackage(MiniAllayItem.copyCargoPackage(heldStack));
+		ItemStack packageBox = createCurrentPackage(AllayCourierItem.copyCargoPackage(heldStack));
 		if (packageBox.isEmpty()) {
-			MiniAllayItem.clearCargo(heldStack);
+			AllayCourierItem.clearCargo(heldStack);
 		} else {
 			packageTemplate = packageBox.copy();
-			MiniAllayItem.loadCargo(heldStack, packageBox);
+			AllayCourierItem.loadCargo(heldStack, packageBox);
 		}
 		playerInventory.setChanged();
 		return true;
@@ -202,7 +202,7 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 	@Override
 	public boolean stillValid(Player player) {
 		ItemStack heldStack = player.getItemInHand(hand);
-		return heldStack.is(AllItems.MINI_ALLAY.get());
+		return heldStack.is(AllItems.ALLAY_COURIER.get());
 	}
 
 	@Override
@@ -258,7 +258,7 @@ public class MiniAllayMenu extends AbstractContainerMenu {
 	}
 
 	@OnlyIn(Dist.CLIENT)
-	public static MiniAllayMenu createOnClient(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
-		return new MiniAllayMenu(AllMenuTypes.MINI_ALLAY.get(), id, playerInventory, extraData);
+	public static AllayCourierMenu createOnClient(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
+		return new AllayCourierMenu(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, extraData);
 	}
 }

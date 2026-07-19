@@ -1,4 +1,4 @@
-package com.yision.allay.item.miniallay;
+package com.yision.allay.item.allaycourier;
 
 import com.simibubi.create.content.logistics.AddressEditBox;
 import com.simibubi.create.content.trains.station.NoShadowFontWrapper;
@@ -9,7 +9,7 @@ import com.simibubi.create.foundation.gui.widget.IconButton;
 import com.simibubi.create.foundation.gui.widget.ScrollInput;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.nobodiiiii.createbiotech.network.CBPackets;
-import com.yision.allay.network.allay.MiniAllayConfirmPacket;
+import com.yision.allay.network.allay.AllayCourierConfirmPacket;
 import java.util.List;
 import net.createmod.catnip.gui.element.GuiGameElement;
 import net.minecraft.client.gui.GuiGraphics;
@@ -20,13 +20,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> {
+public class AllayCourierScreen extends AbstractSimiContainerScreen<AllayCourierMenu> {
 	private AddressEditBox addressBox;
 	private IconButton confirmButton;
 	private List<Rect2i> extraAreas = List.of();
 	private boolean addressSubmitted;
 
-	public MiniAllayScreen(MiniAllayMenu menu, Inventory inventory, Component title) {
+	public AllayCourierScreen(AllayCourierMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
 	}
 
@@ -137,6 +137,6 @@ public class MiniAllayScreen extends AbstractSimiContainerScreen<MiniAllayMenu> 
 		}
 		addressSubmitted = true;
 		String address = addressBox == null ? menu.initialAddress : addressBox.getValue();
-		CBPackets.sendToServer(new MiniAllayConfirmPacket(menu.hand, address));
+		CBPackets.sendToServer(new AllayCourierConfirmPacket(menu.hand, address));
 	}
 }

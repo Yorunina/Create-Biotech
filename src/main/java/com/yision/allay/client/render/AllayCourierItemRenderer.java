@@ -8,7 +8,7 @@ import com.simibubi.create.foundation.item.render.CustomRenderedItemModel;
 import com.simibubi.create.foundation.item.render.CustomRenderedItemModelRenderer;
 import com.simibubi.create.foundation.item.render.PartialItemModelRenderer;
 import com.yision.allay.entity.courier.AllayCourierEntity;
-import com.yision.allay.item.miniallay.MiniAllayItem;
+import com.yision.allay.item.allaycourier.AllayCourierItem;
 import com.nobodiiiii.createbiotech.foundation.render.EntityRenderHelper;
 
 import net.createmod.catnip.animation.AnimationTickHolder;
@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
-public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
+public class AllayCourierItemRenderer extends CustomRenderedItemModelRenderer {
 	private static final Vector3f GUI_TOP_LIGHT_0 = new Vector3f(0.15f, 1.0f, -0.35f).normalize();
 	private static final Vector3f GUI_TOP_LIGHT_1 = new Vector3f(-0.2f, 0.8f, 0.35f).normalize();
 
@@ -36,11 +36,11 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 	private ClientLevel cachedLevel;
 	private final boolean renderLogisticsHat;
 
-	public MiniAllayItemRenderer() {
+	public AllayCourierItemRenderer() {
 		this(true);
 	}
 
-	public MiniAllayItemRenderer(boolean renderLogisticsHat) {
+	public AllayCourierItemRenderer(boolean renderLogisticsHat) {
 		this.renderLogisticsHat = renderLogisticsHat;
 	}
 
@@ -82,7 +82,7 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 	}
 
 	private void configureCourier(AllayCourierEntity courier, ItemStack stack, ItemDisplayContext transformType) {
-		courier.setPackage(MiniAllayItem.copyCargoPackage(stack));
+		courier.setPackage(AllayCourierItem.copyCargoPackage(stack));
 		courier.setPhase(AllayCourierEntity.Phase.WAITING);
 		courier.setRenderLogisticsHat(renderLogisticsHat);
 		courier.setNoGravity(true);
@@ -111,10 +111,10 @@ public class MiniAllayItemRenderer extends CustomRenderedItemModelRenderer {
 		if (transformType != ItemDisplayContext.FIXED && transformType != ItemDisplayContext.GROUND) {
 			return;
 		}
-		if (!MiniAllayItem.hasHeadingAngle(stack)) {
+		if (!AllayCourierItem.hasHeadingAngle(stack)) {
 			return;
 		}
-		ms.mulPose(Axis.YP.rotationDegrees(MiniAllayItem.getHeadingAngle(stack)));
+		ms.mulPose(Axis.YP.rotationDegrees(AllayCourierItem.getHeadingAngle(stack)));
 	}
 
 	private static void setupGuiTopLighting() {

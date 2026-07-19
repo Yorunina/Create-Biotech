@@ -66,11 +66,11 @@ public final class AllayCourierHelper {
 
 	public static boolean canReceiveCarrier(ServerPlayer player) {
 		return ItemHandlerHelper.insertItemStacked(new PlayerMainInvWrapper(player.getInventory()),
-			AllItems.MINI_ALLAY.asStack(), true).isEmpty();
+			AllItems.ALLAY_COURIER.asStack(), true).isEmpty();
 	}
 
 	public static boolean deliverCarrier(ServerPlayer player) {
-		ItemHandlerHelper.giveItemToPlayer(player, AllItems.MINI_ALLAY.asStack());
+		ItemHandlerHelper.giveItemToPlayer(player, AllItems.ALLAY_COURIER.asStack());
 		return true;
 	}
 
@@ -78,7 +78,7 @@ public final class AllayCourierHelper {
 		if (PackageItem.isPackage(box)) {
 			level.addFreshEntity(PackageEntity.fromItemStack(level, position, box.copy()));
 		}
-		level.addFreshEntity(new ItemEntity(level, position.x, position.y, position.z, AllItems.MINI_ALLAY.asStack()));
+		level.addFreshEntity(new ItemEntity(level, position.x, position.y, position.z, AllItems.ALLAY_COURIER.asStack()));
 	}
 
 	public static void dropPackageOnly(ServerLevel level, Vec3 position, ItemStack box) {

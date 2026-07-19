@@ -54,8 +54,8 @@ import com.yision.allay.client.gui.hud.AllayCourierHudOverlay;
 import com.yision.allay.client.render.AllayCourierEntityRenderer;
 import com.yision.allay.client.render.AllayPortRenderer;
 import com.yision.allay.client.render.AllayPortVisual;
-import com.yision.allay.item.miniallay.MiniAllayMenu;
-import com.yision.allay.item.miniallay.MiniAllayScreen;
+import com.yision.allay.item.allaycourier.AllayCourierMenu;
+import com.yision.allay.item.allaycourier.AllayCourierScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
 import com.nobodiiiii.createbiotech.client.particle.CourierNoteParticle;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
@@ -190,7 +190,7 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("item/large_cardboard_box"));
 		event.register(CreateBiotech.asResource("item/large_cardboard_box_captured"));
 		event.register(CardboardBoxPartials.LARGE_BOX_LOGISTICS_LOCATION);
-		event.register(CreateBiotech.asResource("item/mini_allay_package"));
+		event.register(CreateBiotech.asResource("item/allay_courier_package"));
 	}
 
 	@SubscribeEvent
@@ -286,11 +286,11 @@ public class CreateBiotechClient {
 					return new AllayPortScreen((AllayPortMenu) menu, inventory, title);
 				}
 			});
-			MenuScreens.register(CBMenuTypes.MINI_ALLAY.get(), new MenuScreens.ScreenConstructor() {
+			MenuScreens.register(CBMenuTypes.ALLAY_COURIER.get(), new MenuScreens.ScreenConstructor() {
 				@Override
 				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
 					net.minecraft.network.chat.Component title) {
-					return new MiniAllayScreen((MiniAllayMenu) menu, inventory, title);
+					return new AllayCourierScreen((AllayCourierMenu) menu, inventory, title);
 				}
 			});
 			MenuScreens.register(CBMenuTypes.SHULKER_TELEPORTER.get(), new MenuScreens.ScreenConstructor() {
@@ -381,7 +381,7 @@ public class CreateBiotechClient {
 		registerCreateStyleTooltip(CBItems.SHULKER_PACKAGER.get());
 		registerCreateStyleTooltip(CBItems.SHULKER_TELEPORTER.get());
 		registerCreateStyleTooltip(CBItems.ALLAY_PORT.get());
-		registerCreateStyleTooltip(CBItems.MINI_ALLAY.get());
+		registerCreateStyleTooltip(CBItems.ALLAY_COURIER.get());
 		CBItems.BUFFER_PADS.values()
 			.forEach(entry -> registerCreateStyleTooltip(entry.get()));
 	}
