@@ -444,6 +444,9 @@
   "gui.create_biotech.allay_port.arrival_eta": "Estimated arrival: %s",
   "gui.create_biotech.allay_port.return_mode": "Allay Courier Return Behavior",
   "gui.create_biotech.allay_port.return_mode.always_dock": "Dock at Destination",
+  "gui.create_biotech.allay_port.return_mode.always_dock.short": "Dock",
   "gui.create_biotech.allay_port.return_mode.always_return": "Return to Sender",
-  "gui.create_biotech.allay_port.return_mode.return_when_unable": "Return When Destination Is Full"
+  "gui.create_biotech.allay_port.return_mode.always_return.short": "Return",
+  "gui.create_biotech.allay_port.return_mode.return_when_unable": "Return When Destination Is Full",
+  "gui.create_biotech.allay_port.return_mode.return_when_unable.short": "If Full"
 }

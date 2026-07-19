@@ -12,6 +12,9 @@ import com.simibubi.create.foundation.gui.AllGuiTextures;
 import com.simibubi.create.foundation.gui.AllIcons;
 import com.simibubi.create.foundation.gui.menu.AbstractSimiContainerScreen;
 import com.simibubi.create.foundation.gui.widget.IconButton;
+import com.simibubi.create.foundation.gui.widget.Label;
+import com.simibubi.create.foundation.gui.widget.ScrollInput;
+import com.simibubi.create.foundation.gui.widget.SelectionScrollInput;
 import com.simibubi.create.foundation.utility.CreateLang;
 import com.yision.allay.CreateAllay;
 import com.yision.allay.logistics.courier.AllayCourierReturnMode;
@@ -55,7 +58,8 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 	private IconButton confirmButton;
 	private IconButton dontAcceptPackages;
 	private IconButton acceptPackages;
-	private IconButton[] returnModeButtons;
+	private ScrollInput returnModeScroll;
+	private Label returnModeLabel;
 	private AllayCourierReturnMode selectedReturnMode;
 	private ItemStack icon;
 	private List<Rect2i> extraAreas = Collections.emptyList();
@@ -63,6 +67,10 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		Component.translatable("gui.create_biotech.allay_port.return_mode.always_dock"),
 		Component.translatable("gui.create_biotech.allay_port.return_mode.always_return"),
 		Component.translatable("gui.create_biotech.allay_port.return_mode.return_when_unable"));
+	private final List<Component> returnModeShortOptions = List.of(
+		Component.translatable("gui.create_biotech.allay_port.return_mode.always_dock.short"),
+		Component.translatable("gui.create_biotech.allay_port.return_mode.always_return.short"),
+		Component.translatable("gui.create_biotech.allay_port.return_mode.return_when_unable.short"));
 
 	public AllayPortScreen(AllayPortMenu menu, Inventory inventory, Component title) {
 		super(menu, inventory, title);
@@ -99,7 +107,7 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		confirmButton.withCallback(() -> minecraft.player.closeContainer());
 		addRenderableWidget(confirmButton);
 
-		acceptPackages = new IconButton(x + 37, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_AND_RECEIVE);
+		acceptPackages = new IconButton(x + 102, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_AND_RECEIVE);
 		acceptPackages.withCallback(() -> {
 			acceptPackages.green = true;
 			dontAcceptPackages.green = false;
@@ -108,7 +116,7 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		acceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_and_receive"));
 		addRenderableWidget(acceptPackages);
 
-		dontAcceptPackages = new IconButton(x + 37 + 18, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_ONLY);
+		dontAcceptPackages = new IconButton(x + 102 + 18, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_ONLY);
 		dontAcceptPackages.withCallback(() -> {
 			acceptPackages.green = false;
 			dontAcceptPackages.green = true;
@@ -117,17 +125,21 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		dontAcceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_only"));
 		addRenderableWidget(dontAcceptPackages);
 
-		int returnModeX = x + 102;
-		int returnModeY = y + WINDOW_HEIGHT - 24;
-		returnModeButtons = new IconButton[] {
-			createReturnModeButton(returnModeX, returnModeY, AllayCourierReturnMode.ALWAYS_DOCK, AllIcons.I_STOP),
-			createReturnModeButton(returnModeX + 18, returnModeY, AllayCourierReturnMode.ALWAYS_RETURN,
-				AllIcons.I_REFRESH),
-			createReturnModeButton(returnModeX + 36, returnModeY, AllayCourierReturnMode.RETURN_WHEN_UNABLE,
-				AllIcons.I_ROTATE_PLACE_RETURNED)
-		};
-		addRenderableWidgets(returnModeButtons);
-		selectReturnMode(port().getReturnMode());
+		int returnModeX =
+			x + ALLAY_SLOT_SCREEN_X + AllGuiTextures.FROGPORT_SLOT.getWidth() + 4;
+		int returnModeY = y + ALLAY_SLOT_SCREEN_Y + 1;
+		returnModeLabel = new Label(returnModeX + 4, returnModeY + 6, Component.empty()).withShadow();
+		selectedReturnMode = port().getReturnMode();
+		returnModeScroll = new SelectionScrollInput(returnModeX, returnModeY, 53, 16)
+			.forOptions(returnModeOptions)
+			.titled(Component.translatable("gui.create_biotech.allay_port.return_mode"))
+			.format(returnModeShortOptions::get)
+			.calling(state -> selectedReturnMode = AllayCourierReturnMode.byId(state))
+			.writingTo(returnModeLabel)
+			.setState(selectedReturnMode.id());
+		returnModeScroll.onChanged();
+		addRenderableWidget(returnModeScroll);
+		addRenderableWidget(returnModeLabel);
 
 		containerTick();
 
@@ -136,22 +148,6 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 
 	private int nameBoxX(String s, EditBox nameBox) {
 		return getGuiLeft() + WINDOW_WIDTH / 2 - (Math.min(font.width(s), nameBox.getWidth()) + 10) / 2;
-	}
-
-	private IconButton createReturnModeButton(int x, int y, AllayCourierReturnMode mode, AllIcons icon) {
-		IconButton button = new IconButton(x, y, icon);
-		button.withCallback(() -> selectReturnMode(mode));
-		button.setToolTip(Component.translatable("gui.create_biotech.allay_port.return_mode")
-			.append(": ")
-			.append(returnModeOptions.get(mode.id())));
-		return button;
-	}
-
-	private void selectReturnMode(AllayCourierReturnMode mode) {
-		selectedReturnMode = mode;
-		for (AllayCourierReturnMode option : AllayCourierReturnMode.values()) {
-			returnModeButtons[option.id()].green = option == mode;
-		}
 	}
 
 	@Override
@@ -168,6 +164,7 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 
 		blitAllayPortGui(graphics, x + BACKGROUND_SCREEN_X, y + BACKGROUND_SCREEN_Y, BACKGROUND_X, BACKGROUND_Y,
 			BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
+		AllGuiTextures.FROGPORT_SLOT.render(graphics, x + ALLAY_SLOT_SCREEN_X, y + ALLAY_SLOT_SCREEN_Y);
 
 		String text = addressBox.getValue();
 		if (!addressBox.isFocused()) {

@@ -444,6 +444,9 @@
   "gui.create_biotech.allay_port.arrival_eta": "预计到达时间：%s",
   "gui.create_biotech.allay_port.return_mode": "悦灵快递员返航方式",
   "gui.create_biotech.allay_port.return_mode.always_dock": "停靠在目的地",
+  "gui.create_biotech.allay_port.return_mode.always_dock.short": "停靠",
   "gui.create_biotech.allay_port.return_mode.always_return": "返回出发地",
-  "gui.create_biotech.allay_port.return_mode.return_when_unable": "目的地已满时返航"
+  "gui.create_biotech.allay_port.return_mode.always_return.short": "返航",
+  "gui.create_biotech.allay_port.return_mode.return_when_unable": "目的地已满时返航",
+  "gui.create_biotech.allay_port.return_mode.return_when_unable.short": "满时返航"
 }
