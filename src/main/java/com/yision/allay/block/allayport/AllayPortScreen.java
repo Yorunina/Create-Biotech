@@ -36,20 +36,25 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 	private static final int TEXTURE_SIZE = 256;
 	private static final int WINDOW_WIDTH = 220;
 	private static final int WINDOW_HEIGHT = 82;
-	private static final int BACKGROUND_X = 2;
-	private static final int BACKGROUND_Y = 13;
-	private static final int BACKGROUND_WIDTH = 218;
-	private static final int BACKGROUND_HEIGHT = 116;
-	private static final int PACKAGE_SLOTS_X = 25;
+	private static final int UI_X_OFFSET = 8;
+	private static final int BACKGROUND_X = 10;
+	private static final int BACKGROUND_Y = 32;
+	private static final int BACKGROUND_WIDTH = 242;
+	private static final int BACKGROUND_HEIGHT = 97;
+	private static final int PACKAGE_SLOTS_X = 49;
 	private static final int PACKAGE_SLOTS_Y = 54;
-	private static final int PACKAGE_SLOTS_SCREEN_X = 25;
+	private static final int PACKAGE_SLOTS_SCREEN_X = 25 + UI_X_OFFSET;
 	private static final int PACKAGE_SLOTS_SCREEN_Y = 7;
 	private static final int BACKGROUND_SCREEN_X = PACKAGE_SLOTS_SCREEN_X - (PACKAGE_SLOTS_X - BACKGROUND_X);
 	private static final int BACKGROUND_SCREEN_Y = PACKAGE_SLOTS_SCREEN_Y - (PACKAGE_SLOTS_Y - BACKGROUND_Y);
-	private static final int ALLAY_SLOT_X = 9;
+	private static final int ALLAY_SLOT_X = 37;
 	private static final int ALLAY_SLOT_Y = 105;
 	private static final int ALLAY_SLOT_SCREEN_X = BACKGROUND_SCREEN_X + ALLAY_SLOT_X - BACKGROUND_X;
 	private static final int ALLAY_SLOT_SCREEN_Y = BACKGROUND_SCREEN_Y + ALLAY_SLOT_Y - BACKGROUND_Y;
+	private static final int RETURN_MODE_X = 63;
+	private static final int RETURN_MODE_Y = 104;
+	private static final int RETURN_MODE_SCREEN_X = BACKGROUND_SCREEN_X + RETURN_MODE_X - BACKGROUND_X;
+	private static final int RETURN_MODE_SCREEN_Y = BACKGROUND_SCREEN_Y + RETURN_MODE_Y - BACKGROUND_Y;
 	private static final int EDIT_NAME_X = 230;
 	private static final int EDIT_NAME_Y = 3;
 	private static final int EDIT_NAME_SIZE = 13;
@@ -90,7 +95,7 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 
 		Consumer<String> onTextChanged;
 		onTextChanged = s -> addressBox.setX(nameBoxX(s, addressBox));
-		addressBox = new EditBox(new NoShadowFontWrapper(font), x + 23, y - 11, WINDOW_WIDTH - 20, 10,
+		addressBox = new EditBox(new NoShadowFontWrapper(font), x + UI_X_OFFSET + 23, y - 11, WINDOW_WIDTH - 20, 10,
 			Component.empty());
 		addressBox.setBordered(false);
 		addressBox.setMaxLength(25);
@@ -103,11 +108,12 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		addRenderableWidget(addressBox);
 
 		confirmButton =
-			new IconButton(x + WINDOW_WIDTH - 33, y + WINDOW_HEIGHT - 24, AllIcons.I_CONFIRM);
+			new IconButton(x + UI_X_OFFSET + WINDOW_WIDTH - 33, y + WINDOW_HEIGHT - 24, AllIcons.I_CONFIRM);
 		confirmButton.withCallback(() -> minecraft.player.closeContainer());
 		addRenderableWidget(confirmButton);
 
-		acceptPackages = new IconButton(x + 102, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_AND_RECEIVE);
+		acceptPackages =
+			new IconButton(x + UI_X_OFFSET + 102, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_AND_RECEIVE);
 		acceptPackages.withCallback(() -> {
 			acceptPackages.green = true;
 			dontAcceptPackages.green = false;
@@ -116,7 +122,8 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		acceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_and_receive"));
 		addRenderableWidget(acceptPackages);
 
-		dontAcceptPackages = new IconButton(x + 102 + 18, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_ONLY);
+		dontAcceptPackages =
+			new IconButton(x + UI_X_OFFSET + 102 + 18, y + WINDOW_HEIGHT - 24, AllIcons.I_SEND_ONLY);
 		dontAcceptPackages.withCallback(() -> {
 			acceptPackages.green = false;
 			dontAcceptPackages.green = true;
@@ -125,9 +132,8 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 		dontAcceptPackages.setToolTip(CreateLang.translateDirect("gui.package_port.send_only"));
 		addRenderableWidget(dontAcceptPackages);
 
-		int returnModeX =
-			x + ALLAY_SLOT_SCREEN_X + AllGuiTextures.FROGPORT_SLOT.getWidth() + 4;
-		int returnModeY = y + ALLAY_SLOT_SCREEN_Y + 1;
+		int returnModeX = x + RETURN_MODE_SCREEN_X;
+		int returnModeY = y + RETURN_MODE_SCREEN_Y;
 		returnModeLabel = new Label(returnModeX + 4, returnModeY + 6, Component.empty()).withShadow();
 		selectedReturnMode = port().getReturnMode();
 		returnModeScroll = new SelectionScrollInput(returnModeX, returnModeY, 53, 16)
@@ -143,11 +149,13 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 
 		containerTick();
 
-		extraAreas = ImmutableList.of(new Rect2i(x + WINDOW_WIDTH, y + WINDOW_HEIGHT - 50, 70, 60));
+		extraAreas =
+			ImmutableList.of(new Rect2i(x + UI_X_OFFSET + WINDOW_WIDTH, y + WINDOW_HEIGHT - 50, 70, 60));
 	}
 
 	private int nameBoxX(String s, EditBox nameBox) {
-		return getGuiLeft() + WINDOW_WIDTH / 2 - (Math.min(font.width(s), nameBox.getWidth()) + 10) / 2;
+		return getGuiLeft() + UI_X_OFFSET + WINDOW_WIDTH / 2
+			- (Math.min(font.width(s), nameBox.getWidth()) + 10) / 2;
 	}
 
 	@Override
@@ -178,12 +186,12 @@ public class AllayPortScreen extends AbstractSimiContainerScreen<AllayPortMenu> 
 				EDIT_NAME_Y, EDIT_NAME_SIZE, EDIT_NAME_SIZE);
 		}
 
-		GuiGameElement.of(icon).<GuiGameElement.GuiRenderBuilder>at(x + WINDOW_WIDTH + 6,
+		GuiGameElement.of(icon).<GuiGameElement.GuiRenderBuilder>at(x + UI_X_OFFSET + WINDOW_WIDTH + 6,
 			y + WINDOW_HEIGHT - 56, -200)
 			.scale(4)
 			.render(graphics);
 
-		int invX = leftPos + 30;
+		int invX = leftPos + UI_X_OFFSET + 30;
 		int invY = topPos + 8 + imageHeight - AllGuiTextures.PLAYER_INVENTORY.getHeight();
 		renderPlayerInventory(graphics, invX, invY);
 

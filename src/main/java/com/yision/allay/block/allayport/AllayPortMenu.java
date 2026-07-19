@@ -1,6 +1,7 @@
 package com.yision.allay.block.allayport;
 
 import com.simibubi.create.content.logistics.packagePort.PackagePortMenu;
+import com.simibubi.create.foundation.item.SmartInventory;
 import com.yision.allay.registry.AllMenuTypes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -16,6 +17,8 @@ import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 public class AllayPortMenu extends PackagePortMenu {
+	private static final int UI_X_OFFSET = 8;
+
 	public AllayPortMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
 		this(AllMenuTypes.ALLAY_PORT.get(), id, inv, extraData);
 	}
@@ -45,9 +48,21 @@ public class AllayPortMenu extends PackagePortMenu {
 
 	@Override
 	protected void addSlots() {
-		super.addSlots();
+		SmartInventory inventory = contentHolder.inventory;
+		int packageSlotsX = 35;
+		int packageSlotsY = 9;
+
+		for (int row = 0; row < 2; row++) {
+			for (int col = 0; col < 9; col++) {
+				addSlot(new SlotItemHandler(inventory, row * 9 + col, packageSlotsX + col * 18,
+					packageSlotsY + row * 18));
+			}
+		}
+
+		addPlayerSlots(38 + UI_X_OFFSET, 108);
+
 		if (contentHolder instanceof AllayPortBlockEntity allayPortBlockEntity) {
-			addSlot(new SlotItemHandler(allayPortBlockEntity.getCarrierInventory(), 0, 12, 60) {
+			addSlot(new SlotItemHandler(allayPortBlockEntity.getCarrierInventory(), 0, 22, 59) {
 				@Override
 				public boolean mayPlace(ItemStack stack) {
 					return AllayPortInventory.isEmptyCarrier(stack);
