@@ -12,34 +12,42 @@ import java.util.List;
 public class AllayCourierHudPacket {
 	public static final int MAX_VISIBLE_ENTRIES = 3;
 
-	private final List<Integer> etaSeconds;
+	private final List<AllayCourierHudEntry> entries;
 
-	public AllayCourierHudPacket(List<Integer> etaSeconds) {
-		this.etaSeconds = etaSeconds == null ? List.of() : etaSeconds.stream()
+	public AllayCourierHudPacket(List<AllayCourierHudEntry> entries) {
+		this.entries = entries == null ? List.of() : entries.stream()
 			.limit(MAX_VISIBLE_ENTRIES)
-			.map(seconds -> Math.max(0, seconds))
 			.toList();
 	}
 
 	public AllayCourierHudPacket(FriendlyByteBuf buffer) {
 		int count = buffer.readVarInt();
-		List<Integer> decoded = new ArrayList<>(Math.max(0, Math.min(count, MAX_VISIBLE_ENTRIES)));
+		List<AllayCourierHudEntry> decoded =
+			new ArrayList<>(Math.max(0, Math.min(count, MAX_VISIBLE_ENTRIES)));
 		for (int i = 0; i < count; i++) {
+			java.util.UUID id = buffer.readUUID();
+			boolean incoming = buffer.readBoolean();
+			String address = buffer.readUtf(AllayCourierHudEntry.MAX_ADDRESS_LENGTH);
 			int seconds = buffer.readVarInt();
 			if (i < MAX_VISIBLE_ENTRIES) {
-				decoded.add(Math.max(0, seconds));
+				decoded.add(new AllayCourierHudEntry(id, incoming, address, seconds));
 			}
 		}
-		etaSeconds = List.copyOf(decoded);
+		entries = List.copyOf(decoded);
 	}
 
 	public void write(FriendlyByteBuf buffer) {
-		buffer.writeVarInt(etaSeconds.size());
-		etaSeconds.forEach(buffer::writeVarInt);
+		buffer.writeVarInt(entries.size());
+		for (AllayCourierHudEntry entry : entries) {
+			buffer.writeUUID(entry.id());
+			buffer.writeBoolean(entry.incoming());
+			buffer.writeUtf(entry.address(), AllayCourierHudEntry.MAX_ADDRESS_LENGTH);
+			buffer.writeVarInt(entry.etaSeconds());
+		}
 	}
 
 	public void handle(Context context) {
 		context.enqueueWork(() -> DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-			() -> () -> AllayCourierHudOverlay.update(etaSeconds)));
+			() -> () -> AllayCourierHudOverlay.update(entries)));
 	}
 }

@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.UUID;
 
 public final class AllayCourierHudSync {
 	private static final int SYNC_INTERVAL_TICKS = 10;
-	private static final Map<UUID, List<Integer>> LAST_SENT_BY_PLAYER = new HashMap<>();
+	private static final Map<UUID, List<AllayCourierHudEntry>> LAST_SENT_BY_PLAYER = new HashMap<>();
 
 	private AllayCourierHudSync() {}
 
@@ -28,7 +29,7 @@ public final class AllayCourierHudSync {
 			return;
 		}
 
-		Map<UUID, List<Integer>> etaByPlayer = new HashMap<>();
+		Map<UUID, List<AllayCourierHudEntry>> entriesByPlayer = new HashMap<>();
 		for (AllayCourierTask task : tasks) {
 			if (task.isRemoved()) {
 				continue;
@@ -42,24 +43,27 @@ public final class AllayCourierHudSync {
 				continue;
 			}
 			int etaSeconds = Math.max(0, (remainingTicks + 19) / 20);
-			etaByPlayer.computeIfAbsent(playerId, ignored -> new ArrayList<>()).add(etaSeconds);
+			AllayCourierHudEntry entry =
+				new AllayCourierHudEntry(task.id(), task.hudIncoming(), task.hudCounterpartyAddress(), etaSeconds);
+			entriesByPlayer.computeIfAbsent(playerId, ignored -> new ArrayList<>()).add(entry);
 		}
 
 		Set<UUID> onlinePlayers = new HashSet<>();
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			UUID playerId = player.getUUID();
 			onlinePlayers.add(playerId);
-			List<Integer> etaSeconds = new ArrayList<>(etaByPlayer.getOrDefault(playerId, List.of()));
-			etaSeconds.sort(Integer::compareTo);
-			if (etaSeconds.size() > AllayCourierHudPacket.MAX_VISIBLE_ENTRIES) {
-				etaSeconds = List.copyOf(etaSeconds.subList(0, AllayCourierHudPacket.MAX_VISIBLE_ENTRIES));
+			List<AllayCourierHudEntry> entries =
+				new ArrayList<>(entriesByPlayer.getOrDefault(playerId, List.of()));
+			entries.sort(Comparator.comparingInt(AllayCourierHudEntry::etaSeconds));
+			if (entries.size() > AllayCourierHudPacket.MAX_VISIBLE_ENTRIES) {
+				entries = List.copyOf(entries.subList(0, AllayCourierHudPacket.MAX_VISIBLE_ENTRIES));
 			} else {
-				etaSeconds = List.copyOf(etaSeconds);
+				entries = List.copyOf(entries);
 			}
 
-			if (!etaSeconds.equals(LAST_SENT_BY_PLAYER.get(playerId))) {
-				CBPackets.sendToPlayer(new AllayCourierHudPacket(etaSeconds), player);
-				LAST_SENT_BY_PLAYER.put(playerId, etaSeconds);
+			if (!entries.equals(LAST_SENT_BY_PLAYER.get(playerId))) {
+				CBPackets.sendToPlayer(new AllayCourierHudPacket(entries), player);
+				LAST_SENT_BY_PLAYER.put(playerId, entries);
 			}
 		}
 

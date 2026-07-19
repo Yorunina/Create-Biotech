@@ -29,7 +29,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 
 public class CBPackets {
 
-	private static final String NETWORK_VERSION = "10";
+	private static final String NETWORK_VERSION = "11";
 	private static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder.named(CreateBiotech.asResource("main"))
 		.serverAcceptedVersions(NETWORK_VERSION::equals)
 		.clientAcceptedVersions(NETWORK_VERSION::equals)

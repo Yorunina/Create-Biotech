@@ -1,5 +1,6 @@
 package com.yision.allay.logistics.courier;
 
+import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.block.allayport.AllayPortBlock;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
 import com.yision.allay.entity.courier.AllayCourierEntity;
@@ -69,6 +70,7 @@ public final class AllayCourierTask {
 	private @Nullable UUID targetPlayerId;
 	private @Nullable UUID sourcePlayerId;
 	private @Nullable ResourceKey<Level> sourceDimension;
+	private final String sourceAddress;
 	private AllayCourierReturnMode returnMode;
 	private AllayCourierEntity.Mission mission;
 	private AllayCourierEntity.Phase phase;
@@ -90,6 +92,7 @@ public final class AllayCourierTask {
 		@Nullable BlockPos sourceAllayPortPos, @Nullable BlockPos targetAllayPortPos,
 		@Nullable UUID targetPlayerId,
 		@Nullable UUID sourcePlayerId, @Nullable ResourceKey<Level> sourceDimension,
+		@Nullable String sourceAddress,
 		AllayCourierReturnMode returnMode,
 		AllayCourierEntity.Mission mission, Vec3 position, Vec3 launchDirection
 	) {
@@ -102,6 +105,7 @@ public final class AllayCourierTask {
 		this.targetPlayerId = targetPlayerId;
 		this.sourcePlayerId = sourcePlayerId;
 		this.sourceDimension = sourceDimension;
+		this.sourceAddress = sourceAddress == null ? "" : sourceAddress.trim();
 		this.returnMode = returnMode == null ? defaultReturnMode(sourceAllayPortPos, sourcePlayerId) : returnMode;
 		this.mission = mission;
 		this.phase = AllayCourierEntity.Phase.TAKEOFF;
@@ -119,7 +123,8 @@ public final class AllayCourierTask {
 	) {
 		return new AllayCourierTask(id, box, spawnLevel.dimension(), targetDimension,
 			sourceAllayPortPos, targetAllayPortPos, null,
-			sourcePlayerId, sourceDimension, returnMode, AllayCourierEntity.Mission.PACKAGE_TO_ALLAY_PORT,
+			sourcePlayerId, sourceDimension, sourceAddress(spawnLevel, sourceDimension, sourceAllayPortPos),
+			returnMode, AllayCourierEntity.Mission.PACKAGE_TO_ALLAY_PORT,
 			spawnPos, launchDirection);
 	}
 
@@ -133,7 +138,8 @@ public final class AllayCourierTask {
 	) {
 		return new AllayCourierTask(id, box, spawnLevel.dimension(), targetDimension,
 			sourceAllayPortPos, null, targetPlayerId,
-			sourcePlayerId, sourceDimension, returnMode, AllayCourierEntity.Mission.PACKAGE_TO_PLAYER,
+			sourcePlayerId, sourceDimension, sourceAddress(spawnLevel, sourceDimension, sourceAllayPortPos),
+			returnMode, AllayCourierEntity.Mission.PACKAGE_TO_PLAYER,
 			spawnPos, launchDirection);
 	}
 
@@ -144,7 +150,7 @@ public final class AllayCourierTask {
 	) {
 		return new AllayCourierTask(id, ItemStack.EMPTY, spawnLevel.dimension(), targetDimension,
 			null, targetAllayPortPos, null,
-			null, null, AllayCourierReturnMode.DEFAULT_FOR_PORT, AllayCourierEntity.Mission.CARRIER_RETURN,
+			null, null, "", AllayCourierReturnMode.DEFAULT_FOR_PORT, AllayCourierEntity.Mission.CARRIER_RETURN,
 			spawnPos, launchDirection);
 	}
 
@@ -155,7 +161,7 @@ public final class AllayCourierTask {
 	) {
 		return new AllayCourierTask(id, ItemStack.EMPTY, spawnLevel.dimension(), targetDimension,
 			null, null, targetPlayerId,
-			null, null, AllayCourierReturnMode.DEFAULT_FOR_PORT,
+			null, null, "", AllayCourierReturnMode.DEFAULT_FOR_PORT,
 			AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER, spawnPos, launchDirection);
 	}
 
@@ -911,6 +917,18 @@ public final class AllayCourierTask {
 			: AllayCourierReturnMode.DEFAULT_FOR_PORT;
 	}
 
+	private static String sourceAddress(ServerLevel spawnLevel,
+		@Nullable ResourceKey<Level> sourceDimension, @Nullable BlockPos sourceAllayPortPos) {
+		if (sourceDimension == null || sourceAllayPortPos == null
+			|| !sourceDimension.equals(spawnLevel.dimension())) {
+			return "";
+		}
+		if (spawnLevel.getBlockEntity(sourceAllayPortPos) instanceof AllayPortBlockEntity sourcePort) {
+			return sourcePort.addressFilter == null ? "" : sourcePort.addressFilter.trim();
+		}
+		return "";
+	}
+
 	/**
 	 * The two halves of the station animation are deliberately mirrored around the front-facing
 	 * axis. Cruise flight may reach the high approach point from any safe direction, but every
@@ -952,13 +970,21 @@ public final class AllayCourierTask {
 	public void markRemoved() { removed = true; }
 
 	public @Nullable UUID hudTrackingPlayerId() {
-		if (mission == AllayCourierEntity.Mission.CARRIER_RETURN) {
+		if (!PackageItem.isPackage(box)) {
 			return null;
 		}
-		if (mission == AllayCourierEntity.Mission.CARRIER_RETURN_TO_PLAYER) {
-			return targetPlayerId;
-		}
 		return sourcePlayerId != null ? sourcePlayerId : targetPlayerId;
+	}
+
+	public boolean hudIncoming() {
+		return sourcePlayerId == null && targetPlayerId != null;
+	}
+
+	public String hudCounterpartyAddress() {
+		if (hudIncoming()) {
+			return sourceAddress;
+		}
+		return PackageItem.isPackage(box) ? PackageItem.getAddress(box).trim() : "";
 	}
 
 	public CompoundTag save(CompoundTag tag) {
@@ -971,6 +997,7 @@ public final class AllayCourierTask {
 		if (targetAllayPortPos != null) tag.put("TargetAllayPortPos", NbtUtils.writeBlockPos(targetAllayPortPos));
 		if (targetPlayerId != null) tag.putUUID("TargetPlayer", targetPlayerId);
 		if (sourcePlayerId != null) tag.putUUID("SourcePlayer", sourcePlayerId);
+		tag.putString("SourceAddress", sourceAddress);
 		tag.putString("ReturnMode", returnMode.serializedName());
 		tag.putByte("Mission", (byte) mission.ordinal());
 		tag.putByte("Phase", (byte) phase.ordinal());
@@ -1007,7 +1034,7 @@ public final class AllayCourierTask {
 
 		AllayCourierTask task = new AllayCourierTask(id, box, currentDimension, targetDimension,
 			sourceAllayPort, targetAllayPort, targetPlayer,
-			sourcePlayer, sourceDimension, returnMode, mission,
+			sourcePlayer, sourceDimension, tag.getString("SourceAddress"), returnMode, mission,
 			vecFromTag(tag, "Position"), vecFromTag(tag, "LaunchDirection"));
 		task.phase = phase;
 		task.phaseTicks = tag.getInt("PhaseTicks");
