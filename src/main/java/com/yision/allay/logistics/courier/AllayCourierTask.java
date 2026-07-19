@@ -4,6 +4,7 @@ import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.block.allayport.AllayPortBlock;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
 import com.yision.allay.entity.courier.AllayCourierEntity;
+import com.yision.allay.logistics.courier.hud.AllayCourierHudSync;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -181,6 +182,7 @@ public final class AllayCourierTask {
 
 		ServerLevel currentLevel = server.getLevel(currentDimension);
 		if (currentLevel == null) {
+			AllayCourierHudSync.onFailed(server, this);
 			markRemoved();
 			return;
 		}
@@ -557,6 +559,7 @@ public final class AllayCourierTask {
 
 	private void doFinishDeliveryAt(MinecraftServer server, @Nullable ServerLevel level) {
 		if (level == null) {
+			AllayCourierHudSync.onFailed(server, this);
 			markRemoved();
 			return;
 		}
@@ -572,15 +575,25 @@ public final class AllayCourierTask {
 
 		if (result.handled()) {
 			AllayCourierDeliveryService.spawnDeliveryParticles(level, position);
+			if (PackageItem.isPackage(box)) {
+				if (result.packageDelivered()) {
+					AllayCourierHudSync.onDelivered(server, this);
+				} else {
+					AllayCourierHudSync.onFailed(server, this);
+				}
+			}
 			if (result.returnCarrier()) {
 				startCarrierReturn(server);
 				return;
 			}
+		} else {
+			AllayCourierHudSync.onFailed(server, this);
 		}
 		markRemoved();
 	}
 
 	private void doFail(MinecraftServer server, @Nullable ServerLevel currentLevel) {
+		AllayCourierHudSync.onFailed(server, this);
 		if (currentLevel == null) {
 			markRemoved();
 			return;

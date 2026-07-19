@@ -7,12 +7,14 @@ public record AllayCourierHudEntry(
 	UUID id,
 	boolean incoming,
 	String address,
-	int etaSeconds
+	int etaSeconds,
+	AllayCourierHudStatus status
 ) {
 	public static final int MAX_ADDRESS_LENGTH = 64;
 
 	public AllayCourierHudEntry {
 		Objects.requireNonNull(id, "id");
+		Objects.requireNonNull(status, "status");
 		String normalizedAddress = address == null ? "" : address.trim();
 		address = normalizedAddress.length() > MAX_ADDRESS_LENGTH
 			? normalizedAddress.substring(0, MAX_ADDRESS_LENGTH)

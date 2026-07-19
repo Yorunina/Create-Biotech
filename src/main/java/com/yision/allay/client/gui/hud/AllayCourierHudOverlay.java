@@ -2,6 +2,8 @@ package com.yision.allay.client.gui.hud;
 
 import com.yision.allay.CreateAllay;
 import com.yision.allay.logistics.courier.hud.AllayCourierHudEntry;
+import com.yision.allay.logistics.courier.hud.AllayCourierHudPacket;
+import com.yision.allay.logistics.courier.hud.AllayCourierHudStatus;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -32,6 +34,8 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 	private static final int LINE_GAP = 2;
 	private static final long ANIMATION_TIME_MILLIS = 600L;
 	private static final int TEXT_COLOR = 0x3D3C48;
+	private static final int DELIVERED_TEXT_COLOR = 0x285B3A;
+	private static final int FAILED_TEXT_COLOR = 0x7A2830;
 	private static final int LABEL_LEFT_U = 27;
 	private static final int LABEL_LEFT_V = 150;
 	private static final int LABEL_LEFT_WIDTH = 46;
@@ -68,7 +72,7 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 			incomingIds.add(entry.id());
 			AnimatedEntry animatedEntry = findAnimatedEntry(entry.id());
 			if (animatedEntry == null) {
-				animatedEntries.add(new AnimatedEntry(entry, now));
+				animatedEntries.add(new AnimatedEntry(entry));
 			} else {
 				animatedEntry.update(entry, now);
 			}
@@ -98,27 +102,49 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 		}
 
 		int y = TOP_PADDING;
+		int renderedCount = 0;
 		for (AnimatedEntry animatedEntry : animatedEntries) {
+			if (renderedCount >= AllayCourierHudPacket.MAX_VISIBLE_ENTRIES) {
+				break;
+			}
+			animatedEntry.start(now);
 			AllayCourierHudEntry entry = animatedEntry.entry();
 			Component address = entry.address().isBlank()
 				? Component.translatable("block.create_biotech.allay_port")
 				: Component.literal(entry.address());
-			String translationKey = entry.incoming()
-				? "gui.create_biotech.allay_port.arrival_eta.from"
-				: "gui.create_biotech.allay_port.arrival_eta.to";
-			Component text =
-				Component.translatable(translationKey, address, formatEta(entry.etaSeconds()));
-			renderLabel(graphics, minecraft, text, width, y, animatedEntry.visibility(now));
+			Component text;
+			int textColor;
+			if (entry.status() == AllayCourierHudStatus.DELIVERED) {
+				String translationKey = entry.incoming()
+					? "gui.create_biotech.allay_port.delivered.from"
+					: "gui.create_biotech.allay_port.delivered.to";
+				text = Component.translatable(translationKey, address);
+				textColor = DELIVERED_TEXT_COLOR;
+			} else if (entry.status() == AllayCourierHudStatus.FAILED) {
+				String translationKey = entry.incoming()
+					? "gui.create_biotech.allay_port.failed.from"
+					: "gui.create_biotech.allay_port.failed.to";
+				text = Component.translatable(translationKey, address);
+				textColor = FAILED_TEXT_COLOR;
+			} else {
+				String translationKey = entry.incoming()
+					? "gui.create_biotech.allay_port.arrival_eta.from"
+					: "gui.create_biotech.allay_port.arrival_eta.to";
+				text = Component.translatable(translationKey, address, formatEta(entry.etaSeconds()));
+				textColor = TEXT_COLOR;
+			}
+			int naturalLabelWidth = labelWidth(minecraft, text);
+			int renderedLabelWidth = animatedEntry.labelWidth(naturalLabelWidth);
+			renderLabel(graphics, minecraft, text, width, y, animatedEntry.visibility(now),
+				renderedLabelWidth, textColor);
 			y += LABEL_HEIGHT + LINE_GAP;
+			renderedCount++;
 		}
 	}
 
 	private static void renderLabel(GuiGraphics graphics, Minecraft minecraft, Component text,
-		int screenWidth, int y, float visibility) {
-		int textWidth = minecraft.font.width(text);
-		int middleWidth = Math.max(0,
-			textWidth + TEXT_X + TEXT_RIGHT_PADDING - LABEL_LEFT_WIDTH - LABEL_RIGHT_WIDTH);
-		int labelWidth = LABEL_LEFT_WIDTH + middleWidth + LABEL_RIGHT_WIDTH;
+		int screenWidth, int y, float visibility, int labelWidth, int textColor) {
+		int middleWidth = labelWidth - LABEL_LEFT_WIDTH - LABEL_RIGHT_WIDTH;
 		int visibleX = screenWidth - RIGHT_PADDING - labelWidth;
 		int x = Mth.floor(Mth.lerp(visibility, (float) screenWidth, (float) visibleX));
 
@@ -139,7 +165,14 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 		graphics.blit(ALLAY_PORT_GUI, panelX, y + LABEL_PANEL_Y,
 			LABEL_RIGHT_U, LABEL_RIGHT_V, LABEL_RIGHT_WIDTH, LABEL_PANEL_HEIGHT,
 			TEXTURE_SIZE, TEXTURE_SIZE);
-		graphics.drawString(minecraft.font, text, x + TEXT_X, y + TEXT_Y, TEXT_COLOR, false);
+		graphics.drawString(minecraft.font, text, x + TEXT_X, y + TEXT_Y, textColor, false);
+	}
+
+	private static int labelWidth(Minecraft minecraft, Component text) {
+		int middleWidth = Math.max(0,
+			minecraft.font.width(text) + TEXT_X + TEXT_RIGHT_PADDING
+				- LABEL_LEFT_WIDTH - LABEL_RIGHT_WIDTH);
+		return LABEL_LEFT_WIDTH + middleWidth + LABEL_RIGHT_WIDTH;
 	}
 
 	private static AnimatedEntry findAnimatedEntry(UUID id) {
@@ -159,12 +192,12 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 
 	private static final class AnimatedEntry {
 		private AllayCourierHudEntry entry;
-		private long animationTime;
+		private long animationTime = -1;
 		private boolean hiding;
+		private int lastLabelWidth = -1;
 
-		private AnimatedEntry(AllayCourierHudEntry entry, long now) {
+		private AnimatedEntry(AllayCourierHudEntry entry) {
 			this.entry = entry;
-			animationTime = now;
 		}
 
 		private AllayCourierHudEntry entry() {
@@ -180,8 +213,28 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 			setHiding(true, now);
 		}
 
+		private void start(long now) {
+			if (animationTime < 0) {
+				animationTime = now;
+			}
+		}
+
+		private int labelWidth(int naturalLabelWidth) {
+			if (entry.status() == AllayCourierHudStatus.IN_TRANSIT || lastLabelWidth < 0) {
+				lastLabelWidth = naturalLabelWidth;
+			}
+			return lastLabelWidth;
+		}
+
 		private void setHiding(boolean shouldHide, long now) {
 			if (hiding == shouldHide) {
+				return;
+			}
+			if (animationTime < 0) {
+				hiding = shouldHide;
+				if (shouldHide) {
+					animationTime = now - ANIMATION_TIME_MILLIS - 1;
+				}
 				return;
 			}
 			animationTime = now - (long) ((1.0F - visibility(now)) * ANIMATION_TIME_MILLIS);
@@ -195,7 +248,7 @@ public final class AllayCourierHudOverlay implements IGuiOverlay {
 		}
 
 		private boolean finished(long now) {
-			return hiding && now - animationTime > ANIMATION_TIME_MILLIS;
+			return hiding && (animationTime < 0 || now - animationTime > ANIMATION_TIME_MILLIS);
 		}
 	}
 }

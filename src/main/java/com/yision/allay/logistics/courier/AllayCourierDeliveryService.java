@@ -22,17 +22,29 @@ public final class AllayCourierDeliveryService {
 
 	private AllayCourierDeliveryService() {}
 
-	public record DeliveryResult(boolean handled, boolean returnCarrier) {
+	public record DeliveryResult(boolean handled, boolean returnCarrier, boolean packageDelivered) {
 		static DeliveryResult done() {
-			return new DeliveryResult(true, false);
+			return done(true);
+		}
+
+		static DeliveryResult done(boolean packageDelivered) {
+			return new DeliveryResult(true, false, packageDelivered);
 		}
 
 		static DeliveryResult returning() {
-			return new DeliveryResult(true, true);
+			return returning(true);
+		}
+
+		static DeliveryResult returning(boolean packageDelivered) {
+			return new DeliveryResult(true, true, packageDelivered);
+		}
+
+		static DeliveryResult failed() {
+			return new DeliveryResult(true, false, false);
 		}
 
 		static DeliveryResult unhandled() {
-			return new DeliveryResult(false, false);
+			return new DeliveryResult(false, false, false);
 		}
 	}
 
@@ -56,14 +68,14 @@ public final class AllayCourierDeliveryService {
 			case PACKAGE_TO_PLAYER -> {
 				if (targetPlayer == null) {
 					failAndDrop(box, mission, currentLevel, landingTarget);
-					return DeliveryResult.done();
+					return DeliveryResult.failed();
 				}
 				return finishPlayerDelivery(box, targetPlayer, returnMode);
 			}
 			case PACKAGE_TO_ALLAY_PORT -> {
 				if (targetAllayPort == null) {
 					failAndDrop(box, mission, currentLevel, landingTarget);
-					return DeliveryResult.done();
+					return DeliveryResult.failed();
 				}
 				return finishAllayPortDelivery(box, targetAllayPort, returnMode, landingTarget);
 			}
@@ -117,17 +129,17 @@ public final class AllayCourierDeliveryService {
 		boolean packageDelivered = AllayCourierHelper.deliverPackage(targetPlayer, box);
 
 		return switch (returnMode) {
-			case ALWAYS_RETURN -> DeliveryResult.returning();
+			case ALWAYS_RETURN -> DeliveryResult.returning(packageDelivered);
 			case ALWAYS_DOCK -> {
 				AllayCourierHelper.deliverCarrier(targetPlayer);
-				yield DeliveryResult.done();
+				yield DeliveryResult.done(packageDelivered);
 			}
 			case RETURN_WHEN_UNABLE -> {
 				if (!packageDelivered || !AllayCourierHelper.canReceiveCarrier(targetPlayer)) {
-					yield DeliveryResult.returning();
+					yield DeliveryResult.returning(packageDelivered);
 				}
 				AllayCourierHelper.deliverCarrier(targetPlayer);
-				yield DeliveryResult.done();
+				yield DeliveryResult.done(packageDelivered);
 			}
 		};
 	}

@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AllayCourierHudPacket {
-	public static final int MAX_VISIBLE_ENTRIES = 3;
+	public static final int MAX_VISIBLE_ENTRIES = 5;
 
 	private final List<AllayCourierHudEntry> entries;
 
@@ -29,8 +29,9 @@ public class AllayCourierHudPacket {
 			boolean incoming = buffer.readBoolean();
 			String address = buffer.readUtf(AllayCourierHudEntry.MAX_ADDRESS_LENGTH);
 			int seconds = buffer.readVarInt();
+			AllayCourierHudStatus status = AllayCourierHudStatus.byId(buffer.readVarInt());
 			if (i < MAX_VISIBLE_ENTRIES) {
-				decoded.add(new AllayCourierHudEntry(id, incoming, address, seconds));
+				decoded.add(new AllayCourierHudEntry(id, incoming, address, seconds, status));
 			}
 		}
 		entries = List.copyOf(decoded);
@@ -43,6 +44,7 @@ public class AllayCourierHudPacket {
 			buffer.writeBoolean(entry.incoming());
 			buffer.writeUtf(entry.address(), AllayCourierHudEntry.MAX_ADDRESS_LENGTH);
 			buffer.writeVarInt(entry.etaSeconds());
+			buffer.writeVarInt(entry.status().ordinal());
 		}
 	}
 
