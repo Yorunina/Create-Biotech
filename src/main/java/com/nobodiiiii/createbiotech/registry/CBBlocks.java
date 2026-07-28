@@ -79,7 +79,7 @@ public class CBBlocks {
 	public static final RegistryObject<EvokerEnchantingChamberBlock> EVOKER_ENCHANTING_CHAMBER =
 		BLOCKS.register("evoker_enchanting_chamber",
 			() -> new EvokerEnchantingChamberBlock(Block.Properties.of()
-				.sound(SoundType.COPPER)
+				.sound(Blocks.ENCHANTING_TABLE.defaultBlockState().getSoundType())
 				.strength(2.5f)
 				.mapColor(MapColor.METAL)
 				.noOcclusion()));
