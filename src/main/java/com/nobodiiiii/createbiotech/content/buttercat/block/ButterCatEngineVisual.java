@@ -3,7 +3,6 @@ package com.nobodiiiii.createbiotech.content.buttercat.block;
 import com.mojang.math.Axis;
 import com.simibubi.create.content.kinetics.base.RotatingInstance;
 import com.simibubi.create.content.kinetics.base.ShaftVisual;
-import com.nobodiiiii.createbiotech.content.buttercat.register.ModPartialModels;
 import com.simibubi.create.foundation.render.AllInstanceTypes;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
@@ -26,8 +25,10 @@ public class ButterCatEngineVisual extends ShaftVisual<ButterCatEngineBlockEntit
 
     private final Quaternionf blockOrientation;
 
-    private int catModelCode;
-    private int currentButterLevel;
+    private PartialModel currentCatModel;
+    private PartialModel currentBreadModel;
+    private PartialModel currentRopeModel;
+    private PartialModel currentButterModel;
     private float lastAttachmentSpeed = Float.NaN;
     private float lastAttachmentRotationOffset = Float.NaN;
 
@@ -38,15 +39,14 @@ public class ButterCatEngineVisual extends ShaftVisual<ButterCatEngineBlockEntit
         Direction facing = blockState.getValue(ButterCatEngineBlock.HORIZONTAL_FACING);
         blockOrientation =  Axis.YP.rotationDegrees(AngleHelper.horizontalAngle(facing));
 
-        PartialModel catModel = blockEntity.getCatModel();
-        catModelCode = catModel.hashCode();
-        cat = createAttachmentInstance(catModel);
-
-        bread = createAttachmentInstance(ModPartialModels.BCE_EMPTY);
-
-        rope = createAttachmentInstance(ModPartialModels.BCE_EMPTY);
-
-        butter = createAttachmentInstance(ModPartialModels.BCE_EMPTY);
+        currentCatModel = blockEntity.getCatModel();
+        currentBreadModel = blockEntity.getBreadModel();
+        currentRopeModel = blockEntity.getRopeModel();
+        currentButterModel = blockEntity.getButterModel();
+        cat = createAttachmentInstance(currentCatModel);
+        bread = createAttachmentInstance(currentBreadModel);
+        rope = createAttachmentInstance(currentRopeModel);
+        butter = createAttachmentInstance(currentButterModel);
     }
 
     @Override
@@ -58,6 +58,7 @@ public class ButterCatEngineVisual extends ShaftVisual<ButterCatEngineBlockEntit
     @Override
     public void update(float pt) {
         super.update(pt);
+        updateModels();
         updateAttachmentKinetics(true);
     }
 
@@ -98,24 +99,31 @@ public class ButterCatEngineVisual extends ShaftVisual<ButterCatEngineBlockEntit
             .setChanged();
     }
     private void updateModels() {
-
         PartialModel newCatModel = blockEntity.getCatModel();
-        if (newCatModel.hashCode() != catModelCode) {
-            catModelCode = newCatModel.hashCode();
+        if (newCatModel != currentCatModel) {
+            currentCatModel = newCatModel;
             instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(newCatModel)).stealInstance(cat);
             setupAttachmentInstance(cat);
         }
 
-        if(blockEntity.hasBread()){
-            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(blockEntity.getBreadModel())).stealInstance(bread);
+        PartialModel newBreadModel = blockEntity.getBreadModel();
+        if (newBreadModel != currentBreadModel) {
+            currentBreadModel = newBreadModel;
+            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(newBreadModel)).stealInstance(bread);
             setupAttachmentInstance(bread);
+        }
 
-            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(blockEntity.getRopeModel())).stealInstance(rope);
+        PartialModel newRopeModel = blockEntity.getRopeModel();
+        if (newRopeModel != currentRopeModel) {
+            currentRopeModel = newRopeModel;
+            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(newRopeModel)).stealInstance(rope);
             setupAttachmentInstance(rope);
         }
-        if(currentButterLevel != blockEntity.getButterLevel()){
-            currentButterLevel = blockEntity.getButterLevel();
-            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(blockEntity.getButterModel())).stealInstance(butter);
+
+        PartialModel newButterModel = blockEntity.getButterModel();
+        if (newButterModel != currentButterModel) {
+            currentButterModel = newButterModel;
+            instancerProvider().instancer(AllInstanceTypes.ROTATING, Models.partial(newButterModel)).stealInstance(butter);
             setupAttachmentInstance(butter);
         }
     }
@@ -141,6 +149,8 @@ public class ButterCatEngineVisual extends ShaftVisual<ButterCatEngineBlockEntit
     @Override
     public void collectCrumblingInstances(Consumer<Instance> consumer) {
         super.collectCrumblingInstances(consumer);
+        consumer.accept(cat);
+        consumer.accept(butter);
         consumer.accept(bread);
         consumer.accept(rope);
     }

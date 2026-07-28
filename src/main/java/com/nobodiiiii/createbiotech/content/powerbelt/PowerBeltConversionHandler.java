@@ -24,6 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -32,7 +33,7 @@ public class PowerBeltConversionHandler {
 
 	private PowerBeltConversionHandler() {}
 
-	@SubscribeEvent
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
 		Player player = event.getEntity();
 		if (player.isShiftKeyDown() || !player.mayBuild())

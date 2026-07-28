@@ -72,11 +72,7 @@ public class SlimeBeltInventory {
 	/** Cross-axis side offset when input arrives from a face that is neither
 	 *  the FRONT/BACK track surface nor the movement direction. */
 	private static final float INSERT_OFF_TRACK_SIDE_OFFSET = .675f;
-	/** Extra forward shift along motion direction when a horizontal belt feeds
-	 *  into a vertical belt. Aligns item visually with the upstream belt's
-	 *  surface height instead of the segment center. If this push overshoots
-	 *  the track exit, the item is buffered on the exit connector instead. */
-	private static final float INSERT_HV_MOTION_OFFSET = .625f;
+	private static final float TRACK_SURFACE_OFFSET = 7f / 16f;
 
 	TransportedItemStack lazyClientItem;
 
@@ -114,6 +110,8 @@ public class SlimeBeltInventory {
 				lazyClientItem.locked = true;
 		}
 
+		boolean movementDirectionChanged = refreshMovementDirection();
+
 		// Added/Removed items from previous cycle
 		if (!toInsert.isEmpty() || !toRemove.isEmpty()) {
 			toInsert.forEach(this::insert);
@@ -126,11 +124,8 @@ public class SlimeBeltInventory {
 		if (belt.getSpeed() == 0)
 			return;
 
-		boolean movingPositive = belt.getDirectionAwareBeltMovementSpeed() > 0;
-		if (beltMovementPositive != movingPositive) {
-			beltMovementPositive = movingPositive;
+		if (movementDirectionChanged)
 			belt.notifyUpdate();
-		}
 
 		float trackSpeed = Math.abs(belt.getDirectionAwareBeltMovementSpeed());
 		boolean horizontalProcessing = belt.getBlockState().getValue(SlimeBeltBlock.SLOPE) == com.simibubi.create.content.kinetics.belt.BeltSlope.HORIZONTAL;
@@ -633,13 +628,16 @@ public class SlimeBeltInventory {
 		DirectBeltInputBehaviour inputBehaviour =
 			BlockEntityBehaviour.get(world, outputPosition, DirectBeltInputBehaviour.TYPE);
 
-		// Detect a foreign slime belt sitting at the seam — any "I can't push into it
-		// right now" answer should become a hard BLOCK rather than letting our items
-		// fall back to wrapping around our own connector loop.
+		// Detect a foreign or not-yet-initialized slime belt at the seam — any
+		// "I can't push into it right now" answer should become a hard BLOCK
+		// rather than letting our items fall back to our own connector loop.
 		SlimeBeltBlockEntity adjacentSegment = SlimeBeltHelper.getSegmentBE(world, outputPosition);
-		boolean adjacentIsForeignSlimeBelt = adjacentSegment != null
-			&& adjacentSegment.getControllerBE() != null
-			&& !adjacentSegment.getControllerBE().getBlockPos().equals(belt.getBlockPos());
+		SlimeBeltBlockEntity adjacentController =
+			adjacentSegment == null ? null : adjacentSegment.getControllerBE();
+		boolean adjacentIsForeignSlimeBelt = adjacentController != null
+			&& !adjacentController.getBlockPos().equals(belt.getBlockPos());
+		boolean adjacentSlimeBeltNeedsHandoff = adjacentSegment != null
+			&& (adjacentController == null || adjacentIsForeignSlimeBelt);
 
 		if (inputBehaviour != null && inputBehaviour.canInsertFromSide(insertSide)) {
 			// Structurally compatible. If the downstream foreign slime belt is currently
@@ -652,7 +650,7 @@ public class SlimeBeltInventory {
 
 		// Not structurally compatible (e.g. antiparallel rotation). Foreign slime belt
 		// in front of us is still a hard obstruction; do not wrap.
-		if (adjacentIsForeignSlimeBelt)
+		if (adjacentSlimeBeltNeedsHandoff)
 			return Ending.BLOCKED;
 
 		if (BlockHelper.hasBlockSolidSide(world.getBlockState(outputPosition), world, outputPosition,
@@ -673,20 +671,27 @@ public class SlimeBeltInventory {
 	}
 
 	public boolean canInsertAtFromSide(int segment, Direction side) {
-		SlimeBeltHelper.IOTarget target = SlimeBeltHelper.resolveIOTarget(belt, segment, side);
+		return canInsertAtFromSide(segment, side, false);
+	}
+
+	public boolean canInsertAtFromSide(int segment, Direction side, boolean preferEndpointEntryTrack) {
+		refreshMovementDirection();
+		SlimeBeltHelper.IOTarget target =
+			SlimeBeltHelper.resolveIOTarget(belt, segment, side, preferEndpointEntryTrack);
 		if (target == null)
 			return false;
 		Track track = target.track();
 		if (track == null)
 			return false;
 
-		// Horizontal→vertical chain INSERT whose +HV_MOTION_OFFSET push would
-		// overshoot the track exit ends up on the exit connector (see
-		// prepareInsertedItem). Guard against pile-up there: if the connector
-		// already holds an item, the source must wait.
-		if (wouldHvOvershootConnector(segment, side, track)) {
+		// HORIZONTAL → VERTICAL landings within one item spacing of the exit
+		// also require the turn to be clear, preventing overlap with an item
+		// already wrapping around the loop.
+		if (isHorizontalIntoVertical(side)
+			&& hvSurfaceTrackProgress(segment, track, side) > belt.beltLength - 1) {
 			Connector exitConnector = getExitConnector(track);
-			return isConnectorClear(exitConnector);
+			if (!isConnectorClear(exitConnector))
+				return false;
 		}
 
 		// For chain INSERTs the item lands at the track entry (trackProgress 0),
@@ -728,7 +733,14 @@ public class SlimeBeltInventory {
 	}
 
 	public void prepareInsertedItem(TransportedItemStack transported, int segment, Direction side) {
-		SlimeBeltHelper.IOTarget target = SlimeBeltHelper.resolveIOTarget(belt, segment, side);
+		prepareInsertedItem(transported, segment, side, false);
+	}
+
+	public void prepareInsertedItem(TransportedItemStack transported, int segment, Direction side,
+		boolean preferEndpointEntryTrack) {
+		refreshMovementDirection();
+		SlimeBeltHelper.IOTarget target =
+			SlimeBeltHelper.resolveIOTarget(belt, segment, side, preferEndpointEntryTrack);
 		Track track = target != null && target.track() != null
 			? target.track()
 			: SlimeBeltHelper.resolveInputTrack(belt.getBlockState(), side);
@@ -740,7 +752,6 @@ public class SlimeBeltInventory {
 		boolean isHvIntoVertical = isHorizontalAxisChainIntoVertical(transported, side);
 
 		float trackProgress;
-		Connector connectorTarget = null;
 		if (isFrontChain) {
 			// Smooth FRONT chain-continuation: land at the FRONT entry of this
 			// segment, optionally extrapolated back when the prior belt is directly
@@ -762,25 +773,15 @@ public class SlimeBeltInventory {
 			// VERTICAL → HORIZONTAL special handoff should also land on the connected
 			// track's entry point instead of the segment-center general insertion spot.
 			trackProgress = 0f;
+		} else if (isHvIntoVertical) {
+			// Land level with the source belt surface; this is independent of
+			// movement direction and avoids bouncing through the loop turn.
+			trackProgress = hvSurfaceTrackProgress(segment, track, side);
 		} else {
 			trackProgress = computeGeneralTrackProgress(segment, track);
-			// HORIZONTAL → VERTICAL belt input: push the placement forward along
-			// the target track's motion direction so items align vertically with
-			// the source belt's surface. If the push overshoots past the track
-			// exit, buffer the item on the corresponding exit connector arc
-			// (the "wrap" between FRONT and BACK) instead of forcing it onto the
-			// opposite track.
-			if (isHvIntoVertical) {
-				trackProgress += INSERT_HV_MOTION_OFFSET;
-				if (trackProgress > belt.beltLength)
-					connectorTarget = getExitConnector(track);
-			}
 		}
 
-		if (connectorTarget != null)
-			transported.beltPosition = getLoopPositionForConnectorProgress(connectorTarget, WRAP_ENTRY_OFFSET);
-		else
-			transported.beltPosition = getLoopPositionForTrackProgress(track, trackProgress);
+		transported.beltPosition = getLoopPositionForTrackProgress(track, trackProgress);
 
 		// Cross-axis side offset: only for sides perpendicular to the chain axis
 		// AND not on the FRONT/BACK track-face. Chain-axis sides (FRONT/BACK chain
@@ -844,19 +845,53 @@ public class SlimeBeltInventory {
 	}
 
 	private boolean isHorizontalAxisChainIntoVertical(TransportedItemStack transported, Direction side) {
-		return side != null
-			&& !side.getAxis().isVertical()
-			&& transported.prevBeltPosition != 0
+		return isHorizontalIntoVertical(side)
+			&& transported.prevBeltPosition != 0;
+	}
+
+	private boolean isHorizontalIntoVertical(Direction side) {
+		return side != null && !side.getAxis().isVertical()
 			&& belt.getBlockState().getValue(SlimeBeltBlock.SLOPE) == BeltSlope.VERTICAL;
 	}
 
-	private boolean wouldHvOvershootConnector(int segment, Direction side, Track track) {
-		if (side == null || side.getAxis().isVertical())
+	private float hvSurfaceTrackProgress(int segment, Track track, Direction side) {
+		float surfaceHeight = sourceSurfaceHeight(segment, side);
+		float drop = (float) SlimeBeltHelper.VERTICAL_BELT_DROP;
+		boolean chainUp = belt.getBeltFacing().getAxisDirection().getStep() > 0;
+		float frontOffset = chainUp ? segment + surfaceHeight + drop
+			: segment + 1f - surfaceHeight - drop;
+		frontOffset = Mth.clamp(frontOffset, segment + WRAP_ENTRY_OFFSET,
+			segment + 1f - WRAP_ENTRY_OFFSET);
+		return getTrackProgressForFrontOffset(track, frontOffset);
+	}
+
+	private float sourceSurfaceHeight(int segment, Direction side) {
+		float topSurface = .5f + TRACK_SURFACE_OFFSET;
+		if (side == null || belt.getLevel() == null)
+			return topSurface;
+		BlockEntity sourceBE = belt.getLevel()
+			.getBlockEntity(SlimeBeltHelper.getPositionForOffset(belt, segment).relative(side));
+		if (sourceBE instanceof SlimeBeltBlockEntity sourceSegment) {
+			SlimeBeltBlockEntity sourceController = sourceSegment.getControllerBE();
+			Track outputTrack = sourceController == null ? null
+				: SlimeBeltHelper.getEndpointOutputTrack(sourceController, sourceSegment.index);
+			if (outputTrack == Track.BACK)
+				return .5f - TRACK_SURFACE_OFFSET;
+		}
+		return topSurface;
+	}
+
+	private boolean refreshMovementDirection() {
+		if (belt.getSpeed() == 0)
 			return false;
-		if (belt.getBlockState().getValue(SlimeBeltBlock.SLOPE) != BeltSlope.VERTICAL)
+		// Direct insertion may run before this controller's tick after loading or
+		// a kinetic reversal. Coordinate conversion must use the live direction,
+		// not the previous tick's persisted PositiveOrder value.
+		boolean movingPositive = belt.getDirectionAwareBeltMovementSpeed() > 0;
+		if (beltMovementPositive == movingPositive)
 			return false;
-		float trackProgress = computeGeneralTrackProgress(segment, track);
-		return trackProgress + INSERT_HV_MOTION_OFFSET > belt.beltLength;
+		beltMovementPositive = movingPositive;
+		return true;
 	}
 
 	private boolean isConnectorClear(Connector connector) {
