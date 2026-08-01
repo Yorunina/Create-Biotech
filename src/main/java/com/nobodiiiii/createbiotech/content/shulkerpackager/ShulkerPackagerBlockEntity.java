@@ -3,6 +3,7 @@ package com.nobodiiiii.createbiotech.content.shulkerpackager;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.nobodiiiii.createbiotech.foundation.advancement.CBAdvancements;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
 import com.simibubi.create.AllBlocks;
@@ -314,6 +315,8 @@ public class ShulkerPackagerBlockEntity extends PackagerBlockEntity {
 		}
 
 		playTransferEffects(target);
+		CBAdvancements.awardNearby(level, getTransferEffectPos(this), 16, CBAdvancements.SHULKER_PACKAGER);
+		CBAdvancements.awardNearby(level, getTransferEffectPos(target), 16, CBAdvancements.SHULKER_PACKAGER);
 		heldBoxIdleTicks = 0;
 		setChanged();
 		return true;

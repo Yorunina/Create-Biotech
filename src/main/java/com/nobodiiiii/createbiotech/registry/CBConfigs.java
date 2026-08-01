@@ -58,6 +58,7 @@ public class CBConfigs {
 	public static class Client {
 		public final ForgeConfigSpec.BooleanValue enableShulkerTeleporterCameraOffset;
 		public final ForgeConfigSpec.BooleanValue enableShulkerTeleporterPlayerClipping;
+		public final ForgeConfigSpec.BooleanValue renderExperienceAsFluid;
 		public final ClientCreeperBlastChamber creeperBlastChamber;
 		public final ClientUniversalJoint universalJoint;
 		public final BeltParticles beltParticles;
@@ -65,6 +66,9 @@ public class CBConfigs {
 		Client(ForgeConfigSpec.Builder builder) {
 			enableShulkerTeleporterCameraOffset = builder.define("enableShulkerTeleporterCameraOffset", true);
 			enableShulkerTeleporterPlayerClipping = builder.define("enableShulkerTeleporterPlayerClipping", true);
+			renderExperienceAsFluid = builder
+				.comment("Render experience in Create fluid tanks as a conventional fluid instead of experience orbs.")
+				.define("renderExperienceAsFluid", false);
 			creeperBlastChamber = new ClientCreeperBlastChamber(builder);
 			universalJoint = new ClientUniversalJoint(builder);
 			beltParticles = new BeltParticles(builder);
@@ -397,14 +401,57 @@ public class CBConfigs {
 	}
 
 	public static class UniversalJoint {
+		private static final double DEFAULT_STRAIN_START_DISTANCE = 4.675d;
+		private static final int LEGACY_DEFAULT_MAX_CONNECTION_RANGE = 2;
+
+		@Deprecated(forRemoval = true)
 		public final ForgeConfigSpec.IntValue maxConnectionRange;
 		public final ForgeConfigSpec.IntValue itemCooldownTicks;
+		public final ForgeConfigSpec.DoubleValue strainStartDistance;
+		public final ForgeConfigSpec.DoubleValue disconnectDistance;
+		public final ForgeConfigSpec.DoubleValue peakTension;
+		public final ForgeConfigSpec.DoubleValue separationDamping;
+		public final ForgeConfigSpec.DoubleValue endpointAirDrag;
+		public final ForgeConfigSpec.DoubleValue maxImpulse;
+		public final ForgeConfigSpec.DoubleValue shaftSlowdownMultiplier;
 
 		UniversalJoint(ForgeConfigSpec.Builder builder) {
 			builder.push("universalJoint");
-			maxConnectionRange = builder.defineInRange("maxConnectionRange", 2, 0, 64);
+			maxConnectionRange = builder
+				.comment("Deprecated compatibility value. Custom values migrate to strainStartDistance "
+					+ "while the new setting remains at its default.")
+				.defineInRange("maxConnectionRange", LEGACY_DEFAULT_MAX_CONNECTION_RANGE, 0, 64);
 			itemCooldownTicks = builder.defineInRange("itemCooldownTicks", 5, 0, Integer.MAX_VALUE);
+			strainStartDistance = builder
+				.comment("Placement/repair radius and distance where stretching begins, in blocks.")
+				.defineInRange("strainStartDistance", DEFAULT_STRAIN_START_DISTANCE, 0.0d, 128.0d);
+			disconnectDistance = builder
+				.comment("Distance that breaks an overstretched joint, in blocks.")
+				.defineInRange("disconnectDistance", 5.5d, 0.01d, 128.0d);
+			peakTension = builder.defineInRange("peakTension", 8192.0d, 0.0d, 1000000.0d);
+			separationDamping = builder.defineInRange("separationDamping", 320.0d, 0.0d, 100000.0d);
+			endpointAirDrag = builder.defineInRange("endpointAirDrag", 0.75d, 0.0d, 16.0d);
+			maxImpulse = builder.defineInRange("maxImpulse", 1024.0d, 0.01d, 1000000.0d);
+			shaftSlowdownMultiplier = builder
+				.comment("Per-axis player movement multiplier while intersecting the slime shaft.")
+				.defineInRange("shaftSlowdownMultiplier", 0.4d, 0.01d, 1.0d);
 			builder.pop();
+		}
+
+		public double effectiveStrainStartDistance() {
+			return selectStrainStartDistance(strainStartDistance.get(), maxConnectionRange.get());
+		}
+
+		static double selectStrainStartDistance(double configured, int legacy) {
+			if (Double.compare(configured, DEFAULT_STRAIN_START_DISTANCE) == 0
+				&& legacy != LEGACY_DEFAULT_MAX_CONNECTION_RANGE)
+				return Math.max(0.0d, legacy);
+			return Math.max(0.0d, configured);
+		}
+
+		public double effectiveDisconnectRange() {
+			return Math.max(0.01d, Math.max(disconnectDistance.get(),
+				effectiveStrainStartDistance() + 0.01d));
 		}
 	}
 

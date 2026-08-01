@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModFluids;
+import com.nobodiiiii.createbiotech.content.fluid.LiquidLivingSlimeBlock;
 import com.nobodiiiii.createbiotech.content.fluid.LiquidLivingSlimeFluidType;
 import com.nobodiiiii.createbiotech.content.fluid.TeleportationFluid;
 import com.nobodiiiii.createbiotech.content.fluid.TeleportationLiquidBlock;
@@ -166,12 +167,13 @@ public class CBFluids {
 		FLUIDS.register("liquid_living_slime_flowing",
 			() -> new ForgeFlowingFluid.Flowing(CBFluids.liquidLivingSlimeProperties()));
 
-	public static final RegistryObject<LiquidBlock> LIQUID_LIVING_SLIME_BLOCK =
+	public static final RegistryObject<LiquidLivingSlimeBlock> LIQUID_LIVING_SLIME_BLOCK =
 		FLUID_BLOCKS.register("liquid_living_slime",
-			() -> new LiquidBlock(LIQUID_LIVING_SLIME, Block.Properties.of()
+			() -> new LiquidLivingSlimeBlock(LIQUID_LIVING_SLIME, Block.Properties.of()
 				.noCollission()
 				.sound(SoundType.SLIME_BLOCK)
-				.strength(100f)
+				.strength(-1.0F, 100.0F)
+				.dynamicShape()
 				.noLootTable()
 				.liquid()));
 

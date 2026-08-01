@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.AutomaticFishReleaseMachineBlock;
 import com.nobodiiiii.createbiotech.content.boneratchet.BoneRatchetBlock;
 import com.nobodiiiii.createbiotech.content.biopackager.BioPackagerBlock;
 import com.nobodiiiii.createbiotech.content.buttercat.block.ButterCatEngineBlock;
@@ -31,6 +32,7 @@ import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterB
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableBlock;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableCogBlock;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointBlock;
+import com.nobodiiiii.createbiotech.content.universaljoint.HalfShaftBlock;
 import com.yision.allay.block.allayport.AllayPortBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainDriveBlock;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlock;
@@ -76,6 +78,12 @@ public class CBBlocks {
 			.mapColor(MapColor.COLOR_GRAY)
 			.noOcclusion()));
 
+	public static final RegistryObject<AutomaticFishReleaseMachineBlock> AUTOMATIC_FISH_RELEASE_MACHINE =
+		BLOCKS.register("automatic_fish_release_machine",
+			() -> new AutomaticFishReleaseMachineBlock(Block.Properties.copy(Blocks.STRIPPED_SPRUCE_WOOD)
+				.noOcclusion()
+				.mapColor(MapColor.DIRT)));
+
 	public static final RegistryObject<EvokerEnchantingChamberBlock> EVOKER_ENCHANTING_CHAMBER =
 		BLOCKS.register("evoker_enchanting_chamber",
 			() -> new EvokerEnchantingChamberBlock(Block.Properties.of()
@@ -85,11 +93,8 @@ public class CBBlocks {
 				.noOcclusion()));
 
 	public static final RegistryObject<ExperiencePumpBlock> EXPERIENCE_PUMP = BLOCKS.register("experience_pump",
-		() -> new ExperiencePumpBlock(Block.Properties.of()
-			.sound(SoundType.COPPER)
-			.strength(2.5f)
-			.mapColor(MapColor.METAL)
-			.noOcclusion()));
+		() -> new ExperiencePumpBlock(Block.Properties.copy(Blocks.COPPER_BLOCK)
+			.mapColor(MapColor.STONE)));
 
 	public static final RegistryObject<BuddingExperienceBlock> BUDDING_EXPERIENCE =
 		BLOCKS.register("budding_experience",
@@ -131,6 +136,13 @@ public class CBBlocks {
 
 	public static final RegistryObject<UniversalJointBlock> UNIVERSAL_JOINT = BLOCKS.register("universal_joint",
 		() -> new UniversalJointBlock(Block.Properties.of()
+			.sound(SoundType.STONE)
+			.strength(0.8f)
+			.mapColor(MapColor.METAL)
+			.noOcclusion()));
+
+	public static final RegistryObject<HalfShaftBlock> HALF_SHAFT = BLOCKS.register("half_shaft",
+		() -> new HalfShaftBlock(Block.Properties.of()
 			.sound(SoundType.STONE)
 			.strength(0.8f)
 			.mapColor(MapColor.METAL)

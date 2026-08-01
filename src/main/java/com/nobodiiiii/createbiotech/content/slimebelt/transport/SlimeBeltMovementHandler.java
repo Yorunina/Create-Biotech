@@ -22,6 +22,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -33,6 +34,15 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public class SlimeBeltMovementHandler {
+
+	/** Top face of the belt body (y = 13 in SlimeBeltShapes); decides which side of a slope's end an entity is on. */
+	private static final float BELT_TOP_HEIGHT = 13 / 16f;
+	/** Kinetic speed below which entities are not transported. */
+	private static final float MIN_TRANSPORT_SPEED = 1;
+	/** Entities further than this from the belt's center line are left alone. */
+	private static final float MAX_CENTER_DRIFT = 48 / 64f;
+	/** Minimum downward push while climbing a slope; keeps entities glued to the steps. */
+	private static final float MIN_CLIMB_VELOCITY = .13f;
 
 	public static class TransportedEntityInfo {
 		int ticksSinceLastCollision;
@@ -86,7 +96,7 @@ public class SlimeBeltMovementHandler {
 			return;
 
 		boolean notHorizontal = beltBE.getBlockState().getValue(SlimeBeltBlock.SLOPE) != BeltSlope.HORIZONTAL;
-		if (Math.abs(beltBE.getSpeed()) < 1)
+		if (Math.abs(beltBE.getSpeed()) < MIN_TRANSPORT_SPEED)
 			return;
 
 		if (entityIn.getY() - .25f < pos.getY())
@@ -106,14 +116,15 @@ public class SlimeBeltMovementHandler {
 		Vec3 movement = Vec3.atLowerCornerOf(movementDirection.getNormal()).scale(movementSpeed);
 
 		double diffCenter = axis == Axis.Z ? pos.getX() + .5f - entityIn.getX() : pos.getZ() + .5f - entityIn.getZ();
-		if (Math.abs(diffCenter) > 48 / 64f)
+		if (Math.abs(diffCenter) > MAX_CENTER_DRIFT)
 			return;
 
 		BeltPart part = blockState.getValue(SlimeBeltBlock.PART);
-		float top = 13 / 16f;
 		boolean onSlope = notHorizontal && (part == BeltPart.MIDDLE || part == BeltPart.PULLEY
-			|| part == (slope == BeltSlope.UPWARD ? BeltPart.END : BeltPart.START) && entityIn.getY() - pos.getY() < top
-			|| part == (slope == BeltSlope.UPWARD ? BeltPart.START : BeltPart.END) && entityIn.getY() - pos.getY() > top);
+			|| part == (slope == BeltSlope.UPWARD ? BeltPart.END : BeltPart.START)
+				&& entityIn.getY() - pos.getY() < BELT_TOP_HEIGHT
+			|| part == (slope == BeltSlope.UPWARD ? BeltPart.START : BeltPart.END)
+				&& entityIn.getY() - pos.getY() > BELT_TOP_HEIGHT);
 
 		boolean movingDown = onSlope && slope == (movementFacing == beltFacing ? BeltSlope.DOWNWARD : BeltSlope.UPWARD);
 		boolean movingUp = onSlope && slope == (movementFacing == beltFacing ? BeltSlope.UPWARD : BeltSlope.DOWNWARD);
@@ -138,7 +149,7 @@ public class SlimeBeltMovementHandler {
 
 		float step = entityIn.maxUpStep();
 		if (!isPlayer)
-			entityIn.setMaxUpStep(1);
+			entityIn.setMaxUpStep(1.0f);
 
 		if (Math.abs(movementSpeed) < .5f) {
 			Vec3 checkDistance = movement.normalize().scale(0.5);
@@ -158,8 +169,7 @@ public class SlimeBeltMovementHandler {
 		entityIn.fallDistance = 0;
 
 		if (movingUp) {
-			float minVelocity = .13f;
-			float yMovement = (float) -Math.max(Math.abs(movement.y), minVelocity);
+			float yMovement = (float) -Math.max(Math.abs(movement.y), MIN_CLIMB_VELOCITY);
 			entityIn.move(SELF, new Vec3(0, yMovement, 0));
 			entityIn.move(SELF, movement.multiply(1, 0, 1));
 		} else if (movingDown) {

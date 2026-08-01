@@ -1,5 +1,6 @@
 package com.yision.allay.logistics.courier;
 
+import com.nobodiiiii.createbiotech.foundation.advancement.CBAdvancements;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
 import com.yision.allay.entity.courier.AllayCourierEntity;
 import com.yision.allay.registry.AllItems;
@@ -127,6 +128,8 @@ public final class AllayCourierDeliveryService {
 	private static DeliveryResult finishPlayerDelivery(ItemStack box, ServerPlayer targetPlayer,
 		AllayCourierReturnMode returnMode) {
 		boolean packageDelivered = AllayCourierHelper.deliverPackage(targetPlayer, box);
+		if (packageDelivered)
+			CBAdvancements.award(targetPlayer, CBAdvancements.ALLAY_PORT);
 
 		return switch (returnMode) {
 			case ALWAYS_RETURN -> DeliveryResult.returning(packageDelivered);

@@ -392,7 +392,7 @@ public class ExperiencePumpBlockEntity extends PumpBlockEntity {
 
 		@Override
 		public boolean isFluidValid(int tank, FluidStack stack) {
-			return ExperienceFluidHelper.isPrimaryExperience(stack);
+			return ExperienceFluidHelper.isGeneratedExperience(stack);
 		}
 
 		@Override
@@ -402,7 +402,7 @@ public class ExperiencePumpBlockEntity extends PumpBlockEntity {
 
 		@Override
 		public FluidStack drain(FluidStack resource, FluidAction action) {
-			if (!ExperienceFluidHelper.isPrimaryExperience(resource))
+			if (!ExperienceFluidHelper.isGeneratedExperience(resource))
 				return FluidStack.EMPTY;
 			return drain(resource.getAmount(), action);
 		}

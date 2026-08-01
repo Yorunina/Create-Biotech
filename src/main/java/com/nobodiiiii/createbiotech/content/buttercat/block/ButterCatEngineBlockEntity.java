@@ -4,6 +4,7 @@ import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModPartialModels;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModBlocks;
+import com.nobodiiiii.createbiotech.foundation.advancement.CBAdvancements;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.minecraft.core.BlockPos;
@@ -14,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
@@ -51,6 +53,7 @@ public class  ButterCatEngineBlockEntity  extends GeneratingKineticBlockEntity {
         butterCount = Math.min(total, getMaxButterCount());
         overflowCount = total - butterCount;
         updateGeneratedRotation();
+        awardButterCatAdvancement();
     }
     public int getButterCount() {
         return butterCount;
@@ -75,7 +78,8 @@ public class  ButterCatEngineBlockEntity  extends GeneratingKineticBlockEntity {
         else
             butterCount = 0;
         updateGeneratedRotation();
-
+        if (bool)
+            awardButterCatAdvancement();
     }
     public boolean isInfinite(){
         return infinite;
@@ -137,6 +141,12 @@ public class  ButterCatEngineBlockEntity  extends GeneratingKineticBlockEntity {
     }
     protected float getDirectionalGeneratedSpeed(float speed) {
         return convertToDirection(speed, getBlockState().getValue(HORIZONTAL_FACING));
+    }
+
+    private void awardButterCatAdvancement() {
+        if (level == null || level.isClientSide)
+            return;
+        CBAdvancements.awardNearby(level, Vec3.atCenterOf(getBlockPos()), 16, CBAdvancements.BUTTER_CAT);
     }
 
     float getAttachmentRotationOffset() {

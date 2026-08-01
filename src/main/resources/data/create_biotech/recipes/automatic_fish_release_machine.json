@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "FFF",
+    "FWF",
+    "FFF"
+  ],
+  "key": {
+    "F": {
+      "type": "create_biotech:captured_entity_box",
+      "entity": "minecraft:salmon"
+    },
+    "W": {
+      "item": "create:large_water_wheel"
+    }
+  },
+  "result": {
+    "item": "create_biotech:automatic_fish_release_machine"
+  },
+  "show_notification": true
+}

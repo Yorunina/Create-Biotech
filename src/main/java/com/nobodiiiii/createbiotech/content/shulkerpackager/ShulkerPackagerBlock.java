@@ -6,6 +6,8 @@ import com.simibubi.create.AllItems;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.logistics.box.PackageItem;
+import com.simibubi.create.content.logistics.packager.PackagerBlock;
+import com.simibubi.create.content.logistics.packager.PackagerBlockEntity;
 import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.block.WrenchableDirectionalBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -42,7 +44,7 @@ public class ShulkerPackagerBlock extends WrenchableDirectionalBlock
 	implements IBE<ShulkerPackagerBlockEntity>, IWrenchable {
 
 	public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
-	public static final BooleanProperty LINKED = BooleanProperty.create("linked");
+	public static final BooleanProperty LINKED = PackagerBlock.LINKED;
 
 	public ShulkerPackagerBlock(Properties properties) {
 		super(properties);
@@ -64,7 +66,7 @@ public class ShulkerPackagerBlock extends WrenchableDirectionalBlock
 			BlockEntity be = context.getLevel()
 				.getBlockEntity(context.getClickedPos()
 					.relative(face));
-			if (be instanceof ShulkerPackagerBlockEntity)
+			if (be instanceof PackagerBlockEntity)
 				continue;
 			if (be != null && be.getCapability(itemCap)
 				.isPresent()) {

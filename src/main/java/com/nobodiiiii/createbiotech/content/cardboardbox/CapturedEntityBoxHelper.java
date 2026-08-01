@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointRepair;
 import com.simibubi.create.content.logistics.box.PackageItem;
 
 import net.minecraft.ChatFormatting;
@@ -212,6 +213,7 @@ public class CapturedEntityBoxHelper {
 		tag.remove(CAPTURED_ENTITY_TAG);
 		tag.remove(CAPTURED_ENTITY_DESC_ID_TAG);
 		tag.remove(CAPTURED_ENTITY_HEALTH_TAG);
+		UniversalJointRepair.clearSelection(tag);
 		if (tag.isEmpty())
 			stack.setTag(null);
 	}

@@ -1,5 +1,6 @@
 package com.yision.allay.logistics.courier;
 
+import com.nobodiiiii.createbiotech.foundation.advancement.CBAdvancements;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
 import com.yision.allay.logistics.address.AllayAddressRules;
@@ -64,6 +65,7 @@ public final class AllayCourierDispatchService {
 		}
 
 		AllayCourierTaskManager.addTask(level.getServer(), task);
+		CBAdvancements.award(player, CBAdvancements.ALLAY_COURIER);
 		return true;
 	}
 

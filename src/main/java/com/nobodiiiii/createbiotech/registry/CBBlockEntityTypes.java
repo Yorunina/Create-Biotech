@@ -1,6 +1,7 @@
 package com.nobodiiiii.createbiotech.registry;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.AutomaticFishReleaseMachineBlockEntity;
 import com.nobodiiiii.createbiotech.content.boneratchet.BoneRatchetBlockEntity;
 import com.nobodiiiii.createbiotech.content.biopackager.BioPackagerBlockEntity;
 import com.nobodiiiii.createbiotech.content.buttercat.block.ButterCatEngineBlockEntity;
@@ -24,6 +25,7 @@ import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltBlockEntity;
 import com.nobodiiiii.createbiotech.content.slimeclutch.SlimeClutchBlockEntity;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterBlockEntity;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointBlockEntity;
+import com.nobodiiiii.createbiotech.content.universaljoint.HalfShaftBlockEntity;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.BlastProofChainDriveBlockEntity;
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastChamberBlockEntity;
 import com.yision.allay.block.allayport.AllayPortBlockEntity;
@@ -40,6 +42,12 @@ public class CBBlockEntityTypes {
 
 	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITY_TYPES =
 		DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, CreateBiotech.MOD_ID);
+
+	public static final RegistryObject<BlockEntityType<AutomaticFishReleaseMachineBlockEntity>>
+		AUTOMATIC_FISH_RELEASE_MACHINE = BLOCK_ENTITY_TYPES.register("automatic_fish_release_machine",
+			() -> BlockEntityType.Builder
+				.of(AutomaticFishReleaseMachineBlockEntity::new, CBBlocks.AUTOMATIC_FISH_RELEASE_MACHINE.get())
+				.build(null));
 
 	public static final RegistryObject<BlockEntityType<SlimeBeltBlockEntity>> SLIME_BELT =
 		BLOCK_ENTITY_TYPES.register("slime_belt",
@@ -114,6 +122,11 @@ public class CBBlockEntityTypes {
 	public static final RegistryObject<BlockEntityType<UniversalJointBlockEntity>> UNIVERSAL_JOINT =
 		BLOCK_ENTITY_TYPES.register("universal_joint",
 			() -> BlockEntityType.Builder.of(UniversalJointBlockEntity::new, CBBlocks.UNIVERSAL_JOINT.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<HalfShaftBlockEntity>> HALF_SHAFT =
+		BLOCK_ENTITY_TYPES.register("half_shaft",
+			() -> BlockEntityType.Builder.of(HalfShaftBlockEntity::new, CBBlocks.HALF_SHAFT.get())
 				.build(null));
 
 	public static final RegistryObject<BlockEntityType<SlimeClutchBlockEntity>> SLIME_CLUTCH =

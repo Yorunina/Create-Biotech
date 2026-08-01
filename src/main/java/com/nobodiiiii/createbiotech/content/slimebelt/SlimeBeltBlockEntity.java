@@ -14,8 +14,7 @@ import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurface;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceHost;
-import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltBlock;
-import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltBlockEntity;
+import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltLoopGeometry.Track;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltInventory;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeItemHandlerBeltSegment;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltMovementHandler;
@@ -23,8 +22,6 @@ import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltMovemen
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
-import com.simibubi.create.content.kinetics.belt.BeltBlock;
-import com.simibubi.create.content.kinetics.belt.BeltBlockEntity;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
@@ -33,7 +30,6 @@ import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehavi
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour.TransportedResult;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
-import com.simibubi.create.content.logistics.funnel.BeltFunnelBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import com.simibubi.create.foundation.blockEntity.behaviour.inventory.VersionedInventoryTrackerBehaviour;
 
@@ -69,6 +65,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 	private final Map<Direction, LazyOptional<IItemHandler>> sidedHandlers;
 	private LazyOptional<IItemHandler> nullSideHandler;
+	private SlimeBeltLoopGeometry loopGeometry;
 
 	public SlimeBeltBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -144,11 +141,15 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		return isController() ? super.createRenderBoundingBox().inflate(beltLength + 1) : super.createRenderBoundingBox();
 	}
 
+	public IItemHandler getItemCapability(Direction side) {
+		if (!SlimeBeltBlock.canTransportObjects(getBlockState()))
+			return null;
+		return getItemHandler(side).orElse(null);
+	}
+
 	@Override
 	public <T> LazyOptional<T> getCapability(Capability<T> cap, Direction side) {
-		if (!isItemHandlerCap(cap))
-			return super.getCapability(cap, side);
-		if (!SlimeBeltBlock.canTransportObjects(getBlockState()))
+		if (!isItemHandlerCap(cap) || !SlimeBeltBlock.canTransportObjects(getBlockState()))
 			return super.getCapability(cap, side);
 		return getItemHandler(side).cast();
 	}
@@ -189,7 +190,8 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 		if (!wasMoved) {
 			if (!isController())
-				controller = NbtUtils.readBlockPos(compound.getCompound("Controller"));
+				controller = compound.contains("Controller")
+					? NbtUtils.readBlockPos(compound.getCompound("Controller")) : worldPosition;
 			trackerUpdateTag = compound;
 			index = compound.getInt("Index");
 			beltLength = compound.getInt("Length");
@@ -227,6 +229,24 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 	public boolean isController() {
 		return controller != null && worldPosition.equals(controller);
+	}
+
+	/**
+	 * Loop geometry anchored at this belt's controller. Cheap to call: rebuilt only when
+	 * the captured blockstate reference or belt length changes, which covers chain
+	 * rebuilds, slicing, rotation, NBT/client sync and structure moves without any
+	 * explicit invalidation. Non-controller segments delegate to their controller.
+	 */
+	public SlimeBeltLoopGeometry getLoop() {
+		if (!isController()) {
+			SlimeBeltBlockEntity controllerBE = getControllerBE();
+			if (controllerBE != null && controllerBE != this)
+				return controllerBE.getLoop();
+		}
+		BlockState state = getBlockState();
+		if (loopGeometry == null || !loopGeometry.matches(state, beltLength))
+			loopGeometry = SlimeBeltLoopGeometry.of(state, worldPosition, beltLength);
+		return loopGeometry;
 	}
 
 	public float getBeltMovementSpeed() {
@@ -348,8 +368,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	}
 
 	public void invalidateItemHandlers() {
-		sidedHandlers.values()
-			.forEach(LazyOptional::invalidate);
+		sidedHandlers.values().forEach(LazyOptional::invalidate);
 		sidedHandlers.clear();
 		nullSideHandler.invalidate();
 		nullSideHandler = LazyOptional.empty();
@@ -357,7 +376,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 	private LazyOptional<IItemHandler> getItemHandler(Direction side) {
 		// Don't construct (and cache) a handler before the controller's inventory is ready — otherwise
-		// the LazyOptional.of(supplier) below would resolve to a SlimeItemHandlerBeltSegment whose
+		// constructing a handler too early would create a SlimeItemHandlerBeltSegment whose
 		// beltInventory field is null, and subsequent getStackInSlot/insertItem/extractItem calls would NPE.
 		// This happens at world-load time when a neighbouring funnel ticks before the belt chain is wired up.
 		// Note: this preserves the per-side (FRONT/BACK track) routing — once the inventory is ready, the
@@ -375,160 +394,47 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	}
 
 	private boolean canInsertFrom(Direction side) {
-		side = resolveInsertionSide(side);
+		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
 		if (getSpeed() == 0)
 			return false;
 		SlimeBeltBlockEntity controllerBE = getControllerBE();
 		if (controllerBE == null)
 			return false;
-		boolean verticalHorizontalChainInput = isVerticalHorizontalChainInput(side);
-		SlimeBeltHelper.IOTarget target =
-			SlimeBeltHelper.resolveIOTarget(controllerBE, index, side, verticalHorizontalChainInput);
+		Track target = SlimeBeltHelper.resolveIOTrack(controllerBE, index, side);
 		if (target == null)
 			return false;
-		return isCompatibleAdjacentSlimeBeltChainInput(side, controllerBE, target.track());
+		return SlimeBeltInsertionPlanner.isCompatibleAdjacentChainInput(this, side, controllerBE, target);
 	}
 
 	private boolean isOccupied(Direction side) {
-		side = resolveInsertionSide(side);
+		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
 		SlimeBeltInventory beltInventory = getInventory();
-		boolean verticalHorizontalChainInput = isVerticalHorizontalChainInput(side);
+		boolean verticalHorizontalBeltInput = SlimeBeltInsertionPlanner.isVerticalHorizontalBeltInput(this, side);
 		return beltInventory == null || getSpeed() == 0
-			|| !beltInventory.canInsertAtFromSide(index, side, verticalHorizontalChainInput);
+			|| !beltInventory.canInsertAtFromSide(index, side, verticalHorizontalBeltInput);
 	}
 
 	private ItemStack tryInsertingFromSide(TransportedItemStack transportedStack, Direction side, boolean simulate) {
-		side = resolveInsertionSide(side);
+		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
 		SlimeBeltInventory beltInventory = getInventory();
-		boolean verticalHorizontalChainInput = isVerticalHorizontalChainInput(side);
+		boolean verticalHorizontalBeltInput = SlimeBeltInsertionPlanner.isVerticalHorizontalBeltInput(this, side);
 		if (!SlimeBeltBlock.canTransportObjects(getBlockState()) || beltInventory == null)
 			return transportedStack.stack;
-		if (!canInsertFrom(side)
-			|| !beltInventory.canInsertAtFromSide(index, side, verticalHorizontalChainInput))
+		if (!canInsertFrom(side))
+			return transportedStack.stack;
+		SlimeBeltInsertionPlanner.InsertionPlan plan =
+			beltInventory.planInsertion(index, side, verticalHorizontalBeltInput, transportedStack);
+		if (!beltInventory.canInsert(plan))
 			return transportedStack.stack;
 		if (simulate)
 			return ItemStack.EMPTY;
 
 		TransportedItemStack copied = transportedStack.copy();
-		beltInventory.prepareInsertedItem(copied, index, side, verticalHorizontalChainInput);
+		beltInventory.applyInsertion(copied, plan);
 		beltInventory.addItem(copied);
 		setChanged();
 		sendData();
 		return ItemStack.EMPTY;
-	}
-
-	private Direction resolveInsertionSide(Direction side) {
-		if (side == null || level == null)
-			return side;
-		Direction physicalSourceSide = side.getOpposite();
-		// Adjacent belts pass their movement direction rather than their physical
-		// source side. Resolve that ambiguity before treating the same direction
-		// as a funnel input, otherwise a funnel on the opposite face can mask the
-		// vertical-to-horizontal belt handoff.
-		if (hasAdjacentHorizontalVerticalBeltSource(physicalSourceSide))
-			return physicalSourceSide;
-		if (hasAdjacentFunnel(side))
-			return side;
-
-		if (side.getAxis().isVertical())
-			return side;
-		BlockState state = getBlockState();
-		if (!state.hasProperty(SlimeBeltBlock.SLOPE))
-			return side;
-		BeltSlope slope = state.getValue(SlimeBeltBlock.SLOPE);
-		if (slope != BeltSlope.SIDEWAYS && slope != BeltSlope.VERTICAL)
-			return side;
-
-		Direction frontInputSide = SlimeBeltHelper.getFrontInputSide(state);
-		if (side != frontInputSide && side != frontInputSide.getOpposite())
-			return side;
-
-		// Adjacent belts pass their movement direction to DirectBeltInputBehaviour. For vertical and sideways
-		// slime belts we need the physical entry side instead, so recover it from the neighbouring source belt.
-		if (hasAdjacentBeltSource(physicalSourceSide))
-			return physicalSourceSide;
-		return side;
-	}
-
-	private boolean isVerticalHorizontalChainInput(Direction physicalSide) {
-		if (physicalSide == null || !physicalSide.getAxis().isVertical())
-			return false;
-		if (getBlockState().getValue(SlimeBeltBlock.SLOPE) != BeltSlope.HORIZONTAL)
-			return false;
-		return hasAdjacentHorizontalVerticalBeltSource(physicalSide);
-	}
-
-	private boolean isCompatibleAdjacentSlimeBeltChainInput(Direction side, SlimeBeltBlockEntity targetController,
-		SlimeBeltHelper.Track targetTrack) {
-		if (side == null || level == null || side.getAxis() != SlimeBeltHelper.getChainBlockAxis(targetController))
-			return true;
-		BlockEntity sourceBE = level.getBlockEntity(worldPosition.relative(side.getOpposite()));
-		if (!(sourceBE instanceof SlimeBeltBlockEntity sourceSegment))
-			return true;
-		SlimeBeltBlockEntity sourceController = sourceSegment.getControllerBE();
-		if (sourceController == null || sourceController.getController().equals(targetController.getController()))
-			return true;
-		SlimeBeltHelper.Track sourceTrack = SlimeBeltHelper.getEndpointOutputTrack(sourceController, sourceSegment.index);
-		return sourceTrack != null && sourceTrack == targetTrack;
-	}
-
-	private boolean hasAdjacentHorizontalVerticalBeltSource(Direction physicalSide) {
-		BeltSlope targetSlope = getBlockState().getValue(SlimeBeltBlock.SLOPE);
-		BlockEntity blockEntity = level.getBlockEntity(worldPosition.relative(physicalSide));
-		if (blockEntity instanceof SlimeBeltBlockEntity slimeBelt) {
-			BeltSlope sourceSlope = slimeBelt.getBlockState().getValue(SlimeBeltBlock.SLOPE);
-			return isHorizontalVerticalPair(targetSlope, sourceSlope) && isSlimeBeltSourceMovingToward(slimeBelt,
-				physicalSide);
-		}
-		if (blockEntity instanceof MagmaBeltBlockEntity magmaBelt) {
-			BeltSlope sourceSlope = magmaBelt.getBlockState().getValue(MagmaBeltBlock.SLOPE);
-			return isHorizontalVerticalPair(targetSlope, sourceSlope) && isMagmaBeltSourceMovingToward(magmaBelt,
-				physicalSide);
-		}
-		if (blockEntity instanceof BeltBlockEntity belt) {
-			BeltSlope sourceSlope = belt.getBlockState().getValue(BeltBlock.SLOPE);
-			return isHorizontalVerticalPair(targetSlope, sourceSlope) && isBeltSourceMovingToward(belt, physicalSide);
-		}
-		return false;
-	}
-
-	private boolean isHorizontalVerticalPair(BeltSlope first, BeltSlope second) {
-		return first == BeltSlope.HORIZONTAL && second == BeltSlope.VERTICAL
-			|| first == BeltSlope.VERTICAL && second == BeltSlope.HORIZONTAL;
-	}
-
-	private boolean hasAdjacentBeltSource(Direction physicalSide) {
-		BlockEntity blockEntity = level.getBlockEntity(worldPosition.relative(physicalSide));
-		if (blockEntity instanceof SlimeBeltBlockEntity slimeBelt)
-			return isSlimeBeltSourceMovingToward(slimeBelt, physicalSide);
-		if (blockEntity instanceof MagmaBeltBlockEntity magmaBelt)
-			return isMagmaBeltSourceMovingToward(magmaBelt, physicalSide);
-		if (blockEntity instanceof BeltBlockEntity belt)
-			return isBeltSourceMovingToward(belt, physicalSide);
-		return false;
-	}
-
-	private boolean isSlimeBeltSourceMovingToward(SlimeBeltBlockEntity slimeBelt, Direction physicalSide) {
-		if (slimeBelt.getSpeed() == 0)
-			return false;
-		SlimeBeltBlockEntity sourceController = slimeBelt.getControllerBE();
-		if (sourceController == null)
-			return false;
-		Direction expectedMovement = physicalSide.getOpposite();
-		return SlimeBeltHelper.getMovementFacingForTrack(sourceController, SlimeBeltHelper.Track.FRONT) == expectedMovement
-			|| SlimeBeltHelper.getMovementFacingForTrack(sourceController, SlimeBeltHelper.Track.BACK) == expectedMovement;
-	}
-
-	private boolean isMagmaBeltSourceMovingToward(MagmaBeltBlockEntity magmaBelt, Direction physicalSide) {
-		return magmaBelt.getSpeed() != 0 && magmaBelt.getMovementFacing() == physicalSide.getOpposite();
-	}
-
-	private boolean isBeltSourceMovingToward(BeltBlockEntity belt, Direction physicalSide) {
-		return belt.getSpeed() != 0 && belt.getMovementFacing() == physicalSide.getOpposite();
-	}
-
-	private boolean hasAdjacentFunnel(Direction physicalSide) {
-		return level.getBlockState(worldPosition.relative(physicalSide)).getBlock() instanceof BeltFunnelBlock;
 	}
 
 	private void applyToAllItems(float maxDistanceFromCenter,
@@ -576,7 +482,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		if (controller == null || controller.beltLength == 0)
 			return List.of();
 		List<BeltSurface> result = new ArrayList<>(2);
-		for (SlimeBeltHelper.Track track : SlimeBeltHelper.Track.values()) {
+		for (Track track : Track.values()) {
 			Direction outwardNormal = SlimeBeltHelper.getRepresentativeSideForTrack(controller, index, track);
 			Direction movementFacing = SlimeBeltHelper.getMovementFacingForTrack(controller, track);
 			if (outwardNormal.getAxis() == movementFacing.getAxis())

@@ -5,6 +5,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
+import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.AutomaticFishReleaseMachineItem;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModItems;
 import com.nobodiiiii.createbiotech.content.buttercat.item.ConfigurableButterFoodItem;
 import com.nobodiiiii.createbiotech.content.buttercat.item.ConfigurableButterSequencedAssemblyItem;
@@ -24,6 +25,7 @@ import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTa
 import com.nobodiiiii.createbiotech.content.squidprinter.EnchantmentBookCopyItem;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerItem;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackageItem;
+import com.nobodiiiii.createbiotech.content.slimearmor.SlimeArmorItem;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterItem;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointItem;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessTerminalItem;
@@ -32,6 +34,7 @@ import com.yision.allay.item.allaycourier.AllayCourierItem;
 import com.yision.allay.item.allaycourier.IncompleteAllayCourierItem;
 
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -45,6 +48,11 @@ public class CBItems {
 
 	public static final DeferredRegister<Item> ITEMS =
 		DeferredRegister.create(ForgeRegistries.ITEMS, CreateBiotech.MOD_ID);
+
+	public static final RegistryObject<Item> AUTOMATIC_FISH_RELEASE_MACHINE =
+		ITEMS.register("automatic_fish_release_machine",
+			() -> new AutomaticFishReleaseMachineItem(CBBlocks.AUTOMATIC_FISH_RELEASE_MACHINE.get(),
+				new Item.Properties()));
 
 	public static final RegistryObject<Item> EVOKER_ENCHANTING_CHAMBER = ITEMS.register("evoker_enchanting_chamber",
 		() -> new EvokerEnchantingChamberItem(CBBlocks.EVOKER_ENCHANTING_CHAMBER.get(), new Item.Properties()));
@@ -103,6 +111,18 @@ public class CBItems {
 
 	public static final RegistryObject<Item> CAPTURED_SMALL_SLIME = ITEMS.register("captured_small_slime",
 		() -> new CapturedSmallSlimeItem(new Item.Properties().stacksTo(4)));
+
+	public static final RegistryObject<Item> SLIME_HELMET = ITEMS.register("slime_helmet",
+		() -> new SlimeArmorItem(ArmorItem.Type.HELMET, new Item.Properties()));
+
+	public static final RegistryObject<Item> SLIME_CHESTPLATE = ITEMS.register("slime_chestplate",
+		() -> new SlimeArmorItem(ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+	public static final RegistryObject<Item> SLIME_LEGGINGS = ITEMS.register("slime_leggings",
+		() -> new SlimeArmorItem(ArmorItem.Type.LEGGINGS, new Item.Properties()));
+
+	public static final RegistryObject<Item> SLIME_BOOTS = ITEMS.register("slime_boots",
+		() -> new SlimeArmorItem(ArmorItem.Type.BOOTS, new Item.Properties()));
 
 	public static final RegistryObject<Item> UNIVERSAL_JOINT = ITEMS.register("universal_joint",
 		() -> new UniversalJointItem(new Item.Properties()));
