@@ -132,10 +132,15 @@ public final class GeneratedPetriDish_22adcbfa {
         });
         scene.idle(12);
         scene.world().modifyEntity(regenerationPotion, Entity::discard);
-        var regenerationParticles = ParticleTypes.ENTITY_EFFECT;
+        int regenerationColor = PotionUtils.getColor(Potions.REGENERATION);
+        Vec3 regenerationParticleColor = new Vec3(
+            ((regenerationColor >> 16) & 0xff) / 255.0,
+            ((regenerationColor >> 8) & 0xff) / 255.0,
+            (regenerationColor & 0xff) / 255.0
+        );
         scene.effects().emitParticles(
             new Vec3(3.5, 1.05, 3.5),
-            scene.effects().particleEmitterWithinBlockSpace(regenerationParticles, new Vec3(0.0, 0.08, 0.0)),
+            scene.effects().particleEmitterWithinBlockSpace(ParticleTypes.ENTITY_EFFECT, regenerationParticleColor),
             24.0f,
             1
         );

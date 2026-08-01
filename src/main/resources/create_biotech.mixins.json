@@ -65,7 +65,7 @@
     "client.MixinSuperGlueSelectionHandler",
     "client.ModelPartAccessor",
     "client.ModelPartRenderMixin",
-    "client.PonderWorldParticlesMixin",
+    "client.PonderSceneMixin",
     "client.WorldSectionElementImplMixin"
   ],
   "injectors": {
