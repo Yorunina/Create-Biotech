@@ -101,9 +101,13 @@ public enum CBFeature {
 	}
 
 	public static CBFeature fromSerializedName(String name) {
-		CBFeature feature = BY_NAME.get(name);
+		CBFeature feature = bySerializedName(name);
 		if (feature == null)
 			throw new IllegalArgumentException("Unknown Create: Biotech feature: " + name);
 		return feature;
+	}
+
+	public static @Nullable CBFeature bySerializedName(String name) {
+		return BY_NAME.get(name);
 	}
 }

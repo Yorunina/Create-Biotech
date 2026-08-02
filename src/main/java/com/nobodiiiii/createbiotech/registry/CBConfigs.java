@@ -142,7 +142,10 @@ public class CBConfigs {
 		}
 
 		public boolean isEnabled(CBFeature feature) {
-			return enabled.get(feature).get();
+			ForgeConfigSpec.BooleanValue value = enabled.get(feature);
+			// WorldStem recipes are decoded before the per-world SERVER config is loaded.
+			// The actual values are applied by CBFeatureRecipeFilter once the server starts.
+			return SERVER_SPEC.isLoaded() ? value.get() : value.getDefault();
 		}
 	}
 
