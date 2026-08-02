@@ -22,10 +22,10 @@ import net.minecraft.world.entity.player.Player;
 
 @Mixin(StockKeeperRequestScreen.class)
 public abstract class StockKeeperRequestScreenMixin {
-	@Shadow
+	@Shadow(remap = false)
 	WeakReference<LivingEntity> stockKeeper;
 
-	@Shadow
+	@Shadow(remap = false)
 	WeakReference<BlazeBurnerBlockEntity> blaze;
 
 	@Inject(method = "<init>", at = @At("RETURN"))
