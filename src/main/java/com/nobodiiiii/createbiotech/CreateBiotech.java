@@ -25,6 +25,7 @@ import com.nobodiiiii.createbiotech.registry.CBRecipeTypes;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 import com.simibubi.create.api.behaviour.interaction.MovingInteractionBehaviour;
+import com.simibubi.create.api.stress.BlockStressValues;
 import com.yision.allay.block.allayport.AllayPortTargetRegistry;
 import com.yision.allay.logistics.courier.AllayCourierTaskManager;
 
@@ -74,6 +75,7 @@ public class CreateBiotech {
 		event.enqueueWork(() -> {
 			ExperienceOpenPipeEffectHandler.register();
 			ExplosionProofItemVaultCompat.register();
+			BlockStressValues.IMPACTS.register(CBBlocks.EXPERIENCE_PUMP.get(), () -> 4.0d);
 			MovementBehaviour.REGISTRY.register(CBBlocks.GHAST_HELM.get(), new GhastHelmMovementBehaviour());
 			BufferPadMovementBehaviour bufferPadMovementBehaviour = new BufferPadMovementBehaviour();
 			for (DyeColor color : DyeColor.values())

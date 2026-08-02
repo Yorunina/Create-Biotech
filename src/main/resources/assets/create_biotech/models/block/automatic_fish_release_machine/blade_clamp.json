@@ -1,0 +1,11 @@
+{
+  "parent": "block/block",
+  "ambientocclusion": false,
+  "textures": {
+    "metal": "create:block/waterwheel_metal",
+    "particle": "create:block/waterwheel_metal"
+  },
+  "loader": "forge:obj",
+  "flip_v": true,
+  "model": "create_biotech:models/block/automatic_fish_release_machine/blade_clamp.obj"
+}

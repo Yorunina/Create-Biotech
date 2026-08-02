@@ -121,7 +121,7 @@ public final class FluidTankExperienceOrbRenderer {
 
 		PonderScene.SceneTransform transform = ponderLevel.scene.getTransform();
 		PonderScene.SceneCamera camera = new PonderScene.SceneCamera();
-		camera.set(transform.xRotation.getValue(partialTicks) + 90.0f,
+		camera.set(-transform.xRotation.getValue(partialTicks),
 			transform.yRotation.getValue(partialTicks) + 180.0f);
 		return new Quaternionf(camera.rotation());
 	}

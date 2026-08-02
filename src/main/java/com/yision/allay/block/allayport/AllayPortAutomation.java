@@ -9,6 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.Nullable;
 
 final class AllayPortAutomation {
@@ -22,7 +23,31 @@ final class AllayPortAutomation {
 	}
 
 	void tick() {
+		tryPushingToBelow();
 		tryPullingFromBelow();
+	}
+
+	private void tryPushingToBelow() {
+		IItemHandler source = port.getAutomationItemHandler();
+		if (source == null)
+			return;
+
+		IItemHandler destination = getAdjacentInventory(Direction.DOWN);
+		if (destination == null)
+			return;
+
+		for (int slot = 0; slot < source.getSlots(); slot++) {
+			ItemStack packageInSlot = source.extractItem(slot, 1, true);
+			if (packageInSlot.isEmpty())
+				continue;
+
+			ItemStack remainder = ItemHandlerHelper.insertItemStacked(destination, packageInSlot, false);
+			if (!remainder.isEmpty())
+				continue;
+
+			source.extractItem(slot, 1, false);
+			port.markPortContentsChanged();
+		}
 	}
 
 	boolean tryPullingFromBelow() {

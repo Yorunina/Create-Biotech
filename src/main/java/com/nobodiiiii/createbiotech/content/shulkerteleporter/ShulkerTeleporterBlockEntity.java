@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
+import com.nobodiiiii.createbiotech.foundation.advancement.CBAdvancements;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -28,6 +29,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -322,6 +324,8 @@ public class ShulkerTeleporterBlockEntity extends KineticBlockEntity implements 
 			if (!teleported)
 				continue;
 			target.markArrivalCooldown(entity.getUUID());
+			if (entity instanceof ServerPlayer player)
+				CBAdvancements.award(player, CBAdvancements.SHULKER_TELEPORTER);
 			teleportedAny = true;
 		}
 		if (teleportedAny) {

@@ -12,6 +12,8 @@ import net.createmod.ponder.api.scene.SceneBuildingUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Cat;
@@ -50,13 +52,15 @@ public class ModPonderScenes {
                 .pointAt(util.vector().topOf(catPos));
         scene.idle(60);
 
-        ItemStack boxedCat = CBItems.CARDBOARD_BOX.get().getDefaultInstance();
-        scene.overlay().showControls(util.vector().topOf(catPos), Pointing.LEFT, 20).rightClick().withItem(boxedCat);
-        scene.idle(45);
-
-        scene.overlay().showControls(util.vector().topOf(enginePos), Pointing.LEFT, 20).rightClick();
-        scene.idle(5);
+        ItemStack emptyBox = CBItems.CARDBOARD_BOX.get().getDefaultInstance();
+        ItemStack boxedCat = createCapturedCatBox();
+        scene.overlay().showControls(util.vector().topOf(catPos), Pointing.LEFT, 40).rightClick().withItem(emptyBox);
+        scene.idle(40);
         scene.world().modifyEntities(Cat.class, Entity::discard);
+        scene.idle(5);
+
+        scene.overlay().showControls(util.vector().topOf(enginePos), Pointing.LEFT, 20).rightClick().withItem(boxedCat);
+        scene.idle(5);
         scene.world().setBlock(enginePos,
                 ModBlocks.CUTE_CAT_ON_SHAFT
                 .getDefaultState()
@@ -129,6 +133,20 @@ public class ModPonderScenes {
         scene.effects().indicateRedstone(stressPos);
         scene.idle(60);
         scene.markAsFinished();
+    }
+
+    private static ItemStack createCapturedCatBox() {
+        ItemStack stack = CBItems.CARDBOARD_BOX.get().getDefaultInstance();
+        ResourceLocation entityId = BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.CAT);
+        if (entityId == null)
+            return stack;
+
+        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag entityData = new CompoundTag();
+        entityData.putString("id", entityId.toString());
+        tag.put("CapturedEntity", entityData);
+        tag.putString("CapturedEntityDescId", EntityType.CAT.getDescriptionId());
+        return stack;
     }
 }
 

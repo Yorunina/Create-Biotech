@@ -2,6 +2,7 @@ package com.nobodiiiii.createbiotech.client;
 
 import java.util.function.Predicate;
 
+import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.AutomaticFishReleaseMachineRenderer;
 import com.nobodiiiii.createbiotech.content.evokerenchantingchamber.EvokerEnchantingChamberRenderer;
 import com.nobodiiiii.createbiotech.content.experience.ExperiencePumpRenderer;
 import com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule;
@@ -44,10 +45,12 @@ import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTa
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableRenderer;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableScreen;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterRenderer;
+import com.nobodiiiii.createbiotech.content.universaljoint.HalfShaftVisual;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointRenderer;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestMenu;
 import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestScreen;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
+import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
 import com.yision.allay.block.allayport.AllayPortMenu;
 import com.yision.allay.block.allayport.AllayPortScreen;
 import com.yision.allay.client.gui.hud.AllayCourierHudOverlay;
@@ -74,7 +77,10 @@ import com.simibubi.create.content.contraptions.render.ContraptionEntityRenderer
 import com.simibubi.create.content.contraptions.render.ContraptionVisual;
 import com.simibubi.create.content.decoration.encasing.EncasedCTBehaviour;
 import com.simibubi.create.content.kinetics.simpleRelays.encased.EncasedCogVisual;
+import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftVisual;
+import com.simibubi.create.content.kinetics.waterwheel.WaterWheelVisual;
+import com.simibubi.create.content.fluids.PipeAttachmentModel;
 import com.simibubi.create.foundation.block.connected.CTModel;
 import com.simibubi.create.foundation.block.connected.SimpleCTBehaviour;
 import com.simibubi.create.foundation.item.ItemDescription;
@@ -112,9 +118,12 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 @Mod.EventBusSubscriber(modid = CreateBiotech.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class CreateBiotechClient {
+	private static boolean customBlockModelsRegistered;
 
 	@SubscribeEvent
 	public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+		event.registerBlockEntityRenderer(CBBlockEntityTypes.AUTOMATIC_FISH_RELEASE_MACHINE.get(),
+			AutomaticFishReleaseMachineRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.EVOKER_ENCHANTING_CHAMBER.get(),
 			EvokerEnchantingChamberRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.EXPERIENCE_PUMP.get(), ExperiencePumpRenderer::new);
@@ -123,6 +132,7 @@ public class CreateBiotechClient {
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.MAGMA_BELT.get(), MagmaBeltRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.POWER_BELT.get(), PowerBeltRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.UNIVERSAL_JOINT.get(), UniversalJointRenderer::new);
+		event.registerBlockEntityRenderer(CBBlockEntityTypes.HALF_SHAFT.get(), KineticBlockEntityRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.SLIME_CLUTCH.get(), SplitShaftRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.SCHRODINGERS_CAT.get(), SchrodingersCatRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.SPIDER_ASSEMBLY_TABLE.get(),
@@ -161,6 +171,8 @@ public class CreateBiotechClient {
 	@SubscribeEvent
 	public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
 		event.register(CreateBiotech.asResource("block/universal_joint_endpoint_slime_overlay"));
+		event.register(AutomaticFishReleaseMachineRenderer.BLADE_CLAMP_MODEL_LOCATION);
+		event.register(HalfShaftVisual.MODEL.modelLocation());
 		event.register(CreateBiotech.asResource("block/blast_chamber_display/panel"));
 		event.register(CreateBiotech.asResource("block/blast_chamber_display/dial"));
 		event.register(CreateBiotech.asResource("block/blast_chamber_display/creeper_face"));
@@ -207,6 +219,7 @@ public class CreateBiotechClient {
 		MagmaBeltSpriteShifts.init();
 		PowerBeltSpriteShifts.init();
 		CBSpriteShifts.init();
+		registerCustomBlockModels();
 		event.registerReloadListener(new ResourceManagerReloadListener() {
 			@Override
 			public void onResourceManagerReload(ResourceManager resourceManager) {
@@ -232,6 +245,13 @@ public class CreateBiotechClient {
 			ButterCatModule.clientInit();
 			CardboardBoxPartials.register();
 			ShulkerPackagePartials.register();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.AUTOMATIC_FISH_RELEASE_MACHINE.get())
+				.factory(WaterWheelVisual::large)
+				.neverSkipVanillaRender()
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.EXPERIENCE_PUMP.get())
+				.factory(SingleAxisRotatingVisual.ofZ(ExperiencePumpRenderer.COG))
+				.apply();
 			SimpleEntityVisualizer.<GhastHotAirBalloonEntity>builder(CBEntityTypes.GHAST_HOT_AIR_BALLOON.get())
 				.factory(ContraptionVisual::new)
 				.apply();
@@ -253,6 +273,9 @@ public class CreateBiotechClient {
 				.apply();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.SLIME_CLUTCH.get())
 				.factory(SplitShaftVisual::new)
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.HALF_SHAFT.get())
+				.factory(HalfShaftVisual::new)
 				.apply();
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BIO_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_PACKAGER.get(), RenderType.cutoutMipped());
@@ -307,44 +330,10 @@ public class CreateBiotechClient {
 					return new WirelessStockKeeperRequestScreen((WirelessStockKeeperRequestMenu) menu, inventory, title);
 				}
 			});
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(Create.asResource("andesite_belt_funnel"), SlimeBeltFunnelModel::new);
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(Create.asResource("brass_belt_funnel"), SlimeBeltFunnelModel::new);
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("magma_belt"),
-					com.simibubi.create.content.kinetics.belt.BeltModel::new);
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("power_belt"),
-					com.simibubi.create.content.kinetics.belt.BeltModel::new);
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("asurine_casing"),
-					model -> new CTModel(model, new EncasedCTBehaviour(CBSpriteShifts.ASURINE_CASING)));
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("biotech_casing"),
-					model -> new CTModel(model, new EncasedCTBehaviour(CBSpriteShifts.BIOTECH_CASING)));
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("explosion_proof_casing"),
-					model -> new CTModel(model, new CasingConnectedHorizontalCTBehaviour(
-						CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE, CBSpriteShifts.EXPLOSION_PROOF_CASING)));
 			CreateClient.CASING_CONNECTIVITY.makeCasing(CBBlocks.ASURINE_CASING.get(),
 				CBSpriteShifts.ASURINE_CASING);
 			CreateClient.CASING_CONNECTIVITY.makeCasing(CBBlocks.BIOTECH_CASING.get(),
 				CBSpriteShifts.BIOTECH_CASING);
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("creeper_blast_chamber"),
-					model -> new CTModel(model, new CasingConnectedHorizontalCTBehaviour(
-						CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE, CBSpriteShifts.EXPLOSION_PROOF_CASING)));
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("explosion_proof_item_vault"),
-					model -> new CTModel(model, new ExplosionProofItemVaultCTBehaviour()));
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("blast_proof_chain_drive"),
-					model -> new CTModel(model,
-						new EncasedCTBehaviour(CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE)));
-			CreateClient.MODEL_SWAPPER.getCustomBlockModels()
-				.register(CreateBiotech.asResource("blast_proof_framed_glass"),
-					model -> new CTModel(model, new SimpleCTBehaviour(CBSpriteShifts.BLAST_PROOF_FRAMED_GLASS)));
 			CreateClient.CASING_CONNECTIVITY.makeCasing(CBBlocks.EXPLOSION_PROOF_CASING.get(),
 				CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE);
 			CreateClient.CASING_CONNECTIVITY.make(CBBlocks.CREEPER_BLAST_CHAMBER.get(),
@@ -357,6 +346,38 @@ public class CreateBiotechClient {
 		});
 	}
 
+	/** Register custom models before Create snapshots this registry during the first model bake. */
+	private static synchronized void registerCustomBlockModels() {
+		if (customBlockModelsRegistered)
+			return;
+
+		var customBlockModels = CreateClient.MODEL_SWAPPER.getCustomBlockModels();
+		customBlockModels.register(CreateBiotech.asResource("experience_pump"), PipeAttachmentModel::withAO);
+		customBlockModels.register(Create.asResource("andesite_belt_funnel"), SlimeBeltFunnelModel::new);
+		customBlockModels.register(Create.asResource("brass_belt_funnel"), SlimeBeltFunnelModel::new);
+		customBlockModels.register(CreateBiotech.asResource("magma_belt"),
+			com.simibubi.create.content.kinetics.belt.BeltModel::new);
+		customBlockModels.register(CreateBiotech.asResource("power_belt"),
+			com.simibubi.create.content.kinetics.belt.BeltModel::new);
+		customBlockModels.register(CreateBiotech.asResource("asurine_casing"),
+			model -> new CTModel(model, new EncasedCTBehaviour(CBSpriteShifts.ASURINE_CASING)));
+		customBlockModels.register(CreateBiotech.asResource("biotech_casing"),
+			model -> new CTModel(model, new EncasedCTBehaviour(CBSpriteShifts.BIOTECH_CASING)));
+		customBlockModels.register(CreateBiotech.asResource("explosion_proof_casing"),
+			model -> new CTModel(model, new CasingConnectedHorizontalCTBehaviour(
+				CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE, CBSpriteShifts.EXPLOSION_PROOF_CASING)));
+		customBlockModels.register(CreateBiotech.asResource("creeper_blast_chamber"),
+			model -> new CTModel(model, new CasingConnectedHorizontalCTBehaviour(
+				CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE, CBSpriteShifts.EXPLOSION_PROOF_CASING)));
+		customBlockModels.register(CreateBiotech.asResource("explosion_proof_item_vault"),
+			model -> new CTModel(model, new ExplosionProofItemVaultCTBehaviour()));
+		customBlockModels.register(CreateBiotech.asResource("blast_proof_chain_drive"),
+			model -> new CTModel(model, new EncasedCTBehaviour(CBSpriteShifts.EXPLOSION_PROOF_CASING_SIDE)));
+		customBlockModels.register(CreateBiotech.asResource("blast_proof_framed_glass"),
+			model -> new CTModel(model, new SimpleCTBehaviour(CBSpriteShifts.BLAST_PROOF_FRAMED_GLASS)));
+		customBlockModelsRegistered = true;
+	}
+
 	private static void registerItemTooltips() {
 		ItemDescription.useKey(CBFluids.TELEPORTATION_BUCKET.get(), "fluid.create_biotech.teleportation");
 		ItemDescription.useKey(CBItems.SMALL_EXPERIENCE_BUD.get(), "block.create_biotech.experience_bud");
@@ -367,11 +388,11 @@ public class CreateBiotechClient {
 
 		registerCreateStyleTooltip(CBFluids.TELEPORTATION_BUCKET.get());
 		registerCreateStyleTooltip(CBItems.BUDDING_EXPERIENCE.get());
+		registerCreateStyleTooltip(CBItems.AUTOMATIC_FISH_RELEASE_MACHINE.get());
 		registerCreateStyleTooltip(CBItems.SMALL_EXPERIENCE_BUD.get());
 		registerCreateStyleTooltip(CBItems.MEDIUM_EXPERIENCE_BUD.get());
 		registerCreateStyleTooltip(CBItems.LARGE_EXPERIENCE_BUD.get());
 		registerCreateStyleTooltip(CBItems.EXPERIENCE_CLUSTER.get());
-		registerCreateStyleTooltip(CBItems.PETRI_DISH.get());
 		registerCreateStyleTooltip(CBItems.CARDBOARD_BOX.get(), CapturedEntityBoxHelper::hasCapturedEntity);
 		registerCreateStyleTooltip(CBItems.LARGE_CARDBOARD_BOX.get(), CapturedEntityBoxHelper::hasCapturedEntity);
 		registerCreateStyleTooltip(CBItems.CAPTURED_SMALL_SLIME.get());
