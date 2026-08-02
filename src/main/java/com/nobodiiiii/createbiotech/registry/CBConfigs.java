@@ -1,6 +1,9 @@
 package com.nobodiiiii.createbiotech.registry;
 
+import java.util.EnumMap;
 import java.util.List;
+
+import com.nobodiiiii.createbiotech.foundation.feature.CBFeature;
 
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -97,6 +100,7 @@ public class CBConfigs {
 		public final FixedCarrotFishingRod fixedCarrotFishingRod;
 		public final BufferPad bufferPad;
 		public final ShulkerPackager shulkerPackager;
+		public final Features features;
 
 		Server(ForgeConfigSpec.Builder builder) {
 			experience = new Experience(builder);
@@ -120,6 +124,25 @@ public class CBConfigs {
 			fixedCarrotFishingRod = new FixedCarrotFishingRod(builder);
 			bufferPad = new BufferPad(builder);
 			shulkerPackager = new ShulkerPackager(builder);
+			features = new Features(builder);
+		}
+	}
+
+	public static class Features {
+		private final EnumMap<CBFeature, ForgeConfigSpec.BooleanValue> enabled = new EnumMap<>(CBFeature.class);
+
+		Features(ForgeConfigSpec.Builder builder) {
+			builder.comment("Master content-family switches. Disabled families keep their registry entries and existing "
+				+ "world blocks, but their output recipes will not load and players cannot place new blocks. "
+				+ "Run /reload or restart the server after changing these values.")
+				.push("features");
+			for (CBFeature feature : CBFeature.values())
+				enabled.put(feature, builder.define(feature.serializedName(), true));
+			builder.pop();
+		}
+
+		public boolean isEnabled(CBFeature feature) {
+			return enabled.get(feature).get();
 		}
 	}
 

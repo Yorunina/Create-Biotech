@@ -1,6 +1,7 @@
 package com.nobodiiiii.createbiotech.content.buttercat.register;
 
 import com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule;
+import com.nobodiiiii.createbiotech.foundation.feature.CBFeature;
 import com.nobodiiiii.createbiotech.content.buttercat.datagen.other.ModTags;
 import com.simibubi.create.AllFluids;
 import com.tterrag.registrate.util.entry.FluidEntry;
@@ -56,6 +57,8 @@ public class ModFluids {
     private static final DispenseItemBehavior DISPENSE_FLUID = new DefaultDispenseItemBehavior(){
         @Override
         protected ItemStack execute(BlockSource pSource, ItemStack pStack) {
+            if (!CBFeature.BUTTER_CAT.isEnabled())
+                return pStack;
             DispensibleContainerItem dispensibleContainerItem = (DispensibleContainerItem) pStack.getItem();
             BlockPos pos = pSource.getPos().relative(pSource.getBlockState().getValue(DispenserBlock.FACING));
             Level level = pSource.getLevel();

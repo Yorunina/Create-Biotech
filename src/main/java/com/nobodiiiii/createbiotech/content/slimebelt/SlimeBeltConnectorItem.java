@@ -6,6 +6,7 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
+import com.nobodiiiii.createbiotech.foundation.feature.CBFeature;
 import com.nobodiiiii.createbiotech.foundation.item.CBItemData;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
@@ -47,6 +48,8 @@ public class SlimeBeltConnectorItem extends BlockItem {
 	@Nonnull
 	@Override
 	public InteractionResult useOn(UseOnContext context) {
+		if (!CBFeature.SLIME_BELT.isEnabled())
+			return InteractionResult.FAIL;
 		Player player = context.getPlayer();
 		if (player != null && player.isShiftKeyDown()) {
 			CBItemData.set(context.getItemInHand(), null);
