@@ -1,5 +1,6 @@
 package com.yision.allay.block.allayport;
 
+import com.nobodiiiii.createbiotech.foundation.block.CBWrenchHelper;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.foundation.block.IBE;
 import com.yision.allay.registry.AllBlockEntityTypes;
@@ -51,6 +52,8 @@ public class AllayPortBlock extends HorizontalDirectionalBlock implements IWrenc
 	public @NotNull InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
 		@NotNull Player player, @NotNull InteractionHand hand,
 		@NotNull BlockHitResult hitResult) {
+		if (CBWrenchHelper.isWrench(player.getItemInHand(hand)))
+			return InteractionResult.PASS;
 		return onBlockEntityUse(level, pos, blockEntity -> blockEntity.use(player));
 	}
 

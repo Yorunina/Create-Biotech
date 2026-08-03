@@ -17,6 +17,15 @@ java {
     withSourcesJar()
 }
 
+sourceSets {
+	main {
+		resources {
+			srcDir 'src/generated/resources'
+			exclude '.cache/**'
+		}
+	}
+}
+
 mixin {
     add sourceSets.main, "create_biotech.refmap.json"
     config "create_biotech.mixins.json"

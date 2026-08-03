@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.foundation.block.IBE;
 import com.nobodiiiii.createbiotech.content.buttercat.datagen.other.ModTags;
@@ -12,6 +11,7 @@ import com.nobodiiiii.createbiotech.content.buttercat.event.ClientEffect;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModBlockEnetities;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModBlocks;
 import com.nobodiiiii.createbiotech.content.buttercat.register.ModItems;
+import com.nobodiiiii.createbiotech.foundation.block.CBWrenchHelper;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
@@ -81,8 +81,8 @@ public class ButterCatEngineBlock extends HorizontalKineticBlock implements  IBE
     public InteractionResult use(BlockState blockState, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult result) {
         ItemStack itemStack = player.getItemInHand(hand);
 
-        if (hand != InteractionHand.MAIN_HAND || itemStack.is(AllItems.WRENCH.get())) {
-            return InteractionResult.FAIL;
+        if (hand != InteractionHand.MAIN_HAND || CBWrenchHelper.isWrench(itemStack)) {
+            return InteractionResult.PASS;
         }
 
         if (player.isCrouching() || !(level.getBlockEntity(pos) instanceof ButterCatEngineBlockEntity be)) {
@@ -219,7 +219,7 @@ public class ButterCatEngineBlock extends HorizontalKineticBlock implements  IBE
     }
 
     private boolean preservesWholeBlock(ItemStack tool) {
-        return tool != null && (tool.is(AllItems.WRENCH.get())
+		return tool != null && (CBWrenchHelper.isWrench(tool)
             || EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, tool) > 0);
     }
 

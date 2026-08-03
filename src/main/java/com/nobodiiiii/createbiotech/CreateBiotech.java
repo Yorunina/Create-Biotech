@@ -9,6 +9,7 @@ import com.nobodiiiii.createbiotech.content.explosionproofitemvault.ExplosionPro
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastBalloonRopeShearsInteraction;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHelmMovingInteraction;
 import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHelmMovementBehaviour;
+import com.nobodiiiii.createbiotech.data.CBDataGenerators;
 import com.nobodiiiii.createbiotech.network.CBPackets;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -59,6 +60,7 @@ public class CreateBiotech {
 		CBParticleTypes.register(modEventBus);
 		CBRecipeTypes.register(modEventBus);
 		ButterCatModule.init(modEventBus);
+		modEventBus.addListener(CBDataGenerators::gatherData);
 		modEventBus.addListener(CreateBiotech::onCommonSetup);
 		modEventBus.addListener(CreateBiotech::onRegister);
 		CBPackets.register();

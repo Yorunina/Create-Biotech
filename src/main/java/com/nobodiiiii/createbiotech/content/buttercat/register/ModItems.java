@@ -10,7 +10,9 @@ import com.nobodiiiii.createbiotech.content.buttercat.item.ConfigurableButterSeq
 
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
+import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.util.entry.ItemEntry;
+import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 
 import static com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule.REGISTRATE;
 
@@ -23,10 +25,15 @@ public class ModItems {
             .tag(ModTags.BUTTER)
             .tag(ModTags.FOOD_BUTTER)
             .properties(p -> p.food(ButterFoodProperties.create(ButterFoodProperties.Variant.BUTTER)))
+            .setData(ProviderType.ITEM_MODEL, NonNullBiConsumer.noop())
+            .setData(ProviderType.ITEM_TAGS, NonNullBiConsumer.noop())
+            .setData(ProviderType.LANG, NonNullBiConsumer.noop())
             .register();
     public static final ItemEntry<ConfigurableButterFoodItem> SUPER_BUTTER = REGISTRATE
             .item("super_butter", properties -> new ConfigurableButterFoodItem(properties, ButterFoodProperties.Variant.SUPER_BUTTER))
             .properties(p -> p.food(ButterFoodProperties.create(ButterFoodProperties.Variant.SUPER_BUTTER)).rarity(Rarity.EPIC))
+            .setData(ProviderType.ITEM_MODEL, NonNullBiConsumer.noop())
+            .setData(ProviderType.LANG, NonNullBiConsumer.noop())
             .register();
 
     public static final ItemEntry<ConfigurableButterSequencedAssemblyItem> INCOMPLETE_SUPER_BUTTER =  REGISTRATE
@@ -35,6 +42,9 @@ public class ModItems {
             .tag(ModTags.BUTTER)
             .tag(ModTags.FOOD_BUTTER)
             .properties(p -> p.food(ButterFoodProperties.create(ButterFoodProperties.Variant.INCOMPLETE_SUPER_BUTTER)))
+            .setData(ProviderType.ITEM_MODEL, NonNullBiConsumer.noop())
+            .setData(ProviderType.ITEM_TAGS, NonNullBiConsumer.noop())
+            .setData(ProviderType.LANG, NonNullBiConsumer.noop())
             .register();
 
     private static final IdentityHashMap<Item, Integer> BUTTER_LEVEL_MAP = new IdentityHashMap<>();

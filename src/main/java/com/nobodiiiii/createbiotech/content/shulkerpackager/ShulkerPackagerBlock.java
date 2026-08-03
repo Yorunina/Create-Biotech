@@ -1,8 +1,8 @@
 package com.nobodiiiii.createbiotech.content.shulkerpackager;
 
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
+import com.nobodiiiii.createbiotech.foundation.block.CBWrenchHelper;
 import com.simibubi.create.AllBlocks;
-import com.simibubi.create.AllItems;
 import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.logistics.box.PackageItem;
@@ -104,7 +104,7 @@ public class ShulkerPackagerBlock extends WrenchableDirectionalBlock
 			return InteractionResult.PASS;
 
 		ItemStack itemInHand = player.getItemInHand(handIn);
-		if (AllItems.WRENCH.isIn(itemInHand))
+		if (CBWrenchHelper.isWrench(itemInHand))
 			return InteractionResult.PASS;
 		if (AllBlocks.FACTORY_GAUGE.isIn(itemInHand))
 			return InteractionResult.PASS;

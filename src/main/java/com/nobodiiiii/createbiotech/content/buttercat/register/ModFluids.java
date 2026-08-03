@@ -2,9 +2,10 @@ package com.nobodiiiii.createbiotech.content.buttercat.register;
 
 import com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule;
 import com.nobodiiiii.createbiotech.foundation.feature.CBFeature;
-import com.nobodiiiii.createbiotech.content.buttercat.datagen.other.ModTags;
 import com.simibubi.create.AllFluids;
 import com.tterrag.registrate.util.entry.FluidEntry;
+import com.tterrag.registrate.providers.ProviderType;
+import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
 
 import net.createmod.catnip.theme.Color;
 import net.minecraft.core.BlockPos;
@@ -41,12 +42,17 @@ public class ModFluids {
                             .tickRate(60)
                             .slopeFindDistance(2)
                             .explosionResistance(50))
-                    .tag(ModTags.CREAM)
+                    .setData(ProviderType.LANG, NonNullBiConsumer.noop())
                     .source(ForgeFlowingFluid.Flowing.Source::new)
                     .block()
                     .properties(p -> p.mapColor(MapColor.TERRACOTTA_WHITE))
+                    .setData(ProviderType.BLOCKSTATE, NonNullBiConsumer.noop())
+                    .setData(ProviderType.LOOT, NonNullBiConsumer.noop())
+                    .setData(ProviderType.LANG, NonNullBiConsumer.noop())
                     .build()
                     .bucket()
+                    .setData(ProviderType.ITEM_MODEL, NonNullBiConsumer.noop())
+                    .setData(ProviderType.LANG, NonNullBiConsumer.noop())
                     .onRegister(ModFluids::registerFluidDispenseBehavior)
                     .build()
                     .register();

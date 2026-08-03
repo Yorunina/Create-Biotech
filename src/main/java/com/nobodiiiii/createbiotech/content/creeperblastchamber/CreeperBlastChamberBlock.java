@@ -1,6 +1,7 @@
 package com.nobodiiiii.createbiotech.content.creeperblastchamber;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.nobodiiiii.createbiotech.foundation.block.CBWrenchHelper;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 
 import net.minecraft.core.BlockPos;
@@ -60,6 +61,8 @@ public class CreeperBlastChamberBlock extends BaseEntityBlock implements IWrench
 	@Override
 	public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
 								  InteractionHand hand, BlockHitResult hit) {
+		if (CBWrenchHelper.isWrench(player.getItemInHand(hand)))
+			return InteractionResult.PASS;
 		if (level.isClientSide)
 			return InteractionResult.SUCCESS;
 

@@ -7,6 +7,7 @@ import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 public final class ButterFoodProperties {
 
@@ -21,18 +22,22 @@ public final class ButterFoodProperties {
 	public static FoodProperties create(Variant variant) {
 		CBConfigs.ButterCat config = CBConfigs.SERVER.butterCat;
 		FoodProperties.Builder builder = switch (variant) {
-		case BUTTER -> food(config.butterNutrition.get(), config.butterSaturation.get());
-		case SUPER_BUTTER -> food(config.superButterNutrition.get(), config.superButterSaturation.get())
-			.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), config.superButterRotationDuration.get(),
-				config.superButterRotationAmplifier.get())
-			.withEffect(MobEffects.LEVITATION, config.superButterLevitationDuration.get(),
-				config.superButterLevitationAmplifier.get());
-		case INCOMPLETE_SUPER_BUTTER -> food(config.incompleteSuperButterNutrition.get(),
-			config.incompleteSuperButterSaturation.get())
-				.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), config.incompleteSuperButterRotationDuration.get(),
-					config.incompleteSuperButterRotationAmplifier.get());
+		case BUTTER -> food(value(config.butterNutrition), value(config.butterSaturation));
+		case SUPER_BUTTER -> food(value(config.superButterNutrition), value(config.superButterSaturation))
+			.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), value(config.superButterRotationDuration),
+				value(config.superButterRotationAmplifier))
+			.withEffect(MobEffects.LEVITATION, value(config.superButterLevitationDuration),
+				value(config.superButterLevitationAmplifier));
+		case INCOMPLETE_SUPER_BUTTER -> food(value(config.incompleteSuperButterNutrition),
+			value(config.incompleteSuperButterSaturation))
+				.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), value(config.incompleteSuperButterRotationDuration),
+					value(config.incompleteSuperButterRotationAmplifier));
 		};
 		return builder.build();
+	}
+
+	private static <T> T value(ForgeConfigSpec.ConfigValue<T> configValue) {
+		return CBConfigs.SERVER_SPEC.isLoaded() ? configValue.get() : configValue.getDefault();
 	}
 
 	private static Builder food(int nutrition, double saturation) {
