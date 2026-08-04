@@ -14,7 +14,8 @@ public class AllCreateBiotechPonderTags {
 
 		itemHelper.addToTag(AllCreatePonderTags.KINETIC_RELAYS)
 			.add(CBItems.BONE_RATCHET).add(CBItems.SLIME_CLUTCH).add(CBItems.UNIVERSAL_JOINT);
-		itemHelper.addToTag(AllCreatePonderTags.KINETIC_SOURCES).add(CBItems.POWER_BELT_CONNECTOR);
+		itemHelper.addToTag(AllCreatePonderTags.KINETIC_SOURCES)
+			.add(CBItems.POWER_BELT_CONNECTOR).add(CBItems.BUTTER_CAT_ENGINE);
 		itemHelper.addToTag(AllCreatePonderTags.KINETIC_APPLIANCES)
 			.add(CBItems.CREEPER_BLAST_CHAMBER).add(CBItems.MAGMA_BELT_CONNECTOR)
 			.add(CBItems.SHULKER_TELEPORTER).add(CBItems.SPIDER_ASSEMBLY_TABLE);

@@ -9,7 +9,6 @@ import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.Automati
 import com.nobodiiiii.createbiotech.content.boneratchet.BoneRatchetBlock;
 import com.nobodiiiii.createbiotech.content.biopackager.BioPackagerBlock;
 import com.nobodiiiii.createbiotech.content.buttercat.block.ButterCatEngineBlock;
-import com.nobodiiiii.createbiotech.content.buttercat.register.ModBlocks;
 import com.nobodiiiii.createbiotech.content.bufferpad.BufferPadBlock;
 import com.nobodiiiii.createbiotech.content.evokerenchantingchamber.EvokerEnchantingChamberBlock;
 import com.nobodiiiii.createbiotech.content.experience.BuddingExperienceBlock;
@@ -39,6 +38,7 @@ import com.nobodiiiii.createbiotech.content.creeperblastchamber.CreeperBlastCham
 import com.nobodiiiii.createbiotech.content.creeperblastchamber.ExplosionProofCasingBlock;
 import com.simibubi.create.content.decoration.encasing.CasingBlock;
 import com.simibubi.create.content.decoration.palettes.ConnectedGlassBlock;
+import com.simibubi.create.api.stress.BlockStressValues;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.GlassBlock;
@@ -49,7 +49,6 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import com.tterrag.registrate.util.entry.BlockEntry;
 
 public class CBBlocks {
 
@@ -175,6 +174,7 @@ public class CBBlocks {
 		BLOCKS.register("schrodingers_cat",
 			() -> new SchrodingersCatBlock(CBSharedProperties.createWooden()
 				.sound(SoundType.WOOL)
+				.strength(0.8f)
 				.mapColor(MapColor.COLOR_BROWN)
 				.noOcclusion()));
 
@@ -192,7 +192,7 @@ public class CBBlocks {
 
 	public static final RegistryObject<CreeperBlastChamberBlock> CREEPER_BLAST_CHAMBER =
 		BLOCKS.register("creeper_blast_chamber",
-			() -> new CreeperBlastChamberBlock(CBSharedProperties.withObsidianDurability(CBSharedProperties.createStone())
+			() -> new CreeperBlastChamberBlock(CBSharedProperties.withExplosionProofResistance(CBSharedProperties.createStone())
 				.sound(SoundType.WOOD)
 				.noOcclusion()));
 
@@ -210,12 +210,12 @@ public class CBBlocks {
 
 	public static final RegistryObject<ExplosionProofCasingBlock> EXPLOSION_PROOF_CASING =
 		BLOCKS.register("explosion_proof_casing",
-			() -> new ExplosionProofCasingBlock(CBSharedProperties.withObsidianDurability(CBSharedProperties.createStone())
+			() -> new ExplosionProofCasingBlock(CBSharedProperties.withExplosionProofResistance(CBSharedProperties.createStone())
 				.sound(SoundType.WOOD)));
 
 	public static final RegistryObject<ExplosionProofItemVaultBlock> EXPLOSION_PROOF_ITEM_VAULT =
 		BLOCKS.register("explosion_proof_item_vault",
-			() -> new ExplosionProofItemVaultBlock(CBSharedProperties.withObsidianDurability(CBSharedProperties.createSoftMetal())
+			() -> new ExplosionProofItemVaultBlock(CBSharedProperties.withExplosionProofResistance(CBSharedProperties.createSoftMetal())
 				.mapColor(MapColor.TERRACOTTA_BLUE)
 				.sound(SoundType.NETHERITE_BLOCK)));
 
@@ -225,7 +225,7 @@ public class CBBlocks {
 
 	public static final RegistryObject<BlastProofChainDriveBlock> BLAST_PROOF_CHAIN_DRIVE =
 		BLOCKS.register("blast_proof_chain_drive",
-				() -> new BlastProofChainDriveBlock(CBSharedProperties.withObsidianDurability(CBSharedProperties.createStone())
+				() -> new BlastProofChainDriveBlock(CBSharedProperties.withExplosionProofResistance(CBSharedProperties.createStone())
 					.noOcclusion()
 					.mapColor(MapColor.PODZOL)));
 
@@ -263,13 +263,22 @@ public class CBBlocks {
 	public static final Map<DyeColor, RegistryObject<BufferPadBlock>> BUFFER_PADS = registerBufferPads();
 	public static final RegistryObject<BufferPadBlock> BUFFER_PAD = BUFFER_PADS.get(DyeColor.RED);
 
-	// Butter Cat content is registered through the shared ButterCat registrate, and re-exported
-	// here so the project's primary block registry remains the place to inspect mod blocks.
-	public static final BlockEntry<ButterCatEngineBlock> CUTE_CAT_ON_SHAFT = ModBlocks.CUTE_CAT_ON_SHAFT;
-	public static final BlockEntry<ButterCatEngineBlock> BUTTER_CAT_ENGINE = ModBlocks.BUTTER_CAT_ENGINE;
+	public static final RegistryObject<ButterCatEngineBlock> CUTE_CAT_ON_SHAFT =
+		BLOCKS.register("cute_cat_on_shaft",
+			() -> new ButterCatEngineBlock(CBSharedProperties.createStone()
+				.noOcclusion()
+				.mapColor(MapColor.METAL)
+				.forceSolidOff()));
+
+	public static final RegistryObject<ButterCatEngineBlock> BUTTER_CAT_ENGINE =
+		BLOCKS.register("butter_cat_engine",
+			() -> new ButterCatEngineBlock(CBSharedProperties.createStone()
+				.noOcclusion()
+				.mapColor(MapColor.METAL)
+				.forceSolidOff()));
 
 	private static Block.Properties blastProofGlassProperties() {
-		return CBSharedProperties.withObsidianDurability(CBSharedProperties.vanillaGlass());
+		return CBSharedProperties.withExplosionProofResistance(CBSharedProperties.vanillaGlass());
 	}
 
 	private static Map<DyeColor, RegistryObject<BufferPadBlock>> registerBufferPads() {
@@ -297,5 +306,35 @@ public class CBBlocks {
 
 	public static void register(IEventBus modEventBus) {
 		BLOCKS.register(modEventBus);
+	}
+
+	public static void registerButterCatStressValues() {
+		double maxGeneratedRpm = butterCatMaxGeneratedRpm();
+		BlockStressValues.GeneratedRpm generatedRpm =
+			new BlockStressValues.GeneratedRpm((int) Math.round(maxGeneratedRpm), true);
+
+		for (ButterCatEngineBlock block : new ButterCatEngineBlock[] {
+			CUTE_CAT_ON_SHAFT.get(), BUTTER_CAT_ENGINE.get()
+		}) {
+			BlockStressValues.CAPACITIES.register(block, CBBlocks::butterCatCapacityPerRpm);
+			BlockStressValues.RPM.register(block, generatedRpm);
+		}
+	}
+
+	private static double butterCatCapacityPerRpm() {
+		double maxGeneratedRpm = butterCatMaxGeneratedRpm();
+		return maxGeneratedRpm == 0 ? 0 : butterCatMaxStressCapacity() / maxGeneratedRpm;
+	}
+
+	private static double butterCatMaxStressCapacity() {
+		return CBConfigs.SERVER_SPEC.isLoaded()
+			? CBConfigs.SERVER.butterCat.maxStressCapacity.get()
+			: CBConfigs.SERVER.butterCat.maxStressCapacity.getDefault();
+	}
+
+	private static double butterCatMaxGeneratedRpm() {
+		return CBConfigs.SERVER_SPEC.isLoaded()
+			? CBConfigs.SERVER.butterCat.maxGeneratedRpm.get()
+			: CBConfigs.SERVER.butterCat.maxGeneratedRpm.getDefault();
 	}
 }

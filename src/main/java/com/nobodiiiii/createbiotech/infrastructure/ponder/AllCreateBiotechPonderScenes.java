@@ -1,6 +1,7 @@
 package com.nobodiiiii.createbiotech.infrastructure.ponder;
 
 import com.nobodiiiii.createbiotech.registry.CBItems;
+import com.nobodiiiii.createbiotech.content.buttercat.ponder.ModPonderScenes;
 import com.simibubi.create.infrastructure.ponder.AllCreatePonderTags;
 import com.simibubi.create.infrastructure.ponder.scenes.ChassisScenes;
 
@@ -14,5 +15,8 @@ public class AllCreateBiotechPonderScenes {
 		PonderSceneRegistrationHelper<RegistryObject<?>> HELPER = helper.withKeyFunction(RegistryObject::getId);
 		HELPER.forComponents(CBItems.SMART_SUPER_GLUE)
 			.addStoryBoard("super_glue", ChassisScenes::superGlue, AllCreatePonderTags.CONTRAPTION_ASSEMBLY);
+		HELPER.forComponents(CBItems.BUTTER_CAT_ENGINE)
+			.addStoryBoard("butter_cat_engine", ModPonderScenes::butterCatEngine,
+				AllCreatePonderTags.KINETIC_SOURCES);
 	}
 }

@@ -5,7 +5,9 @@ import java.util.function.Predicate;
 import com.nobodiiiii.createbiotech.content.automaticfishreleasemachine.AutomaticFishReleaseMachineRenderer;
 import com.nobodiiiii.createbiotech.content.evokerenchantingchamber.EvokerEnchantingChamberRenderer;
 import com.nobodiiiii.createbiotech.content.experience.ExperiencePumpRenderer;
-import com.nobodiiiii.createbiotech.content.buttercat.ButterCatModule;
+import com.nobodiiiii.createbiotech.content.buttercat.block.ButterCatEngineRenderer;
+import com.nobodiiiii.createbiotech.content.buttercat.block.ButterCatEngineVisual;
+import com.nobodiiiii.createbiotech.content.buttercat.event.RotationHandler;
 import com.nobodiiiii.createbiotech.content.biopackager.BioPackagerRenderer;
 import com.nobodiiiii.createbiotech.content.biopackager.BioPackagerVisual;
 import com.nobodiiiii.createbiotech.content.boneratchet.BoneRatchetRenderer;
@@ -84,6 +86,7 @@ import com.simibubi.create.content.fluids.PipeAttachmentModel;
 import com.simibubi.create.foundation.block.connected.CTModel;
 import com.simibubi.create.foundation.block.connected.SimpleCTBehaviour;
 import com.simibubi.create.foundation.item.ItemDescription;
+import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipModifier;
 
 import dev.engine_room.flywheel.lib.model.Models;
@@ -106,6 +109,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -152,6 +156,7 @@ public class CreateBiotechClient {
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.SHULKER_TELEPORTER.get(), ShulkerTeleporterRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.BONE_RATCHET.get(), BoneRatchetRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.PETRI_DISH.get(), PetriDishRenderer::new);
+		event.registerBlockEntityRenderer(CBBlockEntityTypes.BUTTER_CAT_ENGINE.get(), ButterCatEngineRenderer::new);
 		event.registerBlockEntityRenderer(CBBlockEntityTypes.ALLAY_PORT.get(), AllayPortRenderer::new);
 		event.registerEntityRenderer(CBEntityTypes.GHAST_HOT_AIR_BALLOON.get(),
 			GhastHotAirBalloonEntityRenderer::new);
@@ -203,6 +208,8 @@ public class CreateBiotechClient {
 		event.register(CreateBiotech.asResource("item/large_cardboard_box_captured"));
 		event.register(CardboardBoxPartials.LARGE_BOX_LOGISTICS_LOCATION);
 		event.register(CreateBiotech.asResource("item/allay_courier_package"));
+		ButterCatPartials.allModels()
+			.forEach(model -> event.register(model.modelLocation()));
 	}
 
 	@SubscribeEvent
@@ -238,11 +245,12 @@ public class CreateBiotechClient {
 
 	@SubscribeEvent
 	public static void onClientSetup(FMLClientSetupEvent event) {
+		MinecraftForge.EVENT_BUS.addListener(RotationHandler::onClientTick);
+		MinecraftForge.EVENT_BUS.addListener(RotationHandler::onRender);
 		event.enqueueWork(() -> {
 			registerItemTooltips();
 			registerCardboardBoxModelProperties();
 			PonderIndex.addPlugin(new CreateBiotechPonderPlugin());
-			ButterCatModule.clientInit();
 			CardboardBoxPartials.register();
 			ShulkerPackagePartials.register();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.AUTOMATIC_FISH_RELEASE_MACHINE.get())
@@ -277,6 +285,9 @@ public class CreateBiotechClient {
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.HALF_SHAFT.get())
 				.factory(HalfShaftVisual::new)
 				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.BUTTER_CAT_ENGINE.get())
+				.factory(ButterCatEngineVisual::new)
+				.apply();
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BIO_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_TELEPORTER.get(), RenderType.cutoutMipped());
@@ -295,12 +306,17 @@ public class CreateBiotechClient {
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.FIXED_CARROT_FISHING_ROD.get(), RenderType.cutout());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BLAST_PROOF_GLASS.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BLAST_PROOF_FRAMED_GLASS.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(CBBlocks.CUTE_CAT_ON_SHAFT.get(), RenderType.cutoutMipped());
+			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BUTTER_CAT_ENGINE.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.LIQUID_LIVING_SLIME.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.LIQUID_LIVING_SLIME_FLOWING.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.LIQUID_LIVING_SLIME_BLOCK.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.TELEPORTATION.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.TELEPORTATION_FLOWING.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.TELEPORTATION_BLOCK.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM_FLOWING.get(), RenderType.translucent());
+			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM_BLOCK.get(), RenderType.translucent());
 			MenuScreens.register(CBMenuTypes.SPIDER_ASSEMBLY_TABLE.get(), SpiderAssemblyTableScreen::new);
 			MenuScreens.register(CBMenuTypes.ALLAY_PORT.get(), new MenuScreens.ScreenConstructor() {
 				@Override
@@ -403,6 +419,12 @@ public class CreateBiotechClient {
 		registerCreateStyleTooltip(CBItems.SHULKER_TELEPORTER.get());
 		registerCreateStyleTooltip(CBItems.ALLAY_PORT.get());
 		registerCreateStyleTooltip(CBItems.ALLAY_COURIER.get());
+		registerCreateStyleTooltip(CBItems.CUTE_CAT_ON_SHAFT.get());
+		registerKineticCreateStyleTooltip(CBItems.BUTTER_CAT_ENGINE.get());
+		registerKineticCreateStyleTooltip(CBItems.BUTTER.get());
+		registerKineticCreateStyleTooltip(CBItems.INCOMPLETE_SUPER_BUTTER.get());
+		registerKineticCreateStyleTooltip(CBItems.SUPER_BUTTER.get());
+		registerKineticCreateStyleTooltip(CBFluids.CREAM_BUCKET.get());
 		CBItems.BUFFER_PADS.values()
 			.forEach(entry -> registerCreateStyleTooltip(entry.get()));
 	}
@@ -418,6 +440,12 @@ public class CreateBiotechClient {
 				return;
 			description.modify(context);
 		});
+	}
+
+	private static void registerKineticCreateStyleTooltip(Item item) {
+		TooltipModifier modifier = new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE)
+			.andThen(TooltipModifier.mapNull(KineticStats.create(item)));
+		TooltipModifier.REGISTRY.register(item, modifier::modify);
 	}
 
 	private static void registerCardboardBoxModelProperties() {

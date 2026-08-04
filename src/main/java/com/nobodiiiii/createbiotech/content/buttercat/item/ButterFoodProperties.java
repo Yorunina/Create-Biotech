@@ -1,7 +1,9 @@
 package com.nobodiiiii.createbiotech.content.buttercat.item;
 
-import com.nobodiiiii.createbiotech.content.buttercat.register.ModEffects;
+import java.util.function.Supplier;
+
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
+import com.nobodiiiii.createbiotech.registry.CBMobEffects;
 
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -24,13 +26,13 @@ public final class ButterFoodProperties {
 		FoodProperties.Builder builder = switch (variant) {
 		case BUTTER -> food(value(config.butterNutrition), value(config.butterSaturation));
 		case SUPER_BUTTER -> food(value(config.superButterNutrition), value(config.superButterSaturation))
-			.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), value(config.superButterRotationDuration),
+			.withEffect(CBMobEffects.BUTTER_ROTATION, value(config.superButterRotationDuration),
 				value(config.superButterRotationAmplifier))
-			.withEffect(MobEffects.LEVITATION, value(config.superButterLevitationDuration),
+			.withEffect(() -> MobEffects.LEVITATION, value(config.superButterLevitationDuration),
 				value(config.superButterLevitationAmplifier));
 		case INCOMPLETE_SUPER_BUTTER -> food(value(config.incompleteSuperButterNutrition),
 			value(config.incompleteSuperButterSaturation))
-				.withEffect(ModEffects.BUTTER_ROTATION_EFFECT.get(), value(config.incompleteSuperButterRotationDuration),
+				.withEffect(CBMobEffects.BUTTER_ROTATION, value(config.incompleteSuperButterRotationDuration),
 					value(config.incompleteSuperButterRotationAmplifier));
 		};
 		return builder.build();
@@ -50,9 +52,9 @@ public final class ButterFoodProperties {
 			saturationMod((float) saturation);
 		}
 
-		private Builder withEffect(MobEffect effect, int duration, int amplifier) {
+		private Builder withEffect(Supplier<? extends MobEffect> effect, int duration, int amplifier) {
 			if (duration > 0)
-				effect(() -> new MobEffectInstance(effect, duration, amplifier), 1.0f);
+				effect(() -> new MobEffectInstance(effect.get(), duration, amplifier), 1.0f);
 			return this;
 		}
 	}
