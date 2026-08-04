@@ -2,9 +2,9 @@ package com.yision.allay.item.allaycourier;
 
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
 import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxItem;
+import com.nobodiiiii.createbiotech.registry.CBMenuTypes;
 import com.simibubi.create.content.logistics.box.PackageItem;
 import com.yision.allay.registry.AllItems;
-import com.yision.allay.registry.AllMenuTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -15,8 +15,6 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +46,7 @@ public class AllayCourierMenu extends AbstractContainerMenu {
 	public final String initialAddress;
 
 	public AllayCourierMenu(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
-		this(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, extraData);
+		this(CBMenuTypes.ALLAY_COURIER.get(), id, playerInventory, extraData);
 	}
 
 	public AllayCourierMenu(MenuType<?> type, int id, Inventory playerInventory, FriendlyByteBuf extraData) {
@@ -76,7 +74,7 @@ public class AllayCourierMenu extends AbstractContainerMenu {
 	}
 
 	public static AllayCourierMenu create(int id, Inventory playerInventory, ItemStack openedStack, InteractionHand hand) {
-		return new AllayCourierMenu(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, openedStack, hand);
+		return new AllayCourierMenu(CBMenuTypes.ALLAY_COURIER.get(), id, playerInventory, openedStack, hand);
 	}
 
 	private void addSlots() {
@@ -257,8 +255,4 @@ public class AllayCourierMenu extends AbstractContainerMenu {
 		return copy;
 	}
 
-	@OnlyIn(Dist.CLIENT)
-	public static AllayCourierMenu createOnClient(int id, Inventory playerInventory, FriendlyByteBuf extraData) {
-		return new AllayCourierMenu(AllMenuTypes.ALLAY_COURIER.get(), id, playerInventory, extraData);
-	}
 }

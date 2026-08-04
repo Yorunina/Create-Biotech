@@ -37,30 +37,21 @@ import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerConne
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagePartials;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerRenderer;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerVisual;
-import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterMenu;
 import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterRenderer;
-import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterScreen;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltHelper;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltRenderer;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltSpriteShifts;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableCogRenderer;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableRenderer;
-import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableScreen;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterRenderer;
 import com.nobodiiiii.createbiotech.content.universaljoint.HalfShaftVisual;
 import com.nobodiiiii.createbiotech.content.universaljoint.UniversalJointRenderer;
-import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestMenu;
-import com.nobodiiiii.createbiotech.content.wirelessterminal.WirelessStockKeeperRequestScreen;
 import com.simibubi.create.content.kinetics.transmission.SplitShaftRenderer;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
-import com.yision.allay.block.allayport.AllayPortMenu;
-import com.yision.allay.block.allayport.AllayPortScreen;
 import com.yision.allay.client.gui.hud.AllayCourierHudOverlay;
 import com.yision.allay.client.render.AllayCourierEntityRenderer;
 import com.yision.allay.client.render.AllayPortRenderer;
 import com.yision.allay.client.render.AllayPortVisual;
-import com.yision.allay.item.allaycourier.AllayCourierMenu;
-import com.yision.allay.item.allaycourier.AllayCourierScreen;
 import com.nobodiiiii.createbiotech.foundation.ponder.CreateBiotechPonderPlugin;
 import com.nobodiiiii.createbiotech.client.particle.CourierNoteParticle;
 import com.nobodiiiii.createbiotech.client.particle.StraightEnchantParticle;
@@ -70,7 +61,6 @@ import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBFluids;
 import com.nobodiiiii.createbiotech.registry.CBItems;
-import com.nobodiiiii.createbiotech.registry.CBMenuTypes;
 import com.nobodiiiii.createbiotech.registry.CBParticleTypes;
 import com.nobodiiiii.createbiotech.client.CasingConnectedHorizontalCTBehaviour;
 import com.simibubi.create.Create;
@@ -97,7 +87,6 @@ import net.createmod.catnip.lang.FontHelper;
 import net.createmod.ponder.foundation.PonderIndex;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.item.ItemProperties;
@@ -105,8 +94,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -317,35 +304,7 @@ public class CreateBiotechClient {
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM_FLOWING.get(), RenderType.translucent());
 			ItemBlockRenderTypes.setRenderLayer(CBFluids.CREAM_BLOCK.get(), RenderType.translucent());
-			MenuScreens.register(CBMenuTypes.SPIDER_ASSEMBLY_TABLE.get(), SpiderAssemblyTableScreen::new);
-			MenuScreens.register(CBMenuTypes.ALLAY_PORT.get(), new MenuScreens.ScreenConstructor() {
-				@Override
-				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
-					net.minecraft.network.chat.Component title) {
-					return new AllayPortScreen((AllayPortMenu) menu, inventory, title);
-				}
-			});
-			MenuScreens.register(CBMenuTypes.ALLAY_COURIER.get(), new MenuScreens.ScreenConstructor() {
-				@Override
-				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
-					net.minecraft.network.chat.Component title) {
-					return new AllayCourierScreen((AllayCourierMenu) menu, inventory, title);
-				}
-			});
-			MenuScreens.register(CBMenuTypes.SHULKER_TELEPORTER.get(), new MenuScreens.ScreenConstructor() {
-				@Override
-				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
-					net.minecraft.network.chat.Component title) {
-					return new ShulkerTeleporterScreen((ShulkerTeleporterMenu) menu, inventory, title);
-				}
-			});
-			MenuScreens.register(CBMenuTypes.WIRELESS_STOCK_KEEPER_REQUEST.get(), new MenuScreens.ScreenConstructor() {
-				@Override
-				public net.minecraft.client.gui.screens.Screen create(AbstractContainerMenu menu, Inventory inventory,
-					net.minecraft.network.chat.Component title) {
-					return new WirelessStockKeeperRequestScreen((WirelessStockKeeperRequestMenu) menu, inventory, title);
-				}
-			});
+			CBMenuScreens.register();
 			CreateClient.CASING_CONNECTIVITY.makeCasing(CBBlocks.ASURINE_CASING.get(),
 				CBSpriteShifts.ASURINE_CASING);
 			CreateClient.CASING_CONNECTIVITY.makeCasing(CBBlocks.BIOTECH_CASING.get(),

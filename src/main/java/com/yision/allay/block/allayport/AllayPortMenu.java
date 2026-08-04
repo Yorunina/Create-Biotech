@@ -1,18 +1,15 @@
 package com.yision.allay.block.allayport;
 
+import com.nobodiiiii.createbiotech.registry.CBMenuTypes;
 import com.simibubi.create.content.logistics.packagePort.PackagePortMenu;
 import com.simibubi.create.foundation.item.SmartInventory;
-import com.yision.allay.registry.AllMenuTypes;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.BlockPos;
+import com.yision.allay.client.AllayPortMenuClient;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,7 +17,7 @@ public class AllayPortMenu extends PackagePortMenu {
 	private static final int UI_X_OFFSET = 8;
 
 	public AllayPortMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-		this(AllMenuTypes.ALLAY_PORT.get(), id, inv, extraData);
+		this(CBMenuTypes.ALLAY_PORT.get(), id, inv, extraData);
 	}
 
 	public AllayPortMenu(MenuType<?> type, int id, Inventory inv, FriendlyByteBuf extraData) {
@@ -33,17 +30,11 @@ public class AllayPortMenu extends PackagePortMenu {
 
 	@Override
 	protected AllayPortBlockEntity createOnClient(FriendlyByteBuf extraData) {
-		BlockPos readBlockPos = extraData.readBlockPos();
-		ClientLevel world = Minecraft.getInstance().level;
-		BlockEntity blockEntity = world != null ? world.getBlockEntity(readBlockPos) : null;
-		if (blockEntity instanceof AllayPortBlockEntity allayPortBlockEntity) {
-			return allayPortBlockEntity;
-		}
-		return null;
+		return AllayPortMenuClient.createContent(extraData);
 	}
 
 	public static AllayPortMenu create(int id, Inventory inv, AllayPortBlockEntity blockEntity) {
-		return new AllayPortMenu(AllMenuTypes.ALLAY_PORT.get(), id, inv, blockEntity);
+		return new AllayPortMenu(CBMenuTypes.ALLAY_PORT.get(), id, inv, blockEntity);
 	}
 
 	@Override
