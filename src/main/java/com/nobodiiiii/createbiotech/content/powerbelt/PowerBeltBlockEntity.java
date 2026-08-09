@@ -3,6 +3,7 @@ package com.nobodiiiii.createbiotech.content.powerbelt;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltPlacementSegment;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
@@ -24,7 +25,7 @@ import net.minecraft.world.phys.AABB;
 
 import net.minecraftforge.client.model.data.ModelData;
 
-public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
+public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity implements CBBeltPlacementSegment {
 
 	public static final float MIN_SURFACE_SPEED = 1.0E-4f;
 
@@ -261,6 +262,26 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 	public boolean hasPulley() {
 		return getBlockState().is(CBBlocks.POWER_BELT.get())
 			&& getBlockState().getValue(PowerBeltBlock.PART) != BeltPart.MIDDLE;
+	}
+
+	@Override
+	public int createBiotech$getBeltLength() {
+		return beltLength;
+	}
+
+	@Override
+	public boolean createBiotech$hasPulley() {
+		return hasPulley();
+	}
+
+	@Override
+	public CasingType createBiotech$getCasingType() {
+		return casing;
+	}
+
+	@Override
+	public void createBiotech$setCasingType(CasingType casing) {
+		setCasingType(casing);
 	}
 
 	public PowerBeltBlockEntity getControllerBE() {

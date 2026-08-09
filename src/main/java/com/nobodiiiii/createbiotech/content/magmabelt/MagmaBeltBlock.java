@@ -14,6 +14,7 @@ import com.simibubi.create.AllItems;
 import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltBlock;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltChain;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltChainBlock;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltPlacementBlock;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBItems;
@@ -105,7 +106,7 @@ import net.minecraftforge.items.IItemHandler;
 
 public class MagmaBeltBlock extends HorizontalKineticBlock
 	implements IBE<MagmaBeltBlockEntity>, SpecialBlockItemRequirement, TransformableBlock, ProperWaterloggedBlock,
-	StandardItemBeltBlock, CBBeltChainBlock {
+	StandardItemBeltBlock, CBBeltPlacementBlock {
 
 	public static final Property<BeltSlope> SLOPE = EnumProperty.create("slope", BeltSlope.class);
 	public static final Property<BeltPart> PART = EnumProperty.create("part", BeltPart.class);
@@ -276,6 +277,16 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 	@Override
 	public boolean createBiotech$canSupportTunnel(BlockState state) {
 		return state.getValue(CASING);
+	}
+
+	@Override
+	public ItemStack createBiotech$connectorStack() {
+		return new ItemStack(CBItems.MAGMA_BELT_CONNECTOR.get());
+	}
+
+	@Override
+	public void createBiotech$createChain(Level level, BlockPos start, BlockPos end) {
+		MagmaBeltConnectorItem.createBelts(level, start, end);
 	}
 
 	public static boolean isMagmaBelt(BlockState state) {

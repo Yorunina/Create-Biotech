@@ -16,6 +16,7 @@ import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurface;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceHost;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltTunnelCapabilityInvalidator;
 import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltPort;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltPlacementSegment;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltLoopGeometry.Track;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltInventory;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeItemHandlerBeltSegment;
@@ -28,6 +29,7 @@ import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
 import com.simibubi.create.content.kinetics.belt.BeltSlope;
+import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
 import com.simibubi.create.content.kinetics.belt.behaviour.DirectBeltInputBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour;
 import com.simibubi.create.content.kinetics.belt.behaviour.TransportedItemStackHandlerBehaviour.TransportedResult;
@@ -56,7 +58,8 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 
-public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurfaceHost, StandardItemBeltPort, Clearable {
+public class SlimeBeltBlockEntity extends KineticBlockEntity
+	implements BeltSurfaceHost, StandardItemBeltPort, CBBeltPlacementSegment, Clearable {
 
 	/** Ticks to wait before re-attempting a chain init that already failed once. */
 	private static final int INIT_RETRY_INTERVAL = 20;
@@ -397,6 +400,24 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	public BlockPos createBiotech$getBlockPos() {
 		return worldPosition;
 	}
+
+	@Override
+	public int createBiotech$getBeltLength() {
+		return beltLength;
+	}
+
+	@Override
+	public boolean createBiotech$hasPulley() {
+		return hasPulley();
+	}
+
+	@Override
+	public CasingType createBiotech$getCasingType() {
+		return CasingType.NONE;
+	}
+
+	@Override
+	public void createBiotech$setCasingType(CasingType casing) {}
 
 	@Override
 	public boolean createBiotech$isHorizontalItemPort() {

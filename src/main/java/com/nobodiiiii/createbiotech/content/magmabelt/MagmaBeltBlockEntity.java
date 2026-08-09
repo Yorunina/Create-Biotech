@@ -16,6 +16,7 @@ import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltTunnelCapabilityInvalidator;
 import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltPort;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltPlacementSegment;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -63,7 +64,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 
-public class MagmaBeltBlockEntity extends KineticBlockEntity implements StandardItemBeltPort, Clearable {
+public class MagmaBeltBlockEntity extends KineticBlockEntity
+	implements StandardItemBeltPort, CBBeltPlacementSegment, Clearable {
 
 	/** Ticks to wait before re-attempting a chain init that already failed once. */
 	private static final int INIT_RETRY_INTERVAL = 20;
@@ -456,6 +458,26 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity implements Standard
 	@Override
 	public BlockPos createBiotech$getBlockPos() {
 		return worldPosition;
+	}
+
+	@Override
+	public int createBiotech$getBeltLength() {
+		return beltLength;
+	}
+
+	@Override
+	public boolean createBiotech$hasPulley() {
+		return hasPulley();
+	}
+
+	@Override
+	public CasingType createBiotech$getCasingType() {
+		return casing;
+	}
+
+	@Override
+	public void createBiotech$setCasingType(CasingType casing) {
+		setCasingType(casing);
 	}
 
 	@Override

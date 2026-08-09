@@ -12,6 +12,7 @@ import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceProviderBlock
 import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltBlock;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltChain;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltChainBlock;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltPlacementBlock;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltTransform;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -91,7 +92,7 @@ import net.minecraftforge.items.IItemHandler;
 
 public class SlimeBeltBlock extends HorizontalKineticBlock
 	implements IBE<SlimeBeltBlockEntity>, ProperWaterloggedBlock, BeltSurfaceProviderBlock, TransformableBlock,
-	StandardItemBeltBlock, CBBeltChainBlock {
+	StandardItemBeltBlock, CBBeltPlacementBlock {
 
 	public static final Property<BeltSlope> SLOPE = EnumProperty.create("slope", BeltSlope.class);
 	public static final Property<BeltPart> PART = EnumProperty.create("part", BeltPart.class);
@@ -253,6 +254,16 @@ public class SlimeBeltBlock extends HorizontalKineticBlock
 	@Override
 	public boolean createBiotech$canSupportTunnel(BlockState state) {
 		return true;
+	}
+
+	@Override
+	public ItemStack createBiotech$connectorStack() {
+		return new ItemStack(CBItems.SLIME_BELT_CONNECTOR.get());
+	}
+
+	@Override
+	public void createBiotech$createChain(Level level, BlockPos start, BlockPos end) {
+		SlimeBeltConnectorItem.createBelts(level, start, end);
 	}
 
 	public static boolean canTransportEntities(BlockState state) {
