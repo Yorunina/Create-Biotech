@@ -30,6 +30,8 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 
 	private static final float GENERATED_RPM_STEP = 4f;
 	private static final float TICKS_PER_SECOND = 20f;
+	/** Ticks to wait before re-attempting a chain init that already failed once. */
+	private static final int INIT_RETRY_INTERVAL = 20;
 
 	public int beltLength;
 	public int index;
@@ -40,6 +42,7 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 
 	private long lastMovementGameTime = Long.MIN_VALUE;
 	private long nextDetectionGameTime = Long.MIN_VALUE;
+	private int initRetryCooldown;
 	private float collectedGeneratedSpeed;
 	private float collectedStressCapacity;
 	private float collectedDetectionGeneratedSpeed;
@@ -60,7 +63,7 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 	@Override
 	public void tick() {
 		if (beltLength == 0)
-			PowerBeltBlock.initBelt(level, worldPosition);
+			tryInitBelt();
 
 		super.tick();
 
@@ -72,6 +75,16 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 			return;
 
 		sampleSurfaceMovementBefore(level.getGameTime());
+	}
+
+	private void tryInitBelt() {
+		if (initRetryCooldown > 0) {
+			initRetryCooldown--;
+			return;
+		}
+		PowerBeltBlock.initBelt(level, worldPosition);
+		if (beltLength == 0)
+			initRetryCooldown = INIT_RETRY_INTERVAL;
 	}
 
 	public void addSurfaceMovement(float signedSurfaceSpeed) {
@@ -233,6 +246,7 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 		beltLength = 0;
 		index = 0;
 		controller = null;
+		initRetryCooldown = 0;
 		lastMovementGameTime = Long.MIN_VALUE;
 		nextDetectionGameTime = Long.MIN_VALUE;
 		collectedGeneratedSpeed = 0;
@@ -381,6 +395,7 @@ public class PowerBeltBlockEntity extends GeneratingKineticBlockEntity {
 		beltLength = 0;
 		index = 0;
 		controller = null;
+		initRetryCooldown = 0;
 		lastMovementGameTime = Long.MIN_VALUE;
 		nextDetectionGameTime = Long.MIN_VALUE;
 		collectedGeneratedSpeed = 0;

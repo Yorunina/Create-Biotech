@@ -41,6 +41,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -53,7 +54,10 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 
-public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurfaceHost {
+public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurfaceHost, Clearable {
+
+	/** Ticks to wait before re-attempting a chain init that already failed once. */
+	private static final int INIT_RETRY_INTERVAL = 20;
 
 	public Map<Entity, TransportedEntityInfo> passengers;
 	public int beltLength;
@@ -66,6 +70,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	private final Map<Direction, LazyOptional<IItemHandler>> sidedHandlers;
 	private LazyOptional<IItemHandler> nullSideHandler;
 	private SlimeBeltLoopGeometry loopGeometry;
+	private int initRetryCooldown;
 
 	public SlimeBeltBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
@@ -93,7 +98,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	@Override
 	public void tick() {
 		if (beltLength == 0)
-			SlimeBeltBlock.initBelt(level, worldPosition);
+			tryInitBelt();
 
 		super.tick();
 
@@ -131,6 +136,16 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		toRemove.forEach(passengers::remove);
 	}
 
+	private void tryInitBelt() {
+		if (initRetryCooldown > 0) {
+			initRetryCooldown--;
+			return;
+		}
+		SlimeBeltBlock.initBelt(level, worldPosition);
+		if (beltLength == 0)
+			initRetryCooldown = INIT_RETRY_INTERVAL;
+	}
+
 	@Override
 	public float calculateStressApplied() {
 		return isController() ? super.calculateStressApplied() : 0;
@@ -159,6 +174,12 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		super.destroy();
 		if (isController())
 			getInventory().ejectAll();
+	}
+
+	@Override
+	public void clearContent() {
+		if (inventory != null)
+			inventory.getTransportedItems().clear();
 	}
 
 	@Override
@@ -209,6 +230,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		controller = null;
 		passengers = null;
 		trackerUpdateTag = new CompoundTag();
+		initRetryCooldown = 0;
 		invalidateItemHandlers();
 	}
 

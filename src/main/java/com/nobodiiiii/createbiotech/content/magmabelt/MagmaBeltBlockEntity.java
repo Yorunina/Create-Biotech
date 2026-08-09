@@ -43,6 +43,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -59,7 +60,11 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 
-public class MagmaBeltBlockEntity extends KineticBlockEntity {
+public class MagmaBeltBlockEntity extends KineticBlockEntity implements Clearable {
+
+	/** Ticks to wait before re-attempting a chain init that already failed once. */
+	private static final int INIT_RETRY_INTERVAL = 20;
+
 	public Map<Entity, TransportedEntityInfo> passengers;
 	public Optional<DyeColor> color;
 	public int beltLength;
@@ -71,6 +76,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity {
 	protected BlockPos controller;
 	protected MagmaBeltInventory inventory;
 	protected LazyOptional<IItemHandler> itemHandler;
+	private int initRetryCooldown;
 	public VersionedInventoryTrackerBehaviour invVersionTracker;
 
 	public CompoundTag trackerUpdateTag;
@@ -102,7 +108,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity {
 	public void tick() {
 		// Init belt
 		if (beltLength == 0)
-			MagmaBeltBlock.initBelt(level, worldPosition);
+			tryInitBelt();
 
 		super.tick();
 
@@ -143,6 +149,16 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity {
 			MagmaBeltMovementHandler.transportEntity(this, entity, info);
 		});
 		toRemove.forEach(passengers::remove);
+	}
+
+	private void tryInitBelt() {
+		if (initRetryCooldown > 0) {
+			initRetryCooldown--;
+			return;
+		}
+		MagmaBeltBlock.initBelt(level, worldPosition);
+		if (beltLength == 0)
+			initRetryCooldown = INIT_RETRY_INTERVAL;
 	}
 
 	private void spawnFlameParticles() {
@@ -234,6 +250,12 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity {
 	}
 
 	@Override
+	public void clearContent() {
+		if (inventory != null)
+			inventory.getTransportedItems().clear();
+	}
+
+	@Override
 	public void invalidate() {
 		super.invalidate();
 		itemHandler.invalidate();
@@ -301,6 +323,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity {
 		index = 0;
 		controller = null;
 		trackerUpdateTag = new CompoundTag();
+		initRetryCooldown = 0;
 	}
 
 	public boolean applyColor(DyeColor colorIn) {

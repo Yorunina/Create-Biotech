@@ -36,6 +36,7 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 @Mixin(value = FunnelBlockEntity.class, priority = 1001)
 public abstract class FunnelBlockEntityMixin implements SlimeCaptureFunnelAccess {
@@ -79,6 +80,10 @@ public abstract class FunnelBlockEntityMixin implements SlimeCaptureFunnelAccess
 		FunnelBlockEntity funnel = (FunnelBlockEntity) (Object) this;
 		BlockState blockState = funnel.getBlockState();
 		if (!(blockState.getBlock() instanceof BeltFunnelBlock))
+			return;
+		// Create handles POWERED before resolving the belt below. Let the original method
+		// return PAUSED instead of replacing it with a custom belt mode.
+		if (blockState.getOptionalValue(BlockStateProperties.POWERED).orElse(false))
 			return;
 
 		Shape shape = blockState.getValue(BeltFunnelBlock.SHAPE);
