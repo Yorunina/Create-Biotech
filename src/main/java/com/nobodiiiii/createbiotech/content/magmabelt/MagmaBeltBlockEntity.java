@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBConfigs;
+import com.nobodiiiii.createbiotech.content.beltsurface.BeltTunnelCapabilityInvalidator;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.kinetics.base.IRotate;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -112,7 +113,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity implements Clearabl
 
 		super.tick();
 
-		if (!MagmaBeltBlock.isMagmaBelt(level.getBlockState(worldPosition)))
+		if (!MagmaBeltBlock.isMagmaBelt(getBlockState()))
 			return;
 
 		initializeItemHandler();
@@ -229,6 +230,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity implements Clearabl
 			return;
 		IItemHandler handler = new MagmaItemHandlerBeltSegment(inventory, index);
 		itemHandler = LazyOptional.of(() -> handler);
+		invalidateCaps();
 	}
 
 	@Override
@@ -258,7 +260,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity implements Clearabl
 	@Override
 	public void invalidate() {
 		super.invalidate();
-		itemHandler.invalidate();
+		invalidateItemHandler();
 	}
 
 	@Override
@@ -625,6 +627,10 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity implements Clearabl
 
 	public void invalidateItemHandler() {
 		itemHandler.invalidate();
+		itemHandler = LazyOptional.empty();
+		invalidateCaps();
+		if (level != null)
+			BeltTunnelCapabilityInvalidator.invalidate(level, worldPosition.above());
 	}
 
 	public boolean shouldRenderNormally() {

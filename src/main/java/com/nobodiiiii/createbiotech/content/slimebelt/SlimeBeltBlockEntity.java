@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurface;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceHost;
+import com.nobodiiiii.createbiotech.content.beltsurface.BeltTunnelCapabilityInvalidator;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltLoopGeometry.Track;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltInventory;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeItemHandlerBeltSegment;
@@ -58,6 +59,8 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 	/** Ticks to wait before re-attempting a chain init that already failed once. */
 	private static final int INIT_RETRY_INTERVAL = 20;
+	/** Track.values() clones its array on every call; surface lookups run per funnel per tick. */
+	private static final Track[] TRACKS = Track.values();
 
 	public Map<Entity, TransportedEntityInfo> passengers;
 	public int beltLength;
@@ -102,7 +105,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 		super.tick();
 
-		if (!CBBlocks.SLIME_BELT.get().equals(level.getBlockState(worldPosition).getBlock()))
+		if (!getBlockState().is(CBBlocks.SLIME_BELT.get()))
 			return;
 
 		if (!isController())
@@ -228,9 +231,9 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		beltLength = 0;
 		index = 0;
 		controller = null;
-		passengers = null;
 		trackerUpdateTag = new CompoundTag();
 		initRetryCooldown = 0;
+		// Keep passengers across KineticBlockEntity sync reads. Chain rewiring clears them explicitly.
 		invalidateItemHandlers();
 	}
 
@@ -394,6 +397,9 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		sidedHandlers.clear();
 		nullSideHandler.invalidate();
 		nullSideHandler = LazyOptional.empty();
+		invalidateCaps();
+		if (level != null)
+			BeltTunnelCapabilityInvalidator.invalidate(level, worldPosition.above());
 	}
 
 	private LazyOptional<IItemHandler> getItemHandler(Direction side) {
@@ -498,19 +504,45 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 
 	@Override
 	public List<BeltSurface> surfaces() {
-		if (level == null)
-			return List.of();
-		SlimeBeltBlockEntity controller = getControllerBE();
-		if (controller == null || controller.beltLength == 0)
+		SlimeBeltBlockEntity controller = surfaceController();
+		if (controller == null)
 			return List.of();
 		List<BeltSurface> result = new ArrayList<>(2);
-		for (Track track : Track.values()) {
-			Direction outwardNormal = SlimeBeltHelper.getRepresentativeSideForTrack(controller, index, track);
-			Direction movementFacing = SlimeBeltHelper.getMovementFacingForTrack(controller, track);
-			if (outwardNormal.getAxis() == movementFacing.getAxis())
-				continue;
-			result.add(BeltSurface.of(this, worldPosition, index, outwardNormal, movementFacing));
+		for (Track track : TRACKS) {
+			BeltSurface surface = surfaceOn(controller, track);
+			if (surface != null)
+				result.add(surface);
 		}
 		return result;
+	}
+
+	@Override
+	public BeltSurface surfaceFor(Direction outwardNormal) {
+		SlimeBeltBlockEntity controller = surfaceController();
+		if (controller == null)
+			return null;
+		for (Track track : TRACKS) {
+			if (SlimeBeltHelper.getRepresentativeSideForTrack(controller, index, track) != outwardNormal)
+				continue;
+			BeltSurface surface = surfaceOn(controller, track);
+			if (surface != null)
+				return surface;
+		}
+		return null;
+	}
+
+	private SlimeBeltBlockEntity surfaceController() {
+		if (level == null)
+			return null;
+		SlimeBeltBlockEntity controller = getControllerBE();
+		return controller == null || controller.beltLength == 0 ? null : controller;
+	}
+
+	private BeltSurface surfaceOn(SlimeBeltBlockEntity controller, Track track) {
+		Direction outwardNormal = SlimeBeltHelper.getRepresentativeSideForTrack(controller, index, track);
+		Direction movementFacing = SlimeBeltHelper.getMovementFacingForTrack(controller, track);
+		if (outwardNormal.getAxis() == movementFacing.getAxis())
+			return null;
+		return BeltSurface.of(this, worldPosition, index, outwardNormal, movementFacing);
 	}
 }

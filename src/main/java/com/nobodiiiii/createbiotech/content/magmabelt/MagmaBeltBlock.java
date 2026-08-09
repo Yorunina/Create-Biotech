@@ -14,6 +14,7 @@ import com.simibubi.create.AllItems;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBItems;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltTransform;
 import com.simibubi.create.api.contraption.transformable.TransformableBlock;
 import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.contraptions.StructureTransform;
@@ -470,6 +471,7 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 				be.setController(currentPos);
 				be.beltLength = beltChain.size();
 				be.index = index;
+				be.invalidateItemHandler();
 				be.attachKinetics();
 				be.setChanged();
 				be.sendData();
@@ -657,7 +659,7 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 		if (transform.rotationAxis == Direction.Axis.Y) {
 			return rotate(state, transform.rotation);
 		}
-		return transformInner(state, transform);
+		return CBBeltTransform.transformInner(state, transform, SLOPE);
 	}
 
 	protected BlockState transformInner(BlockState state, StructureTransform transform) {
