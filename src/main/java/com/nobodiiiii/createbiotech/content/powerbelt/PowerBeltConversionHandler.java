@@ -23,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -101,7 +102,7 @@ public class PowerBeltConversionHandler {
 
 			newState = ProperWaterloggedBlock.withWater(level, newState, beltPos);
 			level.setBlock(beltPos, newState, Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
-			level.levelEvent(2001, beltPos, Block.getId(newState));
+			level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, beltPos, Block.getId(newState));
 		}
 
 		PowerBeltBlock.initBelt(level, controllerPos);

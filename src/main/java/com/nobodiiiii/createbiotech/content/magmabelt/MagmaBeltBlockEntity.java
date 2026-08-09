@@ -51,6 +51,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LevelEvent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -102,8 +103,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 	public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
 		super.addBehaviours(behaviours);
 		behaviours.add(new DirectBeltInputBehaviour(this).onlyInsertWhen(this::canInsertFrom)
-			.setInsertionHandler(this::tryInsertingFromSide).considerOccupiedWhen(this::isOccupied)
-			.allowingBeltFunnelsWhen(() -> MagmaBeltBlock.canTransportObjects(getBlockState())));
+			.setInsertionHandler(this::tryInsertingFromSide).considerOccupiedWhen(this::isOccupied));
 		behaviours.add(new TransportedItemStackHandlerBehaviour(this, this::applyToAllItems)
 			.withStackPlacement(this::getWorldPositionOf));
 		behaviours.add(invVersionTracker = new VersionedInventoryTrackerBehaviour(this));
@@ -576,7 +576,7 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 		}
 
 		if (casing != CasingType.NONE)
-			level.levelEvent(2001, worldPosition,
+			level.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, worldPosition,
 				Block.getId(casing == CasingType.ANDESITE ? AllBlocks.ANDESITE_CASING.getDefaultState()
 					: AllBlocks.BRASS_CASING.getDefaultState()));
 		if (blockState.getValue(MagmaBeltBlock.CASING) != shouldBlockHaveCasing)
