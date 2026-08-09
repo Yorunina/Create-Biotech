@@ -15,6 +15,7 @@ import java.util.function.Function;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurface;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceHost;
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltTunnelCapabilityInvalidator;
+import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltPort;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltLoopGeometry.Track;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeBeltInventory;
 import com.nobodiiiii.createbiotech.content.slimebelt.transport.SlimeItemHandlerBeltSegment;
@@ -55,7 +56,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 
-public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurfaceHost, Clearable {
+public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurfaceHost, StandardItemBeltPort, Clearable {
 
 	/** Ticks to wait before re-attempting a chain init that already failed once. */
 	private static final int INIT_RETRY_INTERVAL = 20;
@@ -392,6 +393,61 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		return inventory;
 	}
 
+	@Override
+	public BlockPos createBiotech$getBlockPos() {
+		return worldPosition;
+	}
+
+	@Override
+	public boolean createBiotech$isHorizontalItemPort() {
+		return getBlockState().getValue(SlimeBeltBlock.SLOPE) == BeltSlope.HORIZONTAL
+			&& SlimeBeltBlock.canTransportObjects(getBlockState());
+	}
+
+	@Override
+	public boolean createBiotech$addressesItemPort(Direction side) {
+		return canTunnelAddressFront(side);
+	}
+
+	@Override
+	public boolean createBiotech$canInsertIntoItemPort(Direction side) {
+		return canTunnelInsertIntoFront(side);
+	}
+
+	@Override
+	public ItemStack createBiotech$insertIntoItemPort(ItemStack stack, Direction side, boolean simulate) {
+		return insertFromTunnelIntoFront(stack, side, simulate);
+	}
+
+	@Override
+	public IItemHandler createBiotech$getItemHandler() {
+		return getItemCapability(Direction.UP);
+	}
+
+	@Override
+	public Direction createBiotech$getMovementFacing() {
+		return getMovementFacing();
+	}
+
+	@Override
+	public float createBiotech$getSpeed() {
+		return getSpeed();
+	}
+
+	@Override
+	public float createBiotech$getDirectionAwareSpeed() {
+		return getDirectionAwareBeltMovementSpeed();
+	}
+
+	@Override
+	public Vec3 createBiotech$getEjectionPosition() {
+		SlimeBeltBlockEntity controllerBE = getControllerBE();
+		if (controllerBE == null)
+			return Vec3.atCenterOf(worldPosition);
+		int additionalOffset = getDirectionAwareBeltMovementSpeed() > 0 ? 1 : 0;
+		return SlimeBeltHelper.getVectorForOffset(controllerBE, index + additionalOffset);
+	}
+
 	public void invalidateItemHandlers() {
 		sidedHandlers.values().forEach(LazyOptional::invalidate);
 		sidedHandlers.clear();
@@ -422,6 +478,26 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	}
 
 	private boolean canInsertFrom(Direction side) {
+		return canInsertFrom(side, null);
+	}
+
+	public boolean canTunnelAddressFront(Direction side) {
+		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
+		SlimeBeltBlockEntity controllerBE = getControllerBE();
+		if (controllerBE == null)
+			return false;
+		return SlimeBeltHelper.resolveIOTrack(controllerBE, index, side) == Track.FRONT;
+	}
+
+	public boolean canTunnelInsertIntoFront(Direction side) {
+		return canInsertFrom(side, Track.FRONT);
+	}
+
+	public ItemStack insertFromTunnelIntoFront(ItemStack stack, Direction side, boolean simulate) {
+		return tryInsertingFromSide(new TransportedItemStack(stack), side, simulate, Track.FRONT);
+	}
+
+	private boolean canInsertFrom(Direction side, Track requiredTrack) {
 		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
 		if (getSpeed() == 0)
 			return false;
@@ -429,7 +505,7 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 		if (controllerBE == null)
 			return false;
 		Track target = SlimeBeltHelper.resolveIOTrack(controllerBE, index, side);
-		if (target == null)
+		if (target == null || requiredTrack != null && target != requiredTrack)
 			return false;
 		return SlimeBeltInsertionPlanner.isCompatibleAdjacentChainInput(this, side, controllerBE, target);
 	}
@@ -443,16 +519,21 @@ public class SlimeBeltBlockEntity extends KineticBlockEntity implements BeltSurf
 	}
 
 	private ItemStack tryInsertingFromSide(TransportedItemStack transportedStack, Direction side, boolean simulate) {
+		return tryInsertingFromSide(transportedStack, side, simulate, null);
+	}
+
+	private ItemStack tryInsertingFromSide(TransportedItemStack transportedStack, Direction side, boolean simulate,
+		Track requiredTrack) {
 		side = SlimeBeltInsertionPlanner.resolvePhysicalSide(this, side);
 		SlimeBeltInventory beltInventory = getInventory();
 		boolean verticalHorizontalBeltInput = SlimeBeltInsertionPlanner.isVerticalHorizontalBeltInput(this, side);
 		if (!SlimeBeltBlock.canTransportObjects(getBlockState()) || beltInventory == null)
 			return transportedStack.stack;
-		if (!canInsertFrom(side))
+		if (!canInsertFrom(side, requiredTrack))
 			return transportedStack.stack;
 		SlimeBeltInsertionPlanner.InsertionPlan plan =
 			beltInventory.planInsertion(index, side, verticalHorizontalBeltInput, transportedStack);
-		if (!beltInventory.canInsert(plan))
+		if (plan == null || requiredTrack != null && plan.track() != requiredTrack || !beltInventory.canInsert(plan))
 			return transportedStack.stack;
 		if (simulate)
 			return ItemStack.EMPTY;

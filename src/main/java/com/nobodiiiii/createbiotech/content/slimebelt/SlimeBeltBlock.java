@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceProviderBlock;
+import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltBlock;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltTransform;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -87,7 +88,8 @@ import net.minecraftforge.client.extensions.common.IClientBlockExtensions;
 import net.minecraftforge.items.IItemHandler;
 
 public class SlimeBeltBlock extends HorizontalKineticBlock
-	implements IBE<SlimeBeltBlockEntity>, ProperWaterloggedBlock, BeltSurfaceProviderBlock, TransformableBlock {
+	implements IBE<SlimeBeltBlockEntity>, ProperWaterloggedBlock, BeltSurfaceProviderBlock, TransformableBlock,
+	StandardItemBeltBlock {
 
 	public static final Property<BeltSlope> SLOPE = EnumProperty.create("slope", BeltSlope.class);
 	public static final Property<BeltPart> PART = EnumProperty.create("part", BeltPart.class);
@@ -229,6 +231,21 @@ public class SlimeBeltBlock extends HorizontalKineticBlock
 
 	public static boolean canTransportObjects(BlockState state) {
 		return state.is(CBBlocks.SLIME_BELT.get());
+	}
+
+	@Override
+	public Property<BeltSlope> createBiotech$slopeProperty() {
+		return SLOPE;
+	}
+
+	@Override
+	public boolean createBiotech$canTransportItems(BlockState state) {
+		return canTransportObjects(state);
+	}
+
+	@Override
+	public boolean createBiotech$canSupportTunnel(BlockState state) {
+		return true;
 	}
 
 	public static boolean canTransportEntities(BlockState state) {

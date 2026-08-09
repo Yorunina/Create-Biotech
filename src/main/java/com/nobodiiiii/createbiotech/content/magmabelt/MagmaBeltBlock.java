@@ -11,6 +11,7 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
+import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltBlock;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBItems;
@@ -101,7 +102,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 
 public class MagmaBeltBlock extends HorizontalKineticBlock
-	implements IBE<MagmaBeltBlockEntity>, SpecialBlockItemRequirement, TransformableBlock, ProperWaterloggedBlock {
+	implements IBE<MagmaBeltBlockEntity>, SpecialBlockItemRequirement, TransformableBlock, ProperWaterloggedBlock,
+	StandardItemBeltBlock {
 
 	public static final Property<BeltSlope> SLOPE = EnumProperty.create("slope", BeltSlope.class);
 	public static final Property<BeltPart> PART = EnumProperty.create("part", BeltPart.class);
@@ -252,6 +254,21 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 			return false;
 		BeltSlope slope = state.getValue(SLOPE);
 		return slope != BeltSlope.VERTICAL && slope != BeltSlope.SIDEWAYS;
+	}
+
+	@Override
+	public Property<BeltSlope> createBiotech$slopeProperty() {
+		return SLOPE;
+	}
+
+	@Override
+	public boolean createBiotech$canTransportItems(BlockState state) {
+		return canTransportObjects(state);
+	}
+
+	@Override
+	public boolean createBiotech$canSupportTunnel(BlockState state) {
+		return state.getValue(CASING);
 	}
 
 	public static boolean isMagmaBelt(BlockState state) {
