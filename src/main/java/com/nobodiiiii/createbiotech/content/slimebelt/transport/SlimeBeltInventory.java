@@ -280,6 +280,19 @@ public class SlimeBeltInventory {
 				return;
 			}
 
+			if (horizontalProcessing && track == Track.FRONT) {
+				if (SlimeBeltTunnelInteractionHandler.flapTunnelsAndCheckIfStuck(SlimeBeltInventory.this,
+					currentItem, nextFrontOffset)) {
+					stackInFront = currentItem;
+					return;
+				}
+				if (SlimeBeltCrusherInteractionHandler.checkForCrushers(SlimeBeltInventory.this, currentItem,
+					nextFrontOffset)) {
+					stackInFront = currentItem;
+					return;
+				}
+			}
+
 			setLoopPositionFromTrackProgress(currentItem, track, nextProgress);
 			float diffToMiddle = currentItem.getTargetSideOffset() - currentItem.sideOffset;
 			currentItem.sideOffset += Mth.clamp(diffToMiddle * Math.abs(limitedMovement) * 6f,
