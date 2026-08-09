@@ -68,7 +68,7 @@ public class MagmaBeltRenderer extends SafeBlockEntityRenderer<MagmaBeltBlockEnt
 			if (!MagmaBeltBlock.isMagmaBelt(blockState))
 				return;
 			CBBeltRenderHelper.renderSurface(be, blockState, ms, buffer, light,
-				MagmaBeltRenderer::getSpriteShiftEntry, 0);
+				(diagonal, bottom) -> getSpriteShiftEntry(be.color.orElse(null), diagonal, bottom), 0);
 		}
 
 		renderItems(be, partialTicks, ms, buffer, light, overlay);
