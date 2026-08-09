@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.nobodiiiii.createbiotech.client.render.CBBeltRenderHelper;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntityRenderer;
@@ -110,7 +111,7 @@ public class PowerBeltRenderer extends SafeBlockEntityRenderer<PowerBeltBlockEnt
 		beltBuffer.shiftUVScrolling(spriteShift, (float) scroll);
 	}
 
-	private static SpriteShiftEntry getSpriteShiftEntry(boolean diagonal, boolean bottom) {
+	public static SpriteShiftEntry getSpriteShiftEntry(boolean diagonal, boolean bottom) {
 		return diagonal ? PowerBeltSpriteShifts.BELT_DIAGONAL
 			: bottom ? PowerBeltSpriteShifts.BELT_OFFSET : PowerBeltSpriteShifts.BELT;
 	}

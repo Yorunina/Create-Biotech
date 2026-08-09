@@ -1,12 +1,15 @@
 package com.nobodiiiii.createbiotech.content.powerbelt;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltConnectorGeometry;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltConnectorSelection;
 import com.nobodiiiii.createbiotech.foundation.feature.CBFeature;
+import com.nobodiiiii.createbiotech.foundation.item.CBItemData;
+import com.nobodiiiii.createbiotech.foundation.utility.SubLevelCompat;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltPart;
 import com.simibubi.create.content.kinetics.belt.BeltSlope;
@@ -19,9 +22,7 @@ import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
-import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -51,8 +52,7 @@ public class PowerBeltConnectorItem extends BlockItem {
 			return InteractionResult.FAIL;
 		Player player = context.getPlayer();
 		if (player != null && player.isShiftKeyDown()) {
-			context.getItemInHand()
-				.setTag(null);
+			CBItemData.set(context.getItemInHand(), null);
 			return InteractionResult.SUCCESS;
 		}
 
@@ -63,23 +63,22 @@ public class PowerBeltConnectorItem extends BlockItem {
 		if (level.isClientSide)
 			return validAxis ? InteractionResult.SUCCESS : InteractionResult.FAIL;
 
-		CompoundTag tag = context.getItemInHand()
-			.getOrCreateTag();
+		CompoundTag tag = CBItemData.getOrEmpty(context.getItemInHand());
 		BlockPos firstPulley = null;
 
-		if (tag.contains("FirstPulley")) {
-			firstPulley = NbtUtils.readBlockPos(tag.getCompound("FirstPulley"));
-			if (!validateAxis(level, firstPulley) || !firstPulley.closerThan(pos, maxLength() * 2)) {
-				tag.remove("FirstPulley");
-				context.getItemInHand()
-					.setTag(tag);
+		if (tag.contains(CBBeltConnectorSelection.POSITION)) {
+			firstPulley = CBBeltConnectorSelection.readValid(tag, level, pos, maxLength() * 2,
+				candidate -> validateAxis(level, candidate));
+			if (firstPulley == null) {
+				CBItemData.set(context.getItemInHand(), null);
+				tag = new CompoundTag();
 			}
 		}
 
 		if (!validAxis || player == null)
 			return InteractionResult.FAIL;
 
-		if (tag.contains("FirstPulley")) {
+		if (tag.contains(CBBeltConnectorSelection.POSITION)) {
 			if (!canConnect(level, firstPulley, pos))
 				return InteractionResult.FAIL;
 
@@ -90,31 +89,30 @@ public class PowerBeltConnectorItem extends BlockItem {
 						.shrink(1);
 			}
 
-			if (!context.getItemInHand()
-				.isEmpty()) {
-				context.getItemInHand()
-					.setTag(null);
+			if (!context.getItemInHand().isEmpty()) {
+				CBItemData.set(context.getItemInHand(), null);
 				player.getCooldowns()
 					.addCooldown(this, 5);
 			}
 			return InteractionResult.SUCCESS;
 		}
 
-		tag.put("FirstPulley", NbtUtils.writeBlockPos(pos));
-		context.getItemInHand()
-			.setTag(tag);
+		CBBeltConnectorSelection.write(tag, level, pos);
+		CBItemData.set(context.getItemInHand(), tag);
 		player.getCooldowns()
 			.addCooldown(this, 5);
 		return InteractionResult.SUCCESS;
 	}
 
 	public static void createBelts(Level level, BlockPos start, BlockPos end) {
+		if (!SubLevelCompat.sameSpace(level, start, end))
+			return;
 		level.playSound(null, BlockPos.containing(VecHelper.getCenterOf(start.offset(end))
 			.scale(.5f)), SoundEvents.WOOL_PLACE, SoundSource.BLOCKS, .5f, 1f);
 
 		BeltSlope slope = BeltSlope.HORIZONTAL;
-		Direction facing = getFacingFromTo(start, end);
-		List<BlockPos> beltsToCreate = getBeltChainBetween(start, end, facing);
+		Direction facing = CBBeltConnectorGeometry.facingFromTo(start, end);
+		List<BlockPos> beltsToCreate = CBBeltConnectorGeometry.chainBetween(start, end, slope, facing);
 		BlockState beltState = CBBlocks.POWER_BELT.get()
 			.defaultBlockState();
 		boolean failed = false;
@@ -150,29 +148,9 @@ public class PowerBeltConnectorItem extends BlockItem {
 				level.destroyBlock(currentPos, false);
 	}
 
-	private static Direction getFacingFromTo(BlockPos start, BlockPos end) {
-		Axis beltAxis = start.getX() == end.getX() ? Axis.Z : Axis.X;
-		BlockPos diff = end.subtract(start);
-		AxisDirection axisDirection =
-			beltAxis.choose(diff.getX(), 0, diff.getZ()) > 0 ? AxisDirection.POSITIVE : AxisDirection.NEGATIVE;
-		return Direction.get(axisDirection, beltAxis);
-	}
-
-	private static List<BlockPos> getBeltChainBetween(BlockPos start, BlockPos end, Direction direction) {
-		List<BlockPos> positions = new LinkedList<>();
-		int limit = 1000;
-		BlockPos current = start;
-
-		do {
-			positions.add(current);
-			current = current.relative(direction);
-		} while (!current.equals(end) && limit-- > 0);
-
-		positions.add(end);
-		return positions;
-	}
-
 	public static boolean canConnect(Level level, BlockPos first, BlockPos second) {
+		if (!SubLevelCompat.sameSpace(level, first, second))
+			return false;
 		if (!level.isLoaded(first) || !level.isLoaded(second))
 			return false;
 		if (!second.closerThan(first, maxLength()))
@@ -213,6 +191,8 @@ public class PowerBeltConnectorItem extends BlockItem {
 		int limit = 1000;
 		for (BlockPos currentPos = first.offset(step); !currentPos.equals(second) && limit-- > 0;
 			currentPos = currentPos.offset(step)) {
+			if (!SubLevelCompat.sameSpace(level, first, currentPos))
+				return false;
 			BlockState blockState = level.getBlockState(currentPos);
 			if (ShaftBlock.isShaft(blockState) && blockState.getValue(AbstractSimpleShaftBlock.AXIS) == shaftAxis)
 				continue;

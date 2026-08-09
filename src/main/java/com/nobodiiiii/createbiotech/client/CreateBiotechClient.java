@@ -29,8 +29,10 @@ import com.nobodiiiii.createbiotech.content.ghasthotairballoon.GhastHotAirBalloo
 import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltHelper;
 import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltRenderer;
 import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltSpriteShifts;
+import com.nobodiiiii.createbiotech.content.magmabelt.MagmaBeltVisual;
 import com.nobodiiiii.createbiotech.content.powerbelt.PowerBeltRenderer;
 import com.nobodiiiii.createbiotech.content.powerbelt.PowerBeltSpriteShifts;
+import com.nobodiiiii.createbiotech.content.powerbelt.PowerBeltVisual;
 import com.nobodiiiii.createbiotech.content.petridish.PetriDishRenderer;
 import com.nobodiiiii.createbiotech.content.schrodingerscat.SchrodingersCatRenderer;
 import com.nobodiiiii.createbiotech.content.shulkerpackager.ShulkerPackagerConnectionHandler;
@@ -41,6 +43,7 @@ import com.nobodiiiii.createbiotech.content.shulkerteleporter.ShulkerTeleporterR
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltHelper;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltRenderer;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltSpriteShifts;
+import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltVisual;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableCogRenderer;
 import com.nobodiiiii.createbiotech.content.spiderassemblytable.SpiderAssemblyTableRenderer;
 import com.nobodiiiii.createbiotech.content.squidprinter.SquidPrinterRenderer;
@@ -274,6 +277,18 @@ public class CreateBiotechClient {
 				.apply();
 			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.BUTTER_CAT_ENGINE.get())
 				.factory(ButterCatEngineVisual::new)
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.MAGMA_BELT.get())
+				.factory(MagmaBeltVisual::new)
+				.skipVanillaRender(be -> !be.shouldRenderNormally())
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.SLIME_BELT.get())
+				.factory(SlimeBeltVisual::new)
+				.skipVanillaRender(be -> !be.shouldRenderNormally())
+				.apply();
+			SimpleBlockEntityVisualizer.builder(CBBlockEntityTypes.POWER_BELT.get())
+				.factory(PowerBeltVisual::new)
+				.skipVanillaRender(be -> true)
 				.apply();
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.BIO_PACKAGER.get(), RenderType.cutoutMipped());
 			ItemBlockRenderTypes.setRenderLayer(CBBlocks.SHULKER_PACKAGER.get(), RenderType.cutoutMipped());

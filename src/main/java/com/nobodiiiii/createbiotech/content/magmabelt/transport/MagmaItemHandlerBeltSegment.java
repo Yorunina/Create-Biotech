@@ -1,12 +1,11 @@
 package com.nobodiiiii.createbiotech.content.magmabelt.transport;
 
+import com.nobodiiiii.createbiotech.content.beltsurface.AbstractItemHandlerBeltSegment;
 import com.simibubi.create.content.kinetics.belt.transport.TransportedItemStack;
-import com.simibubi.create.foundation.item.ItemHelper;
 
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
 
-public class MagmaItemHandlerBeltSegment implements IItemHandler {
+public class MagmaItemHandlerBeltSegment extends AbstractItemHandlerBeltSegment {
 
 	private final MagmaBeltInventory beltInventory;
 	int offset;
@@ -17,63 +16,33 @@ public class MagmaItemHandlerBeltSegment implements IItemHandler {
 	}
 
 	@Override
-	public int getSlots() {
-		return 1;
-	}
-
-	@Override
-	public ItemStack getStackInSlot(int slot) {
+	protected TransportedItemStack getTransportedStack() {
 		TransportedItemStack stackAtOffset = this.beltInventory.getStackAtOffset(offset);
-		if (stackAtOffset == null)
-			return ItemStack.EMPTY;
-		return stackAtOffset.stack;
+		return stackAtOffset;
 	}
 
 	@Override
-	public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
-		if (this.beltInventory.canInsertAt(offset)) {
-			ItemStack remainder = ItemHelper.limitCountToMaxStackSize(stack, simulate);
-			if (!simulate) {
-				TransportedItemStack newStack = new TransportedItemStack(stack);
-				newStack.insertedAt = offset;
-				newStack.beltPosition = offset + .5f + (beltInventory.beltMovementPositive ? -1 : 1) / 16f;
-				newStack.prevBeltPosition = newStack.beltPosition;
-				this.beltInventory.addItem(newStack);
-				this.beltInventory.belt.setChanged();
-				this.beltInventory.belt.sendData();
-			}
-			return remainder;
-		}
-		return stack;
+	protected boolean canInsert() {
+		return beltInventory.canInsertAt(offset);
 	}
 
 	@Override
-	public ItemStack extractItem(int slot, int amount, boolean simulate) {
-		TransportedItemStack transported = this.beltInventory.getStackAtOffset(offset);
-		if (transported == null)
-			return ItemStack.EMPTY;
-
-		amount = Math.min(amount, transported.stack.getCount());
-		ItemStack extracted = simulate ? transported.stack.copy()
-			.split(amount) : transported.stack.split(amount);
-		if (!simulate) {
-			if (transported.stack.isEmpty())
-				beltInventory.toRemove.add(transported);
-			else
-				beltInventory.belt.notifyUpdate();
-		}
-
-		return extracted;
+	protected void insertTransportedStack(ItemStack stack) {
+		TransportedItemStack transported = new TransportedItemStack(stack);
+		transported.insertedAt = offset;
+		transported.beltPosition = offset + .5f + (beltInventory.beltMovementPositive ? -1 : 1) / 16f;
+		transported.prevBeltPosition = transported.beltPosition;
+		beltInventory.addItem(transported);
+		beltInventory.belt.setChanged();
+		beltInventory.belt.sendData();
 	}
 
 	@Override
-	public int getSlotLimit(int slot) {
-		return Math.min(getStackInSlot(slot).getMaxStackSize(), 64);
-	}
-
-	@Override
-	public boolean isItemValid(int slot, ItemStack stack) {
-		return true;
+	protected void onExtracted(TransportedItemStack transported, boolean emptied) {
+		if (emptied)
+			beltInventory.toRemove.add(transported);
+		else
+			beltInventory.belt.notifyUpdate();
 	}
 
 }
