@@ -15,6 +15,7 @@
     "BasinBlockMixin",
     "BlockEntityConfigurationPacketMixin",
     "BlockBreakingMovementBehaviourMixin",
+    "ContraptionMixin",
     "BeltMovementHandlerMixin",
     "BeltFunnelBlockMixin",
     "BeltFunnelBlockStateMixin",

@@ -10,6 +10,8 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 
 import com.nobodiiiii.createbiotech.content.beltsurface.BeltSurfaceProviderBlock;
 import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltBlock;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltChain;
+import com.nobodiiiii.createbiotech.foundation.block.CBBeltChainBlock;
 import com.nobodiiiii.createbiotech.foundation.block.CBBeltTransform;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.nobodiiiii.createbiotech.registry.CBBlocks;
@@ -89,10 +91,15 @@ import net.minecraftforge.items.IItemHandler;
 
 public class SlimeBeltBlock extends HorizontalKineticBlock
 	implements IBE<SlimeBeltBlockEntity>, ProperWaterloggedBlock, BeltSurfaceProviderBlock, TransformableBlock,
-	StandardItemBeltBlock {
+	StandardItemBeltBlock, CBBeltChainBlock {
 
 	public static final Property<BeltSlope> SLOPE = EnumProperty.create("slope", BeltSlope.class);
 	public static final Property<BeltPart> PART = EnumProperty.create("part", BeltPart.class);
+
+	@Override
+	public Property<BeltPart> createBiotech$partProperty() {
+		return PART;
+	}
 
 	public SlimeBeltBlock(Properties properties) {
 		super(properties);
@@ -433,24 +440,27 @@ public class SlimeBeltBlock extends HorizontalKineticBlock
 		if (!state.is(CBBlocks.SLIME_BELT.get()))
 			return;
 
-		int limit = 1000;
-		BlockPos currentPos = pos;
-		while (limit-- > 0) {
-			BlockState currentState = world.getBlockState(currentPos);
-			if (!currentState.is(CBBlocks.SLIME_BELT.get())) {
+		CBBeltChain.WalkResult backward = CBBeltChain.walk(world, pos, false, CBBeltChain.MAX_SEGMENTS);
+		if (!backward.complete()) {
+			if (backward.status() == CBBeltChain.WalkStatus.INVALID
+				|| backward.status() == CBBeltChain.WalkStatus.TOO_LONG)
 				world.destroyBlock(pos, true);
-				return;
-			}
-			BlockPos nextSegmentPosition = nextSegmentPosition(currentState, currentPos, false);
-			if (nextSegmentPosition == null)
-				break;
-			if (!world.isLoaded(nextSegmentPosition))
-				return;
-			currentPos = nextSegmentPosition;
+			return;
+		}
+		BlockPos currentPos = backward.lastPosition();
+		if (currentPos == null)
+			return;
+
+		CBBeltChain.WalkResult forward = CBBeltChain.walk(world, currentPos, true, CBBeltChain.MAX_SEGMENTS);
+		if (!forward.complete()) {
+			if (forward.status() == CBBeltChain.WalkStatus.INVALID
+				|| forward.status() == CBBeltChain.WalkStatus.TOO_LONG)
+				world.destroyBlock(currentPos, true);
+			return;
 		}
 
 		int index = 0;
-		List<BlockPos> beltChain = getBeltChain(world, currentPos);
+		List<BlockPos> beltChain = forward.positions();
 		if (beltChain.size() < 2) {
 			world.destroyBlock(currentPos, true);
 			return;
@@ -512,37 +522,11 @@ public class SlimeBeltBlock extends HorizontalKineticBlock
 	}
 
 	public static List<BlockPos> getBeltChain(LevelAccessor world, BlockPos controllerPos) {
-		List<BlockPos> positions = new LinkedList<>();
-		BlockState blockState = world.getBlockState(controllerPos);
-		if (!blockState.is(CBBlocks.SLIME_BELT.get()))
-			return positions;
-
-		int limit = 1000;
-		BlockPos current = controllerPos;
-		while (limit-- > 0 && current != null) {
-			BlockState state = world.getBlockState(current);
-			if (!state.is(CBBlocks.SLIME_BELT.get()))
-				break;
-			positions.add(current);
-			current = nextSegmentPosition(state, current, true);
-		}
-		return positions;
+		return CBBeltChain.getBeltChain(world, controllerPos, CBBeltChain.MAX_SEGMENTS);
 	}
 
 	public static BlockPos nextSegmentPosition(BlockState state, BlockPos pos, boolean forward) {
-		Direction direction = state.getValue(HORIZONTAL_FACING);
-		BeltSlope slope = state.getValue(SLOPE);
-		BeltPart part = state.getValue(PART);
-		int offset = forward ? 1 : -1;
-
-		if (part == BeltPart.END && forward || part == BeltPart.START && !forward)
-			return null;
-		if (slope == BeltSlope.VERTICAL)
-			return pos.above(direction.getAxisDirection() == AxisDirection.POSITIVE ? offset : -offset);
-		pos = pos.relative(direction, offset);
-		if (slope != BeltSlope.HORIZONTAL && slope != BeltSlope.SIDEWAYS)
-			return pos.above(slope == BeltSlope.UPWARD ? offset : -offset);
-		return pos;
+		return CBBeltChain.nextSegmentPosition(state, pos, forward);
 	}
 
 	@Override
