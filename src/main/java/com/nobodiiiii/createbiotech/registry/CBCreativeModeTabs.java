@@ -1,15 +1,25 @@
 package com.nobodiiiii.createbiotech.registry;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.nobodiiiii.createbiotech.CreateBiotech;
-import net.minecraft.world.item.DyeColor;
+import com.nobodiiiii.createbiotech.content.cardboardbox.CapturedEntityBoxHelper;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters;
 import net.minecraft.world.item.CreativeModeTab.Output;
 import net.minecraft.world.item.CreativeModeTab.TabVisibility;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.SpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CBCreativeModeTabs {
@@ -84,6 +94,16 @@ public class CBCreativeModeTabs {
 			})
 			.build());
 
+	public static final RegistryObject<CreativeModeTab> LARGE_CARDBOARD_BOXES =
+		CREATIVE_MODE_TABS.register("large_cardboard_boxes",
+			() -> CreativeModeTab.builder()
+				.title(Component.translatable("itemGroup.create_biotech.large_cardboard_boxes"))
+				.withTabsBefore(MAIN.getKey())
+				.icon(() -> CapturedEntityBoxHelper.createFilledBox(CBItems.LARGE_CARDBOARD_BOX.get(),
+					EntityType.CREEPER))
+				.displayItems(CBCreativeModeTabs::acceptLargeCardboardBoxes)
+				.build());
+
 	private CBCreativeModeTabs() {}
 
 	private static void acceptBufferPads(Output output) {
@@ -93,6 +113,18 @@ public class CBCreativeModeTabs {
 				continue;
 			}
 			output.accept(CBItems.BUFFER_PADS.get(color).get(), TabVisibility.SEARCH_TAB_ONLY);
+		}
+	}
+
+	private static void acceptLargeCardboardBoxes(ItemDisplayParameters parameters, Output output) {
+		Set<EntityType<?>> addedEntityTypes = new HashSet<>();
+		for (Item item : ForgeRegistries.ITEMS) {
+			if (!(item instanceof SpawnEggItem spawnEggItem) || !item.isEnabled(parameters.enabledFeatures()))
+				continue;
+
+			EntityType<?> entityType = spawnEggItem.getType(item.getDefaultInstance().getTag());
+			if (entityType != null && addedEntityTypes.add(entityType))
+				output.accept(CapturedEntityBoxHelper.createFilledBox(CBItems.LARGE_CARDBOARD_BOX.get(), entityType));
 		}
 	}
 

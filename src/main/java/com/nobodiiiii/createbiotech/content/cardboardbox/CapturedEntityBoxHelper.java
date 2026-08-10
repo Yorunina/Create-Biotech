@@ -2,6 +2,7 @@ package com.nobodiiiii.createbiotech.content.cardboardbox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.CreateBiotech;
@@ -12,13 +13,17 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.SpawnEggItem;
 import net.minecraft.world.level.Level;
@@ -97,6 +102,25 @@ public class CapturedEntityBoxHelper {
 		stackTag.putString(CAPTURED_ENTITY_DESC_ID_TAG, target.getType().getDescriptionId());
 		stackTag.putFloat(CAPTURED_ENTITY_HEALTH_TAG, target.getHealth());
 		return true;
+	}
+
+	public static ItemStack createFilledBox(Item boxItem, EntityType<?> entityType) {
+		if (!(boxItem instanceof CapturedEntityBoxItem))
+			throw new IllegalArgumentException("Item " + ForgeRegistries.ITEMS.getKey(boxItem)
+				+ " is not a captured entity box item");
+
+		ItemStack stack = boxItem.getDefaultInstance();
+		ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(entityType);
+		if (entityId == null)
+			return stack;
+
+		CompoundTag entityData = new CompoundTag();
+		entityData.putString("id", entityId.toString());
+		CompoundTag stackTag = stack.getOrCreateTag();
+		stackTag.put(CAPTURED_ENTITY_TAG, entityData);
+		stackTag.putString(CAPTURED_ENTITY_DESC_ID_TAG, entityType.getDescriptionId());
+		stackTag.remove(CAPTURED_ENTITY_HEALTH_TAG);
+		return stack;
 	}
 
 	public static boolean captureEntityFromPlayerStack(ItemStack stack, Player player, LivingEntity target) {
@@ -193,7 +217,12 @@ public class CapturedEntityBoxHelper {
 		if (entityData == null)
 			return null;
 
-		Entity entity = EntityType.loadEntityRecursive(entityData.copy(), level, Function.identity());
+		CompoundTag entityDataForLoad = entityData.copy();
+		if (level instanceof ServerLevel serverLevel
+			&& hasUuidCollision(serverLevel.getServer(), entityDataForLoad))
+			reseedEntityTree(entityDataForLoad);
+
+		Entity entity = EntityType.loadEntityRecursive(entityDataForLoad, level, Function.identity());
 		if (entity == null)
 			return null;
 
@@ -203,6 +232,30 @@ public class CapturedEntityBoxHelper {
 			living.setHealth(Math.min(living.getMaxHealth(), stackTag.getFloat(CAPTURED_ENTITY_HEALTH_TAG)));
 
 		return entity;
+	}
+
+	private static boolean hasUuidCollision(MinecraftServer server, CompoundTag entityData) {
+		if (entityData.hasUUID("UUID")) {
+			UUID uuid = entityData.getUUID("UUID");
+			for (ServerLevel level : server.getAllLevels())
+				if (level.getEntity(uuid) != null)
+					return true;
+		}
+
+		ListTag passengers = entityData.getList("Passengers", Tag.TAG_COMPOUND);
+		for (int i = 0; i < passengers.size(); i++)
+			if (hasUuidCollision(server, passengers.getCompound(i)))
+				return true;
+
+		return false;
+	}
+
+	private static void reseedEntityTree(CompoundTag entityData) {
+		entityData.putUUID("UUID", UUID.randomUUID());
+
+		ListTag passengers = entityData.getList("Passengers", Tag.TAG_COMPOUND);
+		for (int i = 0; i < passengers.size(); i++)
+			reseedEntityTree(passengers.getCompound(i));
 	}
 
 	public static void clearCapturedEntity(ItemStack stack) {

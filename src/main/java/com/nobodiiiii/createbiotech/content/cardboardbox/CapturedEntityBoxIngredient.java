@@ -18,7 +18,6 @@ import com.google.gson.JsonSyntaxException;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -70,8 +69,7 @@ public class CapturedEntityBoxIngredient extends AbstractIngredient {
 			return;
 
 		displayStacks = items.stream()
-			.map(Item::getDefaultInstance)
-			.map(stack -> createDisplayStack(stack, entityType))
+			.map(item -> CapturedEntityBoxHelper.createFilledBox(item, entityType))
 			.toArray(ItemStack[]::new);
 	}
 
@@ -142,19 +140,6 @@ public class CapturedEntityBoxIngredient extends AbstractIngredient {
 		}
 
 		return json;
-	}
-
-	private static ItemStack createDisplayStack(ItemStack stack, EntityType<?> entityType) {
-		ResourceLocation entityId = ForgeRegistries.ENTITY_TYPES.getKey(entityType);
-		if (entityId == null)
-			return stack;
-
-		CompoundTag tag = stack.getOrCreateTag();
-		CompoundTag entityData = new CompoundTag();
-		entityData.putString("id", entityId.toString());
-		tag.put("CapturedEntity", entityData);
-		tag.putString("CapturedEntityDescId", entityType.getDescriptionId());
-		return stack;
 	}
 
 	public static class Serializer implements IIngredientSerializer<CapturedEntityBoxIngredient> {
