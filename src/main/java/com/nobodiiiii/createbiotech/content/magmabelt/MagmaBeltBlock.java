@@ -23,7 +23,6 @@ import com.simibubi.create.api.contraption.transformable.TransformableBlock;
 import com.simibubi.create.api.schematic.requirement.SpecialBlockItemRequirement;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import com.simibubi.create.content.equipment.armor.DivingBootsItem;
-import com.simibubi.create.content.fluids.transfer.GenericItemEmptying;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
@@ -44,7 +43,6 @@ import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import com.simibubi.create.foundation.block.render.MultiPosDestructionHandler;
 import com.simibubi.create.foundation.block.render.ReducedDestroyEffects;
 import com.simibubi.create.foundation.item.ItemHelper;
-import com.yision.allay.block.allayport.AllayPortBlock;
 
 import net.createmod.catnip.data.Iterate;
 import net.createmod.catnip.math.VecHelper;
@@ -85,7 +83,6 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.levelgen.DebugLevelSource;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -304,14 +301,7 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 		boolean isWrench = AllItems.WRENCH.isIn(heldItem);
 		boolean isConnector = heldItem.is(CBItems.MAGMA_BELT_CONNECTOR.get());
 		boolean isShaft = AllBlocks.SHAFT.isIn(heldItem);
-		boolean hasWater = GenericItemEmptying.emptyItem(world, heldItem, true)
-			.getFirst()
-			.getFluid()
-			.isSame(Fluids.WATER);
 		boolean isHand = heldItem.isEmpty() && handIn == InteractionHand.MAIN_HAND;
-
-		if (hasWater)
-			return InteractionResult.PASS;
 
 		if (isConnector)
 			return MagmaBeltSlicer.useConnector(state, world, pos, player, handIn, hit, new Feedback());
@@ -600,8 +590,6 @@ public class MagmaBeltBlock extends HorizontalKineticBlock
 		if (FunnelBlock.isFunnel(blockState) && FunnelBlock.getFunnelFacing(blockState) != Direction.UP)
 			return false;
 		if (blockState.getBlock() instanceof BeltTunnelBlock)
-			return false;
-		if (blockState.getBlock() instanceof AllayPortBlock)
 			return false;
 		return true;
 	}

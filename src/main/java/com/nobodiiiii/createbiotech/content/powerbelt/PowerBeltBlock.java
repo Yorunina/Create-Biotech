@@ -19,7 +19,6 @@ import com.nobodiiiii.createbiotech.registry.CBBlocks;
 import com.nobodiiiii.createbiotech.registry.CBItems;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
-import com.simibubi.create.content.fluids.transfer.GenericItemEmptying;
 import com.simibubi.create.api.contraption.transformable.TransformableBlock;
 import com.simibubi.create.content.contraptions.StructureTransform;
 import com.simibubi.create.content.kinetics.base.HorizontalKineticBlock;
@@ -35,7 +34,6 @@ import com.simibubi.create.foundation.block.IBE;
 import com.simibubi.create.foundation.block.ProperWaterloggedBlock;
 import com.simibubi.create.foundation.block.render.MultiPosDestructionHandler;
 import com.simibubi.create.foundation.block.render.ReducedDestroyEffects;
-import com.yision.allay.block.allayport.AllayPortBlock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -72,7 +70,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.loot.LootParams;
@@ -265,13 +262,6 @@ public class PowerBeltBlock extends HorizontalKineticBlock
 		ItemStack heldItem = player.getItemInHand(hand);
 		boolean isWrench = AllItems.WRENCH.isIn(heldItem);
 		boolean isConnector = CBItems.isPowerBeltConnector(heldItem);
-		boolean hasWater = GenericItemEmptying.emptyItem(world, heldItem, true)
-			.getFirst()
-			.getFluid()
-			.isSame(Fluids.WATER);
-
-		if (hasWater)
-			return InteractionResult.PASS;
 		if (isConnector)
 			return PowerBeltSlicer.useConnector(state, world, pos, player, hand, hit, new PowerBeltSlicer.Feedback());
 		if (isWrench)
@@ -473,8 +463,6 @@ public class PowerBeltBlock extends HorizontalKineticBlock
 		if (FunnelBlock.isFunnel(blockState) && FunnelBlock.getFunnelFacing(blockState) != Direction.UP)
 			return false;
 		if (blockState.getBlock() instanceof BeltTunnelBlock)
-			return false;
-		if (blockState.getBlock() instanceof AllayPortBlock)
 			return false;
 		return true;
 	}

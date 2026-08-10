@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
@@ -48,7 +47,6 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Clearable;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LevelEvent;
@@ -72,7 +70,6 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 	private static final int INIT_RETRY_INTERVAL = 20;
 
 	public Map<Entity, TransportedEntityInfo> passengers;
-	public Optional<DyeColor> color;
 	public int beltLength;
 	public int index;
 	public Direction lastInsert;
@@ -92,7 +89,6 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 		controller = BlockPos.ZERO;
 		itemHandler = LazyOptional.empty();
 		casing = CasingType.NONE;
-		color = Optional.empty();
 	}
 
 	public MagmaBeltBlockEntity(BlockPos pos, BlockState state) {
@@ -277,9 +273,6 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 		NBTHelper.writeEnum(compound, "Casing", casing);
 		compound.putBoolean("Covered", covered);
 
-		if (color.isPresent())
-			NBTHelper.writeEnum(compound, "Dye", color.get());
-
 		if (isController())
 			compound.put("Inventory", getInventory().write());
 		super.write(compound, clientPacket);
@@ -291,9 +284,6 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 
 		if (compound.getBoolean("IsController"))
 			controller = worldPosition;
-
-		color = compound.contains("Dye") ? Optional.of(NBTHelper.readEnum(compound, "Dye", DyeColor.class))
-			: Optional.empty();
 
 		if (!wasMoved) {
 			if (!isController())
@@ -330,27 +320,6 @@ public class MagmaBeltBlockEntity extends KineticBlockEntity
 		controller = null;
 		trackerUpdateTag = new CompoundTag();
 		initRetryCooldown = 0;
-	}
-
-	public boolean applyColor(DyeColor colorIn) {
-		if (colorIn == null) {
-			if (!color.isPresent())
-				return false;
-		} else if (color.isPresent() && color.get() == colorIn)
-			return false;
-		if (level.isClientSide())
-			return true;
-
-		for (BlockPos blockPos : MagmaBeltBlock.getBeltChain(level, getController())) {
-			MagmaBeltBlockEntity belt = MagmaBeltHelper.getSegmentBE(level, blockPos);
-			if (belt == null)
-				continue;
-			belt.color = Optional.ofNullable(colorIn);
-			belt.setChanged();
-			belt.sendData();
-		}
-
-		return true;
 	}
 
 	public MagmaBeltBlockEntity getControllerBE() {

@@ -3,7 +3,6 @@ package com.nobodiiiii.createbiotech.content.magmabelt;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
@@ -35,7 +34,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -257,7 +255,6 @@ public class MagmaBeltSlicer {
 
 			if (!world.isClientSide) {
 				boolean flipBelt = facing != nextState.getValue(MagmaBeltBlock.HORIZONTAL_FACING);
-				Optional<DyeColor> color = controllerBE.color;
 				for (BlockPos blockPos : MagmaBeltBlock.getBeltChain(world, mergedController.getBlockPos())) {
 					MagmaBeltBlockEntity belt = MagmaBeltHelper.getSegmentBE(world, blockPos);
 					if (belt == null)
@@ -265,7 +262,6 @@ public class MagmaBeltSlicer {
 					belt.detachKinetics();
 					belt.invalidateItemHandler();
 					belt.beltLength = 0;
-					belt.color = color;
 					if (flipBelt)
 						world.setBlock(blockPos, flipBelt(world.getBlockState(blockPos)), Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
 				}
@@ -303,8 +299,6 @@ public class MagmaBeltSlicer {
 					ProperWaterloggedBlock.withWater(world, state.setValue(MagmaBeltBlock.CASING, false), next),
 					Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON);
 				MagmaBeltBlockEntity segmentBE = MagmaBeltHelper.getSegmentBE(world, next);
-				if (segmentBE != null)
-					segmentBE.color = controllerBE.color;
 				world.playSound(null, pos, SoundEvents.WOOL_PLACE,
 					player == null ? SoundSource.BLOCKS : SoundSource.PLAYERS, 0.5F, 1F);
 

@@ -6,7 +6,6 @@ import dev.engine_room.flywheel.api.visualization.VisualizationContext;
 
 public final class MagmaBeltVisual extends CBBeltVisual<MagmaBeltBlockEntity> {
 	public MagmaBeltVisual(VisualizationContext context, MagmaBeltBlockEntity blockEntity, float partialTick) {
-		super(context, blockEntity, partialTick,
-			(diagonal, bottom) -> MagmaBeltRenderer.getSpriteShiftEntry(blockEntity.color.orElse(null), diagonal, bottom), 0);
+		super(context, blockEntity, partialTick, MagmaBeltRenderer::getSpriteShiftEntry, 0);
 	}
 }
