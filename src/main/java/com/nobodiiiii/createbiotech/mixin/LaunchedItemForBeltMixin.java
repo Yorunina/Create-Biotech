@@ -1,7 +1,6 @@
 package com.nobodiiiii.createbiotech.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,30 +11,16 @@ import com.nobodiiiii.createbiotech.foundation.block.CBBeltChainPlacement;
 import com.simibubi.create.content.kinetics.belt.BeltBlockEntity.CasingType;
 import com.simibubi.create.content.schematics.cannon.LaunchedItem;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 
 @Mixin(value = LaunchedItem.ForBelt.class, remap = false)
 public abstract class LaunchedItemForBeltMixin implements CBBeltChainData {
 
 	@Unique
 	private int[] createBiotech$pulleyOffsets;
-
-	@Shadow
-	public BlockState state;
-
-	@Shadow
-	public int length;
-
-	@Shadow
-	public CasingType[] casings;
-
-	@Shadow
-	public BlockPos target;
 
 	@Override
 	@Unique
@@ -51,7 +36,8 @@ public abstract class LaunchedItemForBeltMixin implements CBBeltChainData {
 
 	@Inject(method = "serializeNBT", at = @At("RETURN"))
 	private void createBiotech$serializeBeltChain(CallbackInfoReturnable<CompoundTag> cir) {
-		if (!CBBeltChainPlacement.isPlacementBelt(state) || createBiotech$pulleyOffsets == null)
+		LaunchedItem.ForBelt belt = (LaunchedItem.ForBelt) (Object) this;
+		if (!CBBeltChainPlacement.isPlacementBelt(belt.state) || createBiotech$pulleyOffsets == null)
 			return;
 		cir.getReturnValue().putIntArray(CBBeltChainPlacement.PULLEY_OFFSETS_TAG, createBiotech$pulleyOffsets);
 	}
@@ -64,14 +50,15 @@ public abstract class LaunchedItemForBeltMixin implements CBBeltChainData {
 
 	@Inject(method = "place", at = @At("HEAD"), cancellable = true)
 	private void createBiotech$placeBeltChain(Level world, CallbackInfo ci) {
-		if (!CBBeltChainPlacement.isPlacementBelt(state))
+		LaunchedItem.ForBelt belt = (LaunchedItem.ForBelt) (Object) this;
+		if (!CBBeltChainPlacement.isPlacementBelt(belt.state))
 			return;
 		int[] pulleys = createBiotech$pulleyOffsets == null ? new int[0] : createBiotech$pulleyOffsets;
-		CasingType[] beltCasings = casings == null ? new CasingType[length] : casings;
-		if (casings == null)
+		CasingType[] beltCasings = belt.casings == null ? new CasingType[belt.length] : belt.casings;
+		if (belt.casings == null)
 			java.util.Arrays.fill(beltCasings, CasingType.NONE);
-		CBBeltChainPlacement.placeAtomically(world, state,
-			CBBeltChainPlacement.positionsFromPayload(state, target, length), pulleys, beltCasings);
+		CBBeltChainPlacement.placeAtomically(world, belt.state,
+			CBBeltChainPlacement.positionsFromPayload(belt.state, belt.target, belt.length), pulleys, beltCasings);
 		ci.cancel();
 	}
 }

@@ -1,5 +1,7 @@
 package com.nobodiiiii.createbiotech.content.slimebelt.transport;
 
+import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltPort;
+import com.nobodiiiii.createbiotech.content.beltsurface.StandardItemBeltPortResolver;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltBlock;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltBlockEntity;
 import com.nobodiiiii.createbiotech.content.slimebelt.SlimeBeltHelper;
@@ -76,13 +78,21 @@ public final class SlimeBeltTunnelInteractionHandler {
 					BlockPos outputPos = nextTunnel.getBlockPos().below().relative(direction);
 					if (!world.isLoaded(outputPos))
 						return true;
-					DirectBeltInputBehaviour behaviour =
-						BlockEntityBehaviour.get(world, outputPos, DirectBeltInputBehaviour.TYPE);
-					if (behaviour == null || !behaviour.canInsertFromSide(direction))
-						continue;
-
 					ItemStack toInsert = current.stack.copyWithCount(1);
-					if (!behaviour.handleInsertion(toInsert, direction, false).isEmpty())
+					ItemStack remainder;
+					StandardItemBeltPort port = StandardItemBeltPortResolver.getHorizontalPort(world, outputPos);
+					if (port != null) {
+						if (!port.createBiotech$canInsertIntoItemPort(direction))
+							continue;
+						remainder = port.createBiotech$insertIntoItemPort(toInsert, direction, false);
+					} else {
+						DirectBeltInputBehaviour behaviour =
+							BlockEntityBehaviour.get(world, outputPos, DirectBeltInputBehaviour.TYPE);
+						if (behaviour == null || !behaviour.canInsertFromSide(direction))
+							continue;
+						remainder = behaviour.handleInsertion(toInsert, direction, false);
+					}
+					if (!remainder.isEmpty())
 						return true;
 					if (onServer)
 						flapTunnel(beltInventory, upcomingSegment, direction, false);

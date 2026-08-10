@@ -43,7 +43,7 @@ public abstract class SchematicannonBlockEntityMixin {
 		if (!(state.getBlock() instanceof CBBeltPlacementBlock belt))
 			return;
 		BeltPart part = state.getValue(belt.createBiotech$partProperty());
-		if (part == BeltPart.MIDDLE || part == BeltPart.PULLEY)
+		if (part == BeltPart.MIDDLE)
 			cir.setReturnValue(true);
 	}
 
@@ -54,7 +54,7 @@ public abstract class SchematicannonBlockEntityMixin {
 			return;
 
 		BeltPart part = state.getValue(belt.createBiotech$partProperty());
-		if (part == BeltPart.MIDDLE || part == BeltPart.PULLEY) {
+		if (part == BeltPart.MIDDLE) {
 			ci.cancel();
 			return;
 		}
