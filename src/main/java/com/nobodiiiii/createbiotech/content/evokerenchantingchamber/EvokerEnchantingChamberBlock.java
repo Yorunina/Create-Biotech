@@ -1,5 +1,6 @@
 package com.nobodiiiii.createbiotech.content.evokerenchantingchamber;
 
+import com.nobodiiiii.createbiotech.foundation.block.CBMultiBlockLifecycle;
 import com.nobodiiiii.createbiotech.foundation.block.CBWrenchHelper;
 import com.nobodiiiii.createbiotech.registry.CBBlockEntityTypes;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -9,6 +10,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionHand;
@@ -36,11 +38,13 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.level.BlockEvent;
 
-public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWrenchable {
+public class EvokerEnchantingChamberBlock extends BaseEntityBlock
+	implements IWrenchable, CBMultiBlockLifecycle.Part {
 
 	public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 	public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
@@ -58,6 +62,8 @@ public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWr
 		Level level = context.getLevel();
 		if (!hasSpaceForUpperHalf(level, pos))
 			return null;
+		if (!level.getWorldBorder().isWithinBounds(pos.above()))
+			return null;
 		if (!level.getBlockState(pos.above()).canBeReplaced(context))
 			return null;
 		return defaultBlockState()
@@ -71,21 +77,29 @@ public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWr
 	}
 
 	@Override
+	public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+		super.onPlace(state, level, pos, oldState, isMoving);
+		// Also catches parts restored by contraptions or placed through commands, neither
+		// of which passes through setPlacedBy.
+		scheduleStructureCheck(level, pos, state);
+	}
+
+	@Override
 	public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
 		LevelAccessor level, BlockPos currentPos, BlockPos neighborPos) {
-		DoubleBlockHalf half = state.getValue(HALF);
-		Direction counterpartDirection = half == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN;
-
-		if (direction == counterpartDirection) {
-			return neighborState.is(this) && neighborState.getValue(HALF) != half
-				? state
-				: Blocks.AIR.defaultBlockState();
-		}
-
-		if (half == DoubleBlockHalf.LOWER && direction == Direction.DOWN && !state.canSurvive(level, currentPos))
-			return Blocks.AIR.defaultBlockState();
-
+		// Create calls updateShape against the destination before restoring each
+		// non-brittle block. Validating immediately would see the counterpart as air and
+		// erase this state before either half reaches the world. Defer exactly like the
+		// project's other logical multiblocks so the complete placement can settle first.
+		scheduleStructureCheck(level, currentPos, state);
 		return super.updateShape(state, direction, neighborState, level, currentPos, neighborPos);
+	}
+
+	@Override
+	public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+		if (isValidStructure(level, pos, state))
+			return;
+		removeStructure(level, pos, state);
 	}
 
 	@Override
@@ -101,23 +115,29 @@ public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWr
 
 	@Override
 	public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-		if (!level.isClientSide() && state.getValue(HALF) == DoubleBlockHalf.UPPER) {
+		// Survival breaks let the lower half be destroyed by the scheduled shape
+		// teardown, so its loot table decides what drops. Creative has to take it out
+		// itself, without drops, exactly like vanilla's double blocks.
+		if (!level.isClientSide() && state.getValue(HALF) == DoubleBlockHalf.UPPER && player.isCreative()) {
 			BlockPos lowerPos = pos.below();
 			BlockState lowerState = level.getBlockState(lowerPos);
-			if (lowerState.is(this) && lowerState.getValue(HALF) == DoubleBlockHalf.LOWER) {
-				if (player.isCreative()) {
-					level.setBlock(lowerPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL_IMMEDIATE);
-					level.levelEvent(player, 2001, lowerPos, Block.getId(lowerState));
-				} else {
-					BlockEntity lowerBlockEntity = level.getBlockEntity(lowerPos);
-					dropResources(lowerState, (ServerLevel) level, lowerPos, lowerBlockEntity, player,
-						player.getMainHandItem());
-					level.setBlock(lowerPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL_IMMEDIATE);
-				}
-			}
+			if (lowerState.is(this) && lowerState.getValue(HALF) == DoubleBlockHalf.LOWER)
+				CBMultiBlockLifecycle.removeAnchorInCreative(level, lowerPos, player);
 		}
 
 		super.playerWillDestroy(level, pos, state, player);
+	}
+
+	@Override
+	public PushReaction getPistonPushReaction(BlockState state) {
+		// Vanilla pistons must not split the two halves. Moving structures use the
+		// shared CBMultiBlockLifecycle attachment rule instead.
+		return PushReaction.BLOCK;
+	}
+
+	@Override
+	public BlockPos getMultiBlockAnchor(BlockPos pos, BlockState state) {
+		return state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
 	}
 
 	@Override
@@ -237,6 +257,50 @@ public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWr
 			&& lowerState.getValue(FACING) == upperState.getValue(FACING);
 	}
 
+	private static boolean isValidStructure(LevelReader level, BlockPos pos, BlockState state) {
+		BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
+		BlockPos upperPos = lowerPos.above();
+		if (!CBMultiBlockLifecycle.isLoaded(level, lowerPos)
+			|| !CBMultiBlockLifecycle.isLoaded(level, upperPos))
+			return true;
+
+		BlockState lowerState = level.getBlockState(lowerPos);
+		BlockState upperState = level.getBlockState(upperPos);
+		return isHalf(lowerState, DoubleBlockHalf.LOWER)
+			&& isHalf(upperState, DoubleBlockHalf.UPPER)
+			&& lowerState.canSurvive(level, lowerPos);
+	}
+
+	private void scheduleStructureCheck(LevelAccessor level, BlockPos pos, BlockState state) {
+		if (level.isClientSide())
+			return;
+
+		BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
+		BlockPos upperPos = lowerPos.above();
+		if (CBMultiBlockLifecycle.isLoaded(level, lowerPos)
+			&& isHalf(level.getBlockState(lowerPos), DoubleBlockHalf.LOWER)) {
+			CBMultiBlockLifecycle.scheduleValidation(level, lowerPos, this);
+			return;
+		}
+		if (CBMultiBlockLifecycle.isLoaded(level, upperPos)
+			&& isHalf(level.getBlockState(upperPos), DoubleBlockHalf.UPPER))
+			CBMultiBlockLifecycle.scheduleValidation(level, upperPos, this);
+	}
+
+	private static void removeStructure(Level level, BlockPos pos, BlockState state) {
+		BlockPos lowerPos = state.getValue(HALF) == DoubleBlockHalf.LOWER ? pos : pos.below();
+		BlockPos upperPos = lowerPos.above();
+		if (isHalf(level.getBlockState(upperPos), DoubleBlockHalf.UPPER))
+			CBMultiBlockLifecycle.removeSilently(level, upperPos);
+		if (isHalf(level.getBlockState(lowerPos), DoubleBlockHalf.LOWER))
+			level.destroyBlock(lowerPos, true);
+	}
+
+	private static boolean isHalf(BlockState state, DoubleBlockHalf half) {
+		return state.getBlock() instanceof EvokerEnchantingChamberBlock
+			&& state.getValue(HALF) == half;
+	}
+
 	@Override
 	public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state,
 		BlockEntityType<T> type) {
@@ -253,6 +317,8 @@ public class EvokerEnchantingChamberBlock extends BaseEntityBlock implements IWr
 			if (blockEntity instanceof EvokerEnchantingChamberBlockEntity chamber)
 				chamber.dropContentsAndFluid();
 		}
+		if (!state.is(newState.getBlock()))
+			scheduleStructureCheck(level, pos, state);
 		super.onRemove(state, level, pos, newState, isMoving);
 	}
 
